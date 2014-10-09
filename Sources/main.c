@@ -28,6 +28,32 @@ void imageToSerial2(int8_t* image)
 	TERMINAL_PRINTF("\n");	
 }
 
+
+void imageToSerial16(int16_t* image)
+{
+	int16_t i;
+	for(i=0;i<128;i++)
+	{
+		 int16_t val = image[i];
+		 int32_t val2 = val;
+		 TERMINAL_PRINTF("%d ",val2);
+		 
+	}
+	TERMINAL_PRINTF("\n");	
+}
+
+void imageToSerialf(float* image)
+{
+	int16_t i;
+	for(i=0;i<128;i++)
+	{
+		 int val = image[i];
+		 TERMINAL_PRINTF("%d ",val);
+		 
+	}
+	TERMINAL_PRINTF("\n");	
+}
+
 int main(void)
 {
 	
@@ -66,14 +92,15 @@ int main(void)
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
 		TFC_Task();
 		
-		if(readNProcessData(&data,0.3))
+		if(readNProcessData(&data,10,20))
 		{
 			//Output image to serial
 			//imageToSerial2(data.threshold_image);
-			//imageToSerial(data.filtered_image);
+			imageToSerialf(data.d2_img);
+			//imageToSerial16(data.derivate_image);
 			
 			//Output line position
-			TERMINAL_PRINTF("%d\n",data.line_position);
+			//TERMINAL_PRINTF("%d\n",data.line_position);
 		}
 		
 		/*			
