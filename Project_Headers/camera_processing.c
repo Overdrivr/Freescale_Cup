@@ -32,12 +32,11 @@ void initData(cameraData* data)
 
 int readNProcessData(cameraData* data, float tau, float timestep)
 {	
-	uint16_t min, max;
+	float min, max;
 	uint8_t edge_signal;
 	int i,j;
 	int buffer;
 	int16_t t1,t2;
-	float alpha;
 	float x1,x2;
 	float looptime = tau / 1000.f;
 	
@@ -57,22 +56,31 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 		max = 0;
 		for(i=0;i<128;i++)
 		{
-			if(data->filtered_image[i] > max)
-				max = data->filtered_image[i];
-			if(data->filtered_image[i] < min)
-				min =data->filtered_image[i];
+			if(data->raw_image[i] > max)
+				max = data->raw_image[i];
+			if(data->raw_image[i] < min)
+				min =data->raw_image[i];
 		}
 		
-		//Compute derivative
-		for(i=0;i<127;i++)
+		//Remove edges
+		int edgeleft = 20;
+		int edgeright = 15;
+		
+		for(i=0;i<edgeleft;i++)
 		{
-			t2 = data->raw_image[i+1];
-			t1 = data->raw_image[i];
-			data->derivate_image[i] = t2 - t1 ;
+			data->raw_image[i] = max;
 		}
 		
-		//First order complementary filter
-		alpha = tau/(tau + timestep/1000.f);
+		for(i=(128-edgeright);i<128;i++)
+		{
+			data->raw_image[i] = max;
+		}
+		
+		
+		
+		//Second order complementary filter		
+		float beta = 8.f;
+		
 		for(i=0;i<128;i++)
 		{
 			data->raw_img[i] = data->raw_image[i];
@@ -80,29 +88,27 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 			x1 = (data->raw_img[i] - data->d2_img[i]) * tau * tau;
 			data->d1_img[i] = looptime * x1 + data->d1_img[i];
 			
-			x2 = data->d1_img[i] + (data->raw_img[i] - data->d2_img[i]) * 2.0 * tau;
+			x2 = data->d1_img[i] + (data->raw_img[i] - data->d2_img[i]) * beta * tau;
 			
 			data->d2_img[i] = looptime * x2 + data->d2_img[i];
-		}
+		} 
 		/*
 		x1 = (newAngle -   x_angle2C)*k*k;
 		y1 = dtc2*x1 + y1;
 		x2 = y1 + (newAngle -   x_angle2C)*2*k + newRate;
 		x_angle2C = dtc2*x2 + x_angle2C;
-		*/
-		
+		*/	
 			
 		//Adjust dynamic, remove offset and apply threshold
 		//TODO : ALSO SET TO 1 PIXEL THAT ARE TOO BRIGHT TO BE THE LINE ?
+		float threshold = 0.8;
 		for(i=0;i<128;i++)
 		{
-			buffer = data->filtered_image[i];
-			buffer = (buffer - min) * 1000 / (max - min);
-			
-			if(buffer > 750 || 
-			   i < 15 || 
-			   i > (128 - 15))
+			if(data->d2_img[i] > threshold * (max - min))
+			{
+				data->d2_img[i] = max;
 				data->threshold_image[i] = 1;
+			}
 			else
 				data->threshold_image[i] = -1;
 		}
@@ -132,38 +138,26 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 			}
 				
 		}
-			
-		//Filter edges less wide than XX pixel
-		for(i = 0 ; i < data->edges_count ; i++)
-		{
-			buffer = data->rising_edges_position[i];
-			buffer -= data->falling_edges_position[i];
-			if(buffer < 20)
-			{
-				//Remove all edges between both points
-				for(j = data->falling_edges_position[i] ; j <= data->rising_edges_position[i] ; j++)
-				{
-					data->threshold_image[j] = 1;
 					
-				}
-			}
-			
+		
+		float position;
+		
+		if(data->edges_count == 0)
+		{
+			//No edge detected, keep line position
 		}
-		
-		
-		
-		//Either we have one edge (normal behavior) or three
 		if(data->edges_count == 1)
 		{
-			buffer = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2;
-			buffer -= 64;
-			data->line_position = buffer;
+			//1 edge - compute center & record
+			position = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2;
+			position -= 64;
+			data->line_position = position;
 		}
 		else if(data->edges_count == 3)
 		{
-			buffer = (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2;
-			buffer -= 64;
-			data->line_position = buffer;
+			position = (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2;
+			position -= 64;
+			data->line_position = position;
 			//TODO : CALL FUNCTION TO SIGNAL START LINE
 		}
 		//Any other value is error
@@ -171,6 +165,15 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 		{
 			//FOR NOW : DO NOT CHANGE THE VALUE
 		}
+		
+		//Mark position on signal
+		for(i=0;i<127;i++)
+		{
+			data->threshold_image[i] = 0;
+		}
+		i = data->line_position + 64;
+		data->threshold_image[i] = 1;  
+		
 	
 	return 1;
 	}
