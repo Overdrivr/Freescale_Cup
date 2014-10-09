@@ -15,12 +15,15 @@ typedef struct cameraData cameraData;
 struct cameraData
 {
 	uint16_t raw_image[128];
-	uint16_t filtered_image[128];
+	int16_t filtered_image[128];
+	int16_t filtered_image2[128];
+	int16_t  derivate_image[128];
 	int8_t threshold_image[128];
 	uint16_t falling_edges_position[128];
 	uint16_t rising_edges_position[128];
 	uint16_t edges_count;
 	int16_t line_position;
+	float raw_img[128], d1_img[128], d2_img[128];
 };
 
 
@@ -35,7 +38,7 @@ Function to init buffers to zero
 
 
 //////////////////////////////////////////////
-int readNProcessData(cameraData* data, float alpha);
+int readNProcessData(cameraData* data, float tau, float looptime);
 /*
 Reads camera image through serial port, process image and computes line position 
  * data : data structure for holding all informations (for filtering, optimizations, etc.)
