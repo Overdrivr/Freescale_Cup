@@ -1,0 +1,32 @@
+/*
+ * serial.h
+ *
+ *  Created on: Oct 13, 2014
+ *      Author: B48923
+ */
+
+#ifndef SERIAL_H_
+#define SERIAL_H_
+
+//Similar interface to arduino
+
+//QUEUES FOR RECEIVE/TRANSMIT
+#define SERIAL_INCOMING_QUEUE SDA_SERIAL_INCOMING_QUEUE
+#define SERIAL_OUTGOING_QUEUE SDA_SERIAL_OUTGOING_QUEUE
+
+//Write val on serial port
+//Returns 1 if ok
+int16_t serial_write(uint8_t val);
+
+//Write 'len' bytes of data in 'buf'
+//Returns number of bytes written
+int16_t serial_write(char* buf, int len);
+
+//Returns number of received bytes in the reception queue (basically nb of bytes that can be read)
+uint16_t serial_available();
+
+//Returns first byte of received data
+uint8_t serial_read();
+
+
+#endif /* SERIAL_H_ */
