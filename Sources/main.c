@@ -92,11 +92,15 @@ int main(void)
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
 		TFC_Task();
 		
-		if(readNProcessData(&data,10,20))
+		//data
+		//tau
+		//looptime
+		if(readNProcessData(&data,10,50))
 		{
 			//Output image to serial
 			//imageToSerial2(data.threshold_image);
-			imageToSerialf(data.d2_img);
+			//imageToSerialf(data.d2_img);
+			imageToSerialf(data.threshold_filtered_image);
 			//imageToSerial16(data.derivate_image);
 			
 			//Output line position

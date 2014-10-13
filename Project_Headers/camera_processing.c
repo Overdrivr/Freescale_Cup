@@ -20,6 +20,7 @@ void initData(cameraData* data)
 		data->threshold_image[i] = 0;
 		data->falling_edges_position[i] = 0;
 		data->rising_edges_position[i] = 0;
+		data->threshold_filtered_image[i] = 0.f;
 		
 		data->raw_img[i] = 0.f;
 		data->d1_img[i] = 0.f;
@@ -34,11 +35,9 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 {	
 	float min, max;
 	uint8_t edge_signal;
-	int i,j;
-	int buffer;
-	int16_t t1,t2;
 	float x1,x2;
-	float looptime = tau / 1000.f;
+	int i;
+	float looptime = timestep / 1000.f;
 	
 	if(TFC_Ticker[0]>100 && LineScanImageReady==1)
 	{
@@ -79,7 +78,7 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 		
 		
 		//Second order complementary filter		
-		float beta = 8.f;
+		float beta = 1.2f;
 		
 		for(i=0;i<128;i++)
 		{
@@ -101,12 +100,12 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 			
 		//Adjust dynamic, remove offset and apply threshold
 		//TODO : ALSO SET TO 1 PIXEL THAT ARE TOO BRIGHT TO BE THE LINE ?
-		float threshold = 0.8;
+		float threshold = 0.65;
 		for(i=0;i<128;i++)
 		{
 			if(data->d2_img[i] > threshold * (max - min))
 			{
-				data->d2_img[i] = max;
+				//data->d2_img[i] = max;
 				data->threshold_image[i] = 1;
 			}
 			else
@@ -138,7 +137,17 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 			}
 				
 		}
-					
+		
+		float alpha = 0.45;
+		float t1,t2;
+		//Filter threshold image
+		for(i=0;i<127;i++)
+		{
+			t2 = data->threshold_image[i];
+			data->threshold_filtered_image[i] = data->threshold_filtered_image[i] * alpha + t2 * 10 * (1 - alpha);
+		}
+		
+			
 		
 		float position;
 		
@@ -146,7 +155,7 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 		{
 			//No edge detected, keep line position
 		}
-		if(data->edges_count == 1)
+		else if(data->edges_count == 1)
 		{
 			//1 edge - compute center & record
 			position = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2;
@@ -154,7 +163,7 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 			data->line_position = position;
 		}
 		else if(data->edges_count == 3)
-		{
+		{			
 			position = (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2;
 			position -= 64;
 			data->line_position = position;
@@ -165,14 +174,14 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 		{
 			//FOR NOW : DO NOT CHANGE THE VALUE
 		}
-		
+		/*
 		//Mark position on signal
 		for(i=0;i<127;i++)
 		{
 			data->threshold_image[i] = 0;
 		}
 		i = data->line_position + 64;
-		data->threshold_image[i] = 1;  
+		data->threshold_image[i] = 1;*/  
 		
 	
 	return 1;
