@@ -8,6 +8,7 @@
 #include "logger.h"
 #include "serial.h"
 
+
 void init_log()
 {
 	int i;
@@ -22,18 +23,18 @@ void init_log()
 }
 
 //Returns 0 if ok, 1 if size exceeds log capacity
-uint8_t add_to_log(uint8* adress, uint16_t octets, uint8_t readonly)
+uint8_t add_to_log(log* table, uint8_t* adress, uint16_t octets, uint8_t readonly)
 {
 	if(Log.current_index == 127)
 		return 1;
 	
 	//Limited to 1024 octets per variable, should be enough for now
-	if(Log.octets > 1024)
+	if(octets > 1024)
 		return 1;
 	
-	Log.variables_ptr[table->current_index] = adress;
-	Log.variables_size[table->current_index] = octets;
-	Log.rw_rights[table->current_index] = readonly;
+	Log.variables_ptr[Log.current_index] = adress;
+	Log.variables_size[Log.current_index] = octets;
+	Log.rw_rights[Log.current_index] = readonly;
 	
 	Log.current_index++;
 	
@@ -53,31 +54,31 @@ void update_serial()
 	{
 		
 		//Set header (2 octets)
-		serial_write(header);
-		serial_write(header);
+		serial_write(header,1);
+		serial_write(header,1);
 		
 		//Set framesize
 		uint16_t framesize = Log.variables_size[i];
 		temp_ptr = (uint8_t*)(&framesize);
-		serial_write(*temp_ptr); 		
-		serial_write(*(temp_ptr+1));
+		serial_write(*temp_ptr,1); 		
+		serial_write(*(temp_ptr+1),1);
 		
 		//Set CMD
 			//1 is return_log_table..TBD!
 			//2 is return_log_values
-		serial_write(2);
+		serial_write(2,1);
 		
 		//Set data
 		for(j = 0 ; j < Log.variables_size[i] ; j++)
 		{
 			adress = i + j;
 			buffer = *(Log.variables_ptr[adress]);
-			serial_write(buffer);
+			serial_write(buffer,1);
 		}
 	
 		
 		//Set EOFrame
-		serial_write(footer);		
+		serial_write(footer,1);		
 	}
 		
 	
