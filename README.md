@@ -14,4 +14,5 @@ https://community.freescale.com/docs/DOC-93914
 
 ## Software
 CodeWarrior for MCU development & debug
+
 Python for real time data plot
