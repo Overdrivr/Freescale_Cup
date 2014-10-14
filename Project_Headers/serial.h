@@ -8,6 +8,8 @@
 #ifndef SERIAL_H_
 #define SERIAL_H_
 
+#include "TFC\TFC.h"
+
 //Similar interface to arduino
 
 //QUEUES FOR RECEIVE/TRANSMIT
@@ -16,11 +18,10 @@
 
 //Write val on serial port
 //Returns 1 if ok
-int16_t serial_write(uint8_t val);
 
 //Write 'len' bytes of data in 'buf'
 //Returns number of bytes written
-int16_t serial_write(char* buf, int len);
+int16_t serial_write(uint8_t* buf, uint16_t len);
 
 //Returns number of received bytes in the reception queue (basically nb of bytes that can be read)
 uint16_t serial_available();

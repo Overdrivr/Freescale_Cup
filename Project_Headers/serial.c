@@ -10,15 +10,10 @@
 #include "TFC/TFC_UART.h"
 #include "TFC/TFC_Queue.h"
 
-int16_t serial_write(uint8_t val)
-{
-	ByteEnqueue(&SERIAL_OUTGOING_QUEUE,val);
-}
-
 
 int16_t serial_write(uint8_t* buf, uint16_t len)
 {
-	ByteArrayEnqueue(&SERIAL_OUTGOING_QUEUE,buf,Len);
+	return ByteArrayEnqueue(&SERIAL_OUTGOING_QUEUE,buf,len);
 }
 
 uint16_t serial_available()
