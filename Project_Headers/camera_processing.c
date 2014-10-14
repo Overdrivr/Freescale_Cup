@@ -15,29 +15,27 @@ void initData(cameraData* data)
 	{
 		data->raw_image[i] = 0;
 		data->filtered_image[i] = 0;
-		data->filtered_image2[i] = 0;
-		data->derivate_image[i] = 0;
 		data->threshold_image[i] = 0;
 		data->falling_edges_position[i] = 0;
 		data->rising_edges_position[i] = 0;
-		data->threshold_filtered_image[i] = 0.f;
 		
-		data->raw_img[i] = 0.f;
-		data->d1_img[i] = 0.f;
-		data->d2_img[i] = 0.f;
 	}
 	data->edges_count = 0;
 	data->line_position = 0;
 }
 
 
-int readNProcessData(cameraData* data, float tau, float timestep)
+int readNProcessData(cameraData* data, float timestep)
 {	
-	float min, max;
+	float min, max, val;
 	uint8_t edge_signal;
-	float x1,x2;
-	int i;
-	float looptime = timestep / 1000.f;
+	uint16_t i;
+	
+	//Parameters
+	float threshold = 0.65;
+	int edgeleft = 20;
+	int edgeright = 15;
+	float alpha = 0.25;
 	
 	if(TFC_Ticker[0]>100 && LineScanImageReady==1)
 	{
@@ -62,8 +60,7 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 		}
 		
 		//Remove edges
-		int edgeleft = 20;
-		int edgeright = 15;
+		
 		
 		for(i=0;i<edgeleft;i++)
 		{
@@ -75,35 +72,30 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 			data->raw_image[i] = max;
 		}
 		
+		//Left-starting filter
+		data->filtered_image[0] = data->raw_image[0];
+		for(i=0;i<127;i++)
+		{
+			val = data->raw_image[i+1];
+			data->filtered_image[i+1] = data->filtered_image[i] * (1-a) + val * alpha;
+		}
 		
-		
-		//Second order complementary filter		
-		float beta = 1.2f;
-		
+		//Min Max on filter values
+		min = 65535;
+		max = 0;
 		for(i=0;i<128;i++)
 		{
-			data->raw_img[i] = data->raw_image[i];
-			
-			x1 = (data->raw_img[i] - data->d2_img[i]) * tau * tau;
-			data->d1_img[i] = looptime * x1 + data->d1_img[i];
-			
-			x2 = data->d1_img[i] + (data->raw_img[i] - data->d2_img[i]) * beta * tau;
-			
-			data->d2_img[i] = looptime * x2 + data->d2_img[i];
-		} 
-		/*
-		x1 = (newAngle -   x_angle2C)*k*k;
-		y1 = dtc2*x1 + y1;
-		x2 = y1 + (newAngle -   x_angle2C)*2*k + newRate;
-		x_angle2C = dtc2*x2 + x_angle2C;
-		*/	
-			
-		//Adjust dynamic, remove offset and apply threshold
-		//TODO : ALSO SET TO 1 PIXEL THAT ARE TOO BRIGHT TO BE THE LINE ?
-		float threshold = 0.65;
+			if(data->filtered_image[i] > max)
+				max = data->filtered_image[i];
+			if(data->filtered_image[i] < min)
+				min =data->filtered_image[i];
+		}
+		
+		
+		//Apply threshold
 		for(i=0;i<128;i++)
 		{
-			if(data->d2_img[i] > threshold * (max - min))
+			if(data->filtered_image[i] > threshold * (max - min))
 			{
 				//data->d2_img[i] = max;
 				data->threshold_image[i] = 1;
@@ -137,17 +129,7 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 			}
 				
 		}
-		
-		float alpha = 0.45;
-		float t1,t2;
-		//Filter threshold image
-		for(i=0;i<127;i++)
-		{
-			t2 = data->threshold_image[i];
-			data->threshold_filtered_image[i] = data->threshold_filtered_image[i] * alpha + t2 * 10 * (1 - alpha);
-		}
-		
-			
+					
 		
 		float position;
 		
@@ -174,17 +156,17 @@ int readNProcessData(cameraData* data, float tau, float timestep)
 		{
 			//FOR NOW : DO NOT CHANGE THE VALUE
 		}
-		/*
+		
 		//Mark position on signal
-		for(i=0;i<127;i++)
+		for(i=0;i<128;i++)
 		{
 			data->threshold_image[i] = 0;
 		}
 		i = data->line_position + 64;
-		data->threshold_image[i] = 1;*/  
+		data->threshold_image[i] = 1; 
 		
 	
-	return 1;
+		return 1;
 	}
 	return 0;
 }
