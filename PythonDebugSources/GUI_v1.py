@@ -11,6 +11,7 @@ from threading import Thread
 import time
 
 from matplotlib.figure import Figure
+from SerialPortHandler import SerialPortHandler
 """
 class Interface(Tk.Frame):
         
@@ -33,24 +34,6 @@ class Interface(Tk.Frame):
         self.bouton_quitter = Tk.Button(self, text="Quitter")
         self.bouton_quitter.pack(side="left")
 """        
-       
-    
-class SerialPortHandler(Thread):
-
-    def __init__(self):
-        Thread.__init__(self)
-        self.stop_signal = 0;
-
-    def stop(self):
-        self.stop_signal = 1;
-
-    def run(self):
-        while self.stop_signal == 0:
-            sys.stdout.write('A')
-            sys.stdout.flush()
-            attente = 0.2
-            attente += random.randint(1, 60) / 100
-            time.sleep(attente)
 
 
 #fenetre = Tk.Tk()
@@ -59,7 +42,7 @@ class SerialPortHandler(Thread):
 
             
 # Thread serial port
-thread_1 = SerialPortHandler()
+thread_1 = SerialPortHandler('COM5',115200)
 thread_1.start()
 
 time.sleep(5)
@@ -71,3 +54,5 @@ time.sleep(5)
 # Arret du thread
 thread_1.stop()
 thread_1.join()
+
+print('done')
