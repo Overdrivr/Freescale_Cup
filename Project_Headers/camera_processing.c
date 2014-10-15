@@ -25,7 +25,7 @@ void initData(cameraData* data)
 }
 
 
-int readNProcessData(cameraData* data, float timestep)
+int readNProcessData(cameraData* data)
 {	
 	float min, max, val;
 	uint8_t edge_signal;
@@ -77,7 +77,7 @@ int readNProcessData(cameraData* data, float timestep)
 		for(i=0;i<127;i++)
 		{
 			val = data->raw_image[i+1];
-			data->filtered_image[i+1] = data->filtered_image[i] * (1-a) + val * alpha;
+			data->filtered_image[i+1] = data->filtered_image[i] * (1-alpha) + val * alpha;
 		}
 		
 		//Min Max on filter values

@@ -35,7 +35,7 @@ Function to init buffers to zero
 
 
 //////////////////////////////////////////////
-int readNProcessData(cameraData* data, float timestep);
+int readNProcessData(cameraData* data);
 /*
 Reads camera image through serial port, process image and computes line position 
  * data : data structure for holding all informations (for filtering, optimizations, etc.)
