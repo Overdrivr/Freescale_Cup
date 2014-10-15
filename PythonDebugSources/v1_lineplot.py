@@ -1,5 +1,5 @@
 """
-ldr.py
+Modified from:
  
 Display analog data from Arduino using Python (matplotlib)
  
@@ -26,7 +26,7 @@ def main():
      
   # set up animation
   fig = plt.figure()
-  ax = plt.axes(xlim=(0, 127), ylim=(-20, 5000))
+  ax = plt.axes(xlim=(0, 127), ylim=(-2, 2))
   a0, = ax.plot([], [])
    
   def init():
