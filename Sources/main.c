@@ -64,37 +64,57 @@ int main(void)
 	
 	initData(&data);
 	
+	//Computation variables
 	float position_error = 0.f;
 	float previous_error = 0.f;
 	float error_derivative = 0.f;
 	float error_integral = 0.f;
+	float looptime = 0.f;
+	int val = 0.f;
+	float command = 0.f;
+	
+	//Parameters
+	float P = 1.0;
+	float I = 0.1;
+	float D = 0.001;
 	
 	for(;;)
 	{	   
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
 		TFC_Task();
+				
 		
 		//Compute line position
-		if(readNProcessData(&data,10,50))
+		if(readNProcessData(&data))
 		{
+			position_error = data.line_position;
+			//Compute looptime
+			looptime = TFC_Ticker[1];
+			TFC_Ticker[1] = 0;
+			//Compute derivative
+			error_derivative = (position_error - previous_error) * 1000.f / looptime;
+			error_integral = error_integral + position_error * looptime / 1000.f;
+			
+			val = position_error;
+			//val = error_integral;
+			//val = error_derivative;
+			TERMINAL_PRINTF("%d ",val);
+			TERMINAL_PRINTF("\n");
+			
 			//Output image to serial
-			imageToSerial2(data.threshold_image);
+			//imageToSerial2(data.threshold_image);
 			//imageToSerialf(data.d3_img);
 			//imageToSerialf(data.threshold_filtered_image);
 			//imageToSerial16(data.derivate_image);
-			
-			
-			position_error = data.line_position;
-			//Compute stuff
 		}
 		
 		//Update direction every 500us
-		if(TFC_Ticker[1] > 500 )
+		if(TFC_Ticker[2] > 500 )
 		{
-			TFC_Ticker[1] = 0;
+			TFC_Ticker[2] = 0;
 			
 			//Compute servo command between -1.0 & 1.0
-			
+
 		
 		}
 	}
