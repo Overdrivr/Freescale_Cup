@@ -56,8 +56,6 @@ void imageToSerialf(float* image)
 
 int main(void)
 {
-	
-	
 	TFC_Init();
 	
 	cameraData data;
@@ -72,11 +70,21 @@ int main(void)
 	float looptime = 0.f;
 	int val = 0.f;
 	float command = 0.f;
+	float command_engines = 0.f;
+	int engines_on = 0;
 	
 	//Parameters
-	float P = 1.0;
-	float I = 0.1;
+	float P = 0.01;
+	float I = 0.01;
 	float D = 0.001;
+	
+	//Camera processing parameters
+	data.threshold_coefficient = 0.65;
+	data.edgeleft = 20;
+	data.edgeright = 15;
+	data.alpha = 0.25;
+	
+	TFC_HBRIDGE_DISABLE;
 	
 	for(;;)
 	{	   
@@ -85,37 +93,83 @@ int main(void)
 				
 		
 		//Compute line position
-		if(readNProcessData(&data))
+		if(read_process_data(&data))
 		{
-			position_error = data.line_position;
 			//Compute looptime
 			looptime = TFC_Ticker[1];
 			TFC_Ticker[1] = 0;
-			//Compute derivative
+			
+			//Compute errors for PID
+			previous_error = position_error;
+			position_error = data.line_position;
 			error_derivative = (position_error - previous_error) * 1000.f / looptime;
 			error_integral = error_integral + position_error * looptime / 1000.f;
 			
-			val = position_error;
+			
+			//Debug - output to serial
+			//val = position_error;
 			//val = error_integral;
 			//val = error_derivative;
-			TERMINAL_PRINTF("%d ",val);
-			TERMINAL_PRINTF("\n");
+			//TERMINAL_PRINTF("%d ",val);
+			//TERMINAL_PRINTF("\n");
 			
 			//Output image to serial
+			//imageToSerialf(data.calibration_data);
+			//imageToSerialf(data.filtered_image);
 			//imageToSerial2(data.threshold_image);
-			//imageToSerialf(data.d3_img);
-			//imageToSerialf(data.threshold_filtered_image);
 			//imageToSerial16(data.derivate_image);
 		}
 		
-		//Update direction every 500us
-		if(TFC_Ticker[2] > 500 )
+		//Update direction every 100ms
+		if(TFC_Ticker[2] > 100)
 		{
 			TFC_Ticker[2] = 0;
 			
 			//Compute servo command between -1.0 & 1.0
-
+			command = P * position_error; //+ I * error_integral;
+			
+			if(command > 1.f)
+				command = 1.f;
+			if(command < -1.f)
+				command = -1.f;
+			
+			TFC_SetServo(0, command);
+			
+			val = command * 1000;
+			TERMINAL_PRINTF("%d ", val);
+			TERMINAL_PRINTF("\n");
+		}
 		
+		//Button events
+		if(TFC_PUSH_BUTTON_0_PRESSED)
+		{
+			calibrate_data(&data);
+			error_integral = 0.f;
+		}
+		if(TFC_PUSH_BUTTON_1_PRESSED)
+		{
+			//Start-Stop engines
+			if(engines_on == 0)
+			{
+				engines_on = 1;
+				TFC_HBRIDGE_ENABLE;//?
+			}	
+			else
+			{
+				engines_on = 0;
+				TFC_HBRIDGE_DISABLE;//?
+			}
+				
+		}
+		
+		if(engines_on == 0)
+		{
+			TFC_SetMotorPWM(0.f , 0.f);
+		}
+		else
+		{
+			command_engines =  TFC_ReadPot(0);
+			TFC_SetMotorPWM(command_engines , command_engines);
 		}
 	}
 	
