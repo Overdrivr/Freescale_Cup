@@ -17,31 +17,46 @@ struct cameraData
 	uint16_t raw_image[128];
 	float filtered_image[128];
 	int8_t threshold_image[128];
+	
 	int falling_edges_position[128];
 	int rising_edges_position[128];
 	uint16_t edges_count;
 	int16_t line_position;
+	
+	//Calibration data
+	float calibration_data[128];
+	float threshold;
+	
+	//Parameters
+	float threshold_coefficient;
+	int edgeleft;
+	int edgeright;
+	float alpha;
 };
 
 
 //////////////////////////////////////////////
-void initData(cameraData* data);
+void init_data(cameraData* data);
 /*
-Function to init buffers to zero
- 
+ * Function to init buffers to zero
  * data : data structure for holding all informations (for filtering & computing)
  */
 
 
 
 //////////////////////////////////////////////
-int readNProcessData(cameraData* data);
+int read_process_data(cameraData* data);
 /*
-Reads camera image through serial port, process image and computes line position 
+ * Reads camera image through serial port, process image and computes line position 
  * data : data structure for holding all informations (for filtering, optimizations, etc.)
- * alpha : Coefficient for complementary filter, between ]0.0;1.0[
- 	 	   Value close to 1.0 filters a lot, but reacts slowly to new changes
- 	 	   	   	    	  0.0 filters very little, the new image replaces almost immediately the old one, so does noise
+ * Return : 1 if job done, 0 if done nothing
+ */
+
+//////////////////////////////////////////////
+void calibrate_data(cameraData* data);
+/*
+ * Camera will read 10 frames and compute a correct threshold value
+ * 
  */
 
 
