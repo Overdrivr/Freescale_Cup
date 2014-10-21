@@ -15,7 +15,7 @@ void TFC_ProcessTerminal();
 	#define TERMINAL_READABLE       	BytesInQueue(&TERMINAL_IN_QUEUE)
 	#define TERMINAL_GETC           	ForcedByteDequeue(&TERMINAL_IN_QUEUE)
 #else
-	#error "Unsupported Terminal Configuration!"
+	//#error "Unsupported Terminal Configuration!"
 #endif
 
 

@@ -10,7 +10,9 @@ void TFC_Init()
 	TFC_InitMotorPWM();
     TFC_InitADCs();
     TFC_InitLineScanCamera();
-    TFC_InitTerminal();
+	#if defined(TERMINAL_USE_SDA_SERIAL)
+    	TFC_InitTerminal();
+	#endif
 	TFC_InitUARTs();
 	TFC_HBRIDGE_DISABLE;
 	TFC_SetMotorPWM(0,0);

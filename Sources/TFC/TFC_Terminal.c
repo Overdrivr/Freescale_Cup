@@ -176,9 +176,10 @@ void TerminalCmd_H(char *arg)
 
 void TFC_ProcessTerminal()
 {
+	#if defined(TERMINAL_USE_SDA_SERIAL)
      uint8_t i,j;
      uint8_t ArgsFound;
-        
+       
     if(TERMINAL_READABLE)
     {
        NextCharIn = TERMINAL_GETC;
@@ -291,6 +292,7 @@ void TFC_ProcessTerminal()
         
         }
     }
+	#endif
  
 }
 
