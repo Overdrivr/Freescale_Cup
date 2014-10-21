@@ -1,6 +1,7 @@
 #include "derivative.h" /* include peripheral declarations */
 #include "TFC\TFC.h"
 #include "camera_processing.h"
+#include "logger.h"
 
 void imageToSerial(uint16_t* image)
 {
@@ -60,7 +61,7 @@ int main(void)
 	
 	cameraData data;
 	
-	initData(&data);
+	init_data(&data);
 	
 	//Computation variables
 	float position_error = 0.f;
@@ -84,14 +85,27 @@ int main(void)
 	data.edgeright = 15;
 	data.alpha = 0.25;
 	
+	int32_t test = 0;
+	init_log();
+	add_to_log(&test, sizeof(test), INT32,1,"test_var");
+	
 	TFC_HBRIDGE_DISABLE;
 	
 	for(;;)
 	{	   
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
 		TFC_Task();
-				
 		
+		//Logger debug
+		if(TFC_Ticker[2] > 300)
+		{
+			TFC_Ticker[2] = 0;
+			update_log_serial();
+		}
+		
+		
+				
+		/*
 		//Compute line position
 		if(read_process_data(&data))
 		{
@@ -171,7 +185,7 @@ int main(void)
 			command_engines =  TFC_ReadPot(0);
 			TFC_SetMotorPWM(command_engines , command_engines);
 		}
+	*/
 	}
-	
 	return 0;
 }
