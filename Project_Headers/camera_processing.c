@@ -7,7 +7,7 @@
 
 #include "camera_processing.h"
 
-void initData(cameraData* data)
+void init_data(cameraData* data)
 {
 	int i;
 	//Init image buffer
