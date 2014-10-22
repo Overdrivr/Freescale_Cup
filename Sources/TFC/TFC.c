@@ -21,9 +21,7 @@ void TFC_Init()
 
 void TFC_Task()
 {
-	#if defined(TERMINAL_USE_SDA_SERIAL)
-		TFC_UART_Process();
-	#endif
-	 
+	
+	TFC_UART_Process();
     TFC_ProcessTerminal();
 }
