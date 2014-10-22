@@ -8,6 +8,7 @@
 #include "logger.h"
 #include "serial.h"
 
+log Log;
 
 void init_log()
 {
@@ -73,7 +74,9 @@ void update_log_serial()
 			case FLOAT:
 				type = 1;
 				break;
+				
 			case INT32:
+			default:
 				type = 2;
 				break;
 		}
