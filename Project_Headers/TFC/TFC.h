@@ -25,7 +25,6 @@
 #include "TFC\TFC_LineScanCamera.h"
 #include "TFC\TFC_Queue.h"
 #include "TFC\TFC_UART.h"
-#include "TFC\TFC_Terminal.h"
 
 void TFC_Task();
 void TFC_Init();
