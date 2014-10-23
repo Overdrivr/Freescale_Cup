@@ -9,6 +9,8 @@
 #define SERIAL_H_
 
 #include "TFC\TFC.h"
+#include "TFC\TFC_UART.h"
+#include "TFC\TFC_Queue.h"
 
 //Similar interface to arduino
 
@@ -22,6 +24,8 @@
 //Write 'len' bytes of data in 'buf'
 //Returns number of bytes written
 int16_t serial_write(uint8_t* buf, uint16_t len);
+
+#define serial_printf(...) Qprintf(&SERIAL_OUTGOING_QUEUE,__VA_ARGS__)
 
 //Returns number of received bytes in the reception queue (basically nb of bytes that can be read)
 uint16_t serial_available();

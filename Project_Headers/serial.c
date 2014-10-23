@@ -7,9 +7,6 @@
 
 
 #include "serial.h"
-#include "TFC/TFC_UART.h"
-#include "TFC/TFC_Queue.h"
-
 
 int16_t serial_write(uint8_t* buf, uint16_t len)
 {
