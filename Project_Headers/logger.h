@@ -10,6 +10,7 @@
 
 //1 log can retain 128 different variables (=ptr adress) (A table only counts 1)
 #include "TFC\TFC.h"
+#include "serial.h"
 
 typedef enum datatype datatype;
 enum datatype
@@ -42,18 +43,17 @@ struct log
 	uint16_t current_index;
 };
 
-extern log Log;
-
-void init_log();
+void init_log(log* Log);
 
 //Returns 0 if ok, 1 if size exceeds log capacity
-uint8_t add_to_log(uint8_t* adress, 
+uint8_t add_to_log(log* Log,
+				   uint8_t* adress, 
 				   uint16_t octets,
 				   datatype type, 
 				   uint8_t readonly, 
 				   char* name);
 
-void update_log_serial();
+void update_log_serial(log* Log);
 
 //TBD
 void process_serial();
