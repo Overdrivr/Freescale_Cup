@@ -26,15 +26,13 @@ def main():
      
   # set up animation
   fig = plt.figure()
-  ax = plt.axes(xlim=(0, 127), ylim=(-1100, 1100))
+  ax = plt.axes(xlim=(0, 127), ylim=(-20, 20))
   a0, = ax.plot([], [])
-
-  global data
-  data = deque(np.zeros(128, dtype='f'),128)
-
    
   def init():
     print('init')
+    data = np.arange(128)
+    data.fill(0)
     a0.set_data(np.arange(128),data)
     return a0,
       
@@ -43,9 +41,10 @@ def main():
        serialout = ""
        serialout = ser.readline()
        temp = np.fromstring(serialout, dtype=int, sep=' ')
-       data.append(temp)
+       data = np.arange(128)
+       data.fill(0)
        print(temp)
-       a0.set_data(np.arange(128),data)
+       a0.set_data(np.arange(data.size),data)
        return a0,
 
   
