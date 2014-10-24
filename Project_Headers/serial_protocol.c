@@ -86,11 +86,7 @@ void update_serial_protocol()
 			}
 			else
 			{
-				if(received_byte == SOF_)
-				{
-					//ERROR : RX already in process
-				}
-				else if(received_byte == EOF_)
+				if(received_byte == EOF_)
 				{
 					protocol_state = IDLE;
 				}
