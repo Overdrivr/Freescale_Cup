@@ -10,7 +10,7 @@
 
 //1 log can retain 128 different variables (=ptr adress) (A table only counts 1)
 #include "TFC\TFC.h"
-#include "serial.h"
+#include "serial_protocol.h"
 
 typedef enum datatype datatype;
 enum datatype

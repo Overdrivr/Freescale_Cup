@@ -7,8 +7,6 @@
 
 #include "logger.h"
 
-uint8_t buffer[SDA_SERIAL_OUTGOING_QUEUE_SIZE];
-
 void init_log(log* Log)
 {
 	uint16_t i;
@@ -52,9 +50,11 @@ void update_log_serial(log* Log)
 	uint8_t *temp_ptr;
 	uint8_t type;
 	
+	uint8_t buffer[512];
+	
 	//Transmit data to serial
 	for(i = 0 ; i < Log->current_index ; i++)
-	{/*
+	{
 		j = 0;
 		
 		//Write command
@@ -82,14 +82,11 @@ void update_log_serial(log* Log)
 		//Write data
 		for(k = 0 ; k < Log->variables[i].size ; k++)
 		{
-			buffer[j] = (*Log->variables[i].ptr + k);
+			buffer[j] = *(Log->variables[i].ptr + k);
 			j++;
-		}*/
+		}
 			
-	
 		//Send to serial protocol
-		//send_serial_frame(buffer,j);
-		serial_printf("TEST");
-		//serial_printf("%s\n",buffer);
+		send_serial_frame(buffer,j);
 	}
 }
