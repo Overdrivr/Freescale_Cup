@@ -6,6 +6,7 @@ import serial
 import queue
 from serial.tools.list_ports import comports
 from SerialProtocol import SerialProtocol
+from Logger import Logger
 
 #Serial data processing class
 class Worker(Thread):
@@ -14,7 +15,8 @@ class Worker(Thread):
         Thread.__init__(self)
         self.stop_signal = 0
         self.serial_thread = serial_thread
-        self.serial_protocol = SerialProtocol
+        self.logger = Logger()
+        self.serial_protocol = SerialProtocol(self.logger.new_frame)
         
     def stop(self):
         self.stop_signal = 1;
@@ -27,6 +29,8 @@ class Worker(Thread):
                 byte = self.serial_thread.read()
                 #Then feed it to serial protocol
                 self.serial_protocol.new_rx_byte(byte)
+
+            
 
 
                 
