@@ -10,32 +10,17 @@ from serial.tools.list_ports import comports
 #Serial data processing class
 class SerialPortHandler(Thread):
 
-    def __init__(self,port,baudrate,force=False,default=False):
+    def __init__(self,port,baudrate,force=False,default_to=False):
         Thread.__init__(self)
         self.ser = serial.Serial()
         self.ser.baudrate = baudrate
         self.ser.port = port
         self.ser.timeout = 1
         self.force = force
-        self.default = default
+        self.default_to = default_to
         self.rxqueue = Queue(0)
         self.stop_signal = 0;
 
-    def stop(self):
-        self.stop_signal = 1;
-
-    #Returns amount of available bytes for reading
-    def available(self):
-        return self.rxqueue.qsize()
-
-    #Returns first available byte for reading
-    def read(self):
-        return self.rxqueue.get()
-
-    def write(self, frame)
-        return ser.write(frame)
-
-    def run(self):
         portlist = serial.tools.list_ports.comports()
         port_found = -1
         port_amount = 0
@@ -43,11 +28,11 @@ class SerialPortHandler(Thread):
 
         #List all COM ports
         print('COM ports list :')        
-        for port, desc, hwid in sorted(portlist):
-            sys.stderr.write('--- %-20s %s\n' % (port, desc))
+        for p, desc, hwid in sorted(portlist):
+            print('--- %-20s %s\n' % (p, desc))
             port_amount+=1
-            if port == self.ser.port:
-                port_found = port
+            if p == self.ser.port:
+                port_found = 1
                 
         #In case no port is found 
         if port_amount == 0:
@@ -60,22 +45,36 @@ class SerialPortHandler(Thread):
                   
         #In case ports are found but not chosen one
         if port_amount > 0 and port_found == -1:
-            print('COM port not found.')
+            print(port,' port not found.')
             print('   - can use \'default\' mode to default to fall back to a valid port.')
+            terminate = True
             
-            if self.default:
+            if self.default_to:
                 terminate = False
                 ser.port = [x[1] for x in portlist][0]
                 
         #Exit prematurely if error
         if terminate:
-            print('exiting.')
-            return
+            raise ValueError(port, 'port non valid, aborting.')
 
-                    
         self.ser.open()
-        #self.ser.isOpen()
         print('Connected to port ',port_found)
+
+    def stop(self):
+        self.stop_signal = 1;
+
+    #Returns amount of available bytes for reading
+    def available(self):
+        return self.rxqueue.qsize()
+
+    #Returns first available byte for reading
+    def read(self):
+        return self.rxqueue.get()
+
+    def write(self, frame):
+        return self.ser.write(frame)
+
+    def run(self):
         
         #Main serial loop      
         while self.stop_signal == 0:
