@@ -32,6 +32,9 @@ class SerialPortHandler(Thread):
     def read(self):
         return self.rxqueue.get()
 
+    def write(self, frame)
+        return ser.write(frame)
+
     def run(self):
         portlist = serial.tools.list_ports.comports()
         port_found = -1
