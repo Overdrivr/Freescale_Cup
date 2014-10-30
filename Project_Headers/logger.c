@@ -64,12 +64,31 @@ void update_log_serial(log* Log)
 		switch(Log->variables[i].type)
 		{
 			case FLOAT:
-				type = 1;
+				type = 0x00;
+				break;
+			case UINT8:
+				type = 0x01;
+				break;
+			
+			case UINT16:
+				type = 0x02;
+				break;
+			
+			case UINT32:
+				type = 0x03;
+				break;
+				
+			case INT8:
+				type = 0x04;
+				break;
+			
+			case INT16:
+				type = 0x05;
 				break;
 				
 			case INT32:
 			default:
-				type = 2;
+				type = 0x06;
 				break;
 		}
 		buffer[j] = type;			j++;
