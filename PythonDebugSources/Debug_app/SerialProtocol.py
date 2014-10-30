@@ -21,21 +21,21 @@ class SerialProtocol():
     def __init__(self,newframe_callback):
         self.rx_state = RX_STATE.IDLE;
         self.escape_state = ESC_STATE.IDLE;
-        self.SOF = 0x7F
-        self.EOF = 0x7F
-        self.ESC = 0x7D
+        self.SOF = bytes(0x7F)
+        self.EOF = bytes(0x7F)
+        self.ESC = bytes(0x7D)
         self.frame_queue = Queue(0)
         self.callback = newframe_callback
 
     def new_rx_byte(self, newbyte):
-        newbyte = int.from_bytes(newbyte, byteorder='big')
-        print(newbyte)
+        #newbyte = int.from_bytes(newbyte, byteorder='big')
+        
         #No frame in process
         if self.rx_state == RX_STATE.IDLE:
             if newbyte == self.SOF:
                 # New frame started
                 self.rx_state = RX_STATE.IN_PROCESS
-                print("---SOF")
+                
         #Frame is in process        
         else:
             #Next char must be data
@@ -44,11 +44,11 @@ class SerialProtocol():
                 #See serial_protocols_definition.xlsx
                 self.frame_queue.put(newbyte)
                 self.escape_state = ESC_STATE.IDLE
-                print("---ESC")
+                
+                
             #Next char can be data or flag (EOF, SOF,..)    
             elif self.escape_state == ESC_STATE.IDLE:
                 if newbyte == self.EOF:
-                    print("---EOF")
                     frame = self.frame_queue
                     self.callback(frame)
                     self.frame_queue = Queue(0)
@@ -58,5 +58,20 @@ class SerialProtocol():
                 else:
                     self.frame_queue.put(newbyte)
 
+    def process_tx_payload(self, payload):
+        frame = bytearray()
+        frame.extend(self.SOF)
+        print(payload)
+        
+        for x in payload:
+            print(x)
+            if x == self.SOF or x == self.EOF or x == self.ESC:
+                print("ESC")
+                frame.extend(self.ESC)
+            frame.extend(x)
+                           
+        frame.extend(self.EOF)
+        
+        return frame
         
 
