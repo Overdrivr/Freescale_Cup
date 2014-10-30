@@ -23,7 +23,6 @@ class SerialPortHandler(Thread):
 
     def stop(self):
         self.stop_signal = 1;
-        #TODO : Also force stop serial port here
 
     #Returns amount of available bytes for reading
     def available(self):
