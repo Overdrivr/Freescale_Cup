@@ -27,9 +27,7 @@ class SerialProtocol():
         self.frame_queue = Queue(0)
         self.callback = newframe_callback
 
-    def new_rx_byte(self, newbyte):
-        #newbyte = int.from_bytes(newbyte, byteorder='big')
-        
+    def new_rx_byte(self, newbyte):        
         #No frame in process
         if self.rx_state == RX_STATE.IDLE:
             if newbyte == self.SOF:
@@ -48,13 +46,16 @@ class SerialProtocol():
                 
             #Next char can be data or flag (EOF, SOF,..)    
             elif self.escape_state == ESC_STATE.IDLE:
+                #End of frame, the payload is immediatly send to callback function
                 if newbyte == self.EOF:
                     frame = self.frame_queue
                     self.callback(frame)
                     self.frame_queue = Queue(0)
                     self.rx_state = RX_STATE.IDLE
+                #Escaping
                 elif newbyte == self.ESC:
                     self.escape_state = ESC_STATE.NEXT
+                #Storing data
                 else:
                     self.frame_queue.put(newbyte)
 
@@ -66,7 +67,6 @@ class SerialProtocol():
         for x in payload:
             print(x)
             if x == self.SOF or x == self.EOF or x == self.ESC:
-                print("ESC")
                 frame.extend(self.ESC)
             frame.extend(x)
                            
