@@ -1,59 +1,9 @@
 #include "derivative.h" /* include peripheral declarations */
 #include "TFC\TFC.h"
 #include "camera_processing.h"
+#include "serial.h"
+#include "serial_protocol.h"
 #include "logger.h"
-
-void imageToSerial(uint16_t* image)
-{
-	uint16_t i;
-	for(i=0;i<128;i++)
-	{
-		 uint16_t val = image[i];
-		 uint32_t val2 = val;
-		 TERMINAL_PRINTF("%d ",val2);
-		 
-	}
-	TERMINAL_PRINTF("\n");	
-}
-
-void imageToSerial2(int8_t* image)
-{
-	int16_t i;
-	for(i=0;i<128;i++)
-	{
-		 int8_t val = image[i];
-		 int32_t val2 = val;
-		 TERMINAL_PRINTF("%d ",val2);
-		 
-	}
-	TERMINAL_PRINTF("\n");	
-}
-
-
-void imageToSerial16(int16_t* image)
-{
-	int16_t i;
-	for(i=0;i<128;i++)
-	{
-		 int16_t val = image[i];
-		 int32_t val2 = val;
-		 TERMINAL_PRINTF("%d ",val2);
-		 
-	}
-	TERMINAL_PRINTF("\n");	
-}
-
-void imageToSerialf(float* image)
-{
-	int16_t i;
-	for(i=0;i<128;i++)
-	{
-		 int val = image[i];
-		 TERMINAL_PRINTF("%d ",val);
-		 
-	}
-	TERMINAL_PRINTF("\n");	
-}
 
 int main(void)
 {
@@ -72,7 +22,7 @@ int main(void)
 	int val = 0.f;
 	float command = 0.f;
 	float command_engines = 0.f;
-	int engines_on = 0;
+	int engines_on = 1;
 	
 	//Parameters
 	float P = 0.01;
@@ -86,10 +36,15 @@ int main(void)
 	data.alpha = 0.25;
 	
 	int32_t test = 0;
-	init_log();
-	add_to_log(&test, sizeof(test), INT32,1,"test_var");
+	init_serial_protocol();
+	log log_table;
+	init_log(&log_table);
+	add_to_log(&log_table,&test, 4, INT32,1,"test_var");
 	
-	TFC_HBRIDGE_DISABLE;
+	TFC_HBRIDGE_ENABLE;
+	
+	uint8_t led_state = 0;
+	TFC_SetBatteryLED_Level(led_state);
 	
 	for(;;)
 	{	   
@@ -100,12 +55,22 @@ int main(void)
 		if(TFC_Ticker[2] > 300)
 		{
 			TFC_Ticker[2] = 0;
-			update_log_serial();
+			update_log_serial(&log_table);
+			test++;
+			if(test > 128)
+				test = -128;
+			update_serial_protocol();
+			serial_printf("TX");
+			serial_printf("\n");
 		}
 		
+		//Led state
+		/*if(TFC_Ticker[5] > 500)
+		{
+			TFC_Ticker[5] = 0;
+			led_state ^= 0x01; 
+		}
 		
-				
-		/*
 		//Compute line position
 		if(read_process_data(&data))
 		{
@@ -150,8 +115,8 @@ int main(void)
 			TFC_SetServo(0, command);
 			
 			val = command * 1000;
-			TERMINAL_PRINTF("%d ", val);
-			TERMINAL_PRINTF("\n");
+			//TERMINAL_PRINTF("%d ", val);
+			//TERMINAL_PRINTF("\n");
 		}
 		
 		//Button events
@@ -159,23 +124,28 @@ int main(void)
 		{
 			calibrate_data(&data);
 			error_integral = 0.f;
-		}
-		if(TFC_PUSH_BUTTON_1_PRESSED)
+			led_state = 3;
+		}*/
+		
+		/*if(TFC_PUSH_BUTTON_1_PRESSED & TFC_Ticker[6] > 500)
 		{
+			TFC_Ticker[6] = 0;
 			//Start-Stop engines
 			if(engines_on == 0)
 			{
 				engines_on = 1;
 				TFC_HBRIDGE_ENABLE;//?
+				TFC_BAT_LED3_TOGGLE;
 			}	
 			else
 			{
 				engines_on = 0;
 				TFC_HBRIDGE_DISABLE;//?
+				TFC_BAT_LED3_TOGGLE;
 			}
 				
-		}
-		
+		}*/
+		/*
 		if(engines_on == 0)
 		{
 			TFC_SetMotorPWM(0.f , 0.f);
@@ -184,8 +154,12 @@ int main(void)
 		{
 			command_engines =  TFC_ReadPot(0);
 			TFC_SetMotorPWM(command_engines , command_engines);
+			command_engines *= 1000;
 		}
-	*/
+		
+		//send_serial_frame(&command_engines,2);
+	
+		TFC_SetBatteryLED_Level(led_state);*/
 	}
 	return 0;
 }
