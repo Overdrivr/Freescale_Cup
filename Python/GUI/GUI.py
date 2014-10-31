@@ -21,25 +21,24 @@ class Application(Tk.Frame):
         Tk.Frame.__init__(self, self.fenetre, width=1, height=1, **kwargs)
         self.pack(fill=Tk.BOTH)
 
-        #Start threads
         # Serial port thread
-        """thread_1 = SerialPortHandler('COM8',115200)
-        thread_1.start()
-
+        self.thread_1 = SerialPortHandler()
         # Main thread 
-        workerthread = Worker(thread_1)
-        workerthread.start()
-        workerthread.get_MCU_table()"""
+        self.workerthread = Worker(self.thread_1)
         
         #Widgets
         self.bouton_quitter = Tk.Button(self, text="Quitter", command = self.stop)
         self.bouton_quitter.pack(side="left")
-        """
-        liste = Tk.Listbox(self)
-        liste.insert(Tk.END,"COM5")
-        liste.insert(Tk.END,"COM6")
-        liste.pack()
-        """
+
+        self.bouton_refresh_ports = Tk.Button(self, text="Refresh ports", command = self.read_ports)
+        self.bouton_refresh_ports.pack(side="bottom")
+
+        self.bouton_connect = Tk.Button(self, text="Connect", command = self.start_com)
+        self.bouton_connect.pack(side="left")
+        
+        self.liste = Tk.Listbox(self)
+        self.liste.pack(side="left")
+        
         """self.f = Figure(figsize=(4,3), dpi=100)
         self.a = self.f.add_subplot(111)
         self.t = arange(0.0,3.0,0.01)
@@ -51,15 +50,33 @@ class Application(Tk.Frame):
         self.canvas.show()
         self.canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
         """         
+    def read_ports(self):
+        ports_list = self.thread_1.get_ports()
+        for p, desc, hwid in sorted(ports_list):
+            self.liste.insert(Tk.END,p)
+        
+    def start_com(self):
+        if not self.liste.curselection():
+            print("No port selected, aborting.")
+            return
+                  
+        chosen_port = self.liste.get(Tk.ACTIVE)
+        print("Chosen port:",chosen_port)
+        self.thread_1.connect(chosen_port,115200)
+        self.thread_1.start()
+
+        self.workerthread.start()
+        self.workerthread.get_MCU_table()
 
     def stop(self):
         #Stop threads
         print("***************Stopping threads*************")
-        """workerthread.stop()
-        thread_1.stop()
+        self.workerthread.stop()
+        self.thread_1.stop()
 
-        workerthread.join()
-        thread_1.join()
+        #TODO : Check if thread was started before, cannot join an unstarted thread
+        self.workerthread.join()
+        self.thread_1.join()
 
         print('done')
-        """
+        
