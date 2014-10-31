@@ -1,8 +1,8 @@
-import matplotlib
-matplotlib.use('TkAgg')
+#import matplotlib
+#matplotlib.use('TkAgg')
 
-from numpy import arange, sin, pi
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+#from numpy import arange, sin, pi
+#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 
 import tkinter as Tk
 import random
@@ -10,7 +10,7 @@ import sys
 from threading import Thread
 import time
 
-from matplotlib.figure import Figure
+#from matplotlib.figure import Figure
 from SerialPortHandler import SerialPortHandler
 from Worker import Worker
 """
@@ -45,21 +45,23 @@ class Interface(Tk.Frame):
 Start threads
 """
 # Serial port thread
-thread_1 = SerialPortHandler('COM5',115200)
+thread_1 = SerialPortHandler('COM8',115200)
 thread_1.start()
 
 # Main thread 
 workerthread = Worker(thread_1)
 workerthread.start()
+workerthread.get_MCU_table()
 
 # Read serial for 5 seconds 
-time.sleep(5)
+time.sleep(1)
 
 
 
 """
-Stop threads
+Stop thread
 """
+print("***************Stopping threads*************")
 workerthread.stop()
 thread_1.stop()
 

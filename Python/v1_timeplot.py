@@ -8,7 +8,7 @@ Website: electronut.in
 """
  
 import sys, serial, argparse
-import numpy as np
+#import numpy as np
 from time import sleep
 from collections import deque
  
