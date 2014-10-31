@@ -10,18 +10,22 @@ from serial.tools.list_ports import comports
 #Serial data processing class
 class SerialPortHandler(Thread):
 
-    def __init__(self,port,baudrate,force=False,default_to=False):
+    def __init__(self):
         Thread.__init__(self)
         self.ser = serial.Serial()
-        self.ser.baudrate = baudrate
-        self.ser.port = port
         self.ser.timeout = 1
-        self.force = force
-        self.default_to = default_to
+        self.force = False
+        self.default_to = False
         self.rxqueue = Queue(0)
         self.stop_signal = 0;
 
-        portlist = serial.tools.list_ports.comports()
+    def connect(self,port,baudrate,force=False,default_to=False):
+        self.ser.baudrate = baudrate
+        self.ser.port = port
+        self.force =force
+        self.default_to = force
+        
+        portlist = self.get_ports()
         port_found = -1
         port_amount = 0
         terminate = False
@@ -55,11 +59,17 @@ class SerialPortHandler(Thread):
                 
         #Exit prematurely if error
         if terminate:
-            raise ValueError(port, 'port non valid, aborting.')
+            print(port, 'port non valid, aborting.')
+            return
 
         self.ser.open()
         print('Connected to port ',port_found)
+        return
 
+        
+    def get_ports(self):
+        return serial.tools.list_ports.comports()
+        
     def stop(self):
         self.stop_signal = 1;
 
