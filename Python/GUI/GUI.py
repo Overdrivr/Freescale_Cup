@@ -25,19 +25,26 @@ class Application(Tk.Frame):
         self.thread_1 = SerialPortHandler()
         # Main thread 
         self.workerthread = Worker(self.thread_1)
+
+        self.grid()
         
         #Widgets
-        self.bouton_quitter = Tk.Button(self, text="Quitter", command = self.stop)
-        self.bouton_quitter.pack(side="left")
+        self.txt_ports = Tk.Label(self,text="COM Ports")
+        self.txt_ports.grid(column=0,row=0)
+
+        self.liste = Tk.Listbox(self,height=2)
+        self.liste.grid(column=0,row=1,sticky='EW')
 
         self.bouton_refresh_ports = Tk.Button(self, text="Refresh ports", command = self.read_ports)
-        self.bouton_refresh_ports.pack(side="bottom")
+        self.bouton_refresh_ports.grid(column=0,row=2,sticky='EW')
 
         self.bouton_connect = Tk.Button(self, text="Connect", command = self.start_com)
-        self.bouton_connect.pack(side="left")
+        self.bouton_connect.grid(column=0,row=3,sticky='EW')
         
-        self.liste = Tk.Listbox(self)
-        self.liste.pack(side="left")
+        self.bouton_quitter = Tk.Button(self, text="x", relief=Tk.GROOVE,command = self.stop)
+        self.bouton_quitter.grid(column=1,row=0,sticky='EW')
+
+                
         
         """self.f = Figure(figsize=(4,3), dpi=100)
         self.a = self.f.add_subplot(111)
@@ -70,13 +77,14 @@ class Application(Tk.Frame):
 
     def stop(self):
         #Stop threads
-        print("***************Stopping threads*************")
+        print("--- Stopping threads...")
         self.workerthread.stop()
         self.thread_1.stop()
 
-        #TODO : Check if thread was started before, cannot join an unstarted thread
-        self.workerthread.join()
-        self.thread_1.join()
+        if self.workerthread.isAlive():
+            self.workerthread.join()
+        if self.thread_1.isAlive():
+            self.thread_1.join()
 
-        print('done')
+        print('--- Threads stopped.')
         
