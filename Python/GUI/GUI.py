@@ -29,22 +29,31 @@ class Application(Tk.Frame):
         self.grid()
         
         #Widgets
-        self.txt_ports = Tk.Label(self,text="COM Ports")
+        self.txt_ports = Tk.Label(self,text="COM PORTS")
         self.txt_ports.grid(column=0,row=0)
 
-        self.liste = Tk.Listbox(self,height=2)
+        self.liste = Tk.Listbox(self,height=1)
         self.liste.grid(column=0,row=1,sticky='EW')
 
-        self.bouton_refresh_ports = Tk.Button(self, text="Refresh ports", command = self.read_ports)
+        self.scrollbar_liste = Tk.Scrollbar(self.liste)
+        self.scrollbar_liste.config(command = self.liste.yview)
+        self.liste.config(yscrollcommand = self.scrollbar_liste.set)
+        self.scrollbar_liste.pack(side=Tk.RIGHT)
+        
+        self.bouton_refresh_ports = Tk.Button(self, text="REFRESH", command = self.read_ports)
         self.bouton_refresh_ports.grid(column=0,row=2,sticky='EW')
 
-        self.bouton_connect = Tk.Button(self, text="Connect", command = self.start_com)
+        self.bouton_connect = Tk.Button(self, text="CONNECT", command = self.start_com)
         self.bouton_connect.grid(column=0,row=3,sticky='EW')
         
         self.bouton_quitter = Tk.Button(self, text="x", relief=Tk.GROOVE,command = self.stop)
         self.bouton_quitter.grid(column=1,row=0,sticky='EW')
 
-                
+        self.txt_connected = Tk.Label(self,text="NOT CONNECTED", fg='red', width = 20)
+        self.txt_connected.grid(column=0,row=4,sticky='EW')
+
+        self.txt_connected = Tk.Label(self,text="LOGGER")
+        self.txt_connected.grid(column=0,row=6,sticky='EW')    
         
         """self.f = Figure(figsize=(4,3), dpi=100)
         self.a = self.f.add_subplot(111)
@@ -63,8 +72,14 @@ class Application(Tk.Frame):
             self.liste.insert(Tk.END,p)
         
     def start_com(self):
+        self.txt_connected.config(text="CONNECTING",fg="orange")
+        self.update_idletasks()
+        
         if not self.liste.curselection():
             print("No port selected, aborting.")
+            time.sleep(0.5)
+            self.txt_connected.config(text="NOT CONNECTED",fg="red")
+            self.update_idletasks()
             return
                   
         chosen_port = self.liste.get(Tk.ACTIVE)
@@ -72,7 +87,9 @@ class Application(Tk.Frame):
         self.thread_1.connect(chosen_port,115200)
         self.thread_1.start()
 
-        self.workerthread.start()
+        self.txt_connected.config(fg = 'green')
+
+        self.workerthread.start()        
         self.workerthread.get_MCU_table()
 
     def stop(self):
