@@ -16,3 +16,11 @@ https://community.freescale.com/docs/DOC-93914
 CodeWarrior for MCU development & debug
 
 Python for real time data plot
+
+## Python 
+### Core version
+Python 3.4.2 minimum (https://www.python.org/downloads/)
+
+### Modules to install (manually or via pip)
+matplotlib 1.4.2 (Will install a bunch of other modules as well, if it fails when using pip to do the install, manually install numpy 1.9.0 minimum & scipy 0.14 minimum)
+pyserial
