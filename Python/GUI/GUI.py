@@ -38,15 +38,12 @@ class Application(Tk.Frame):
         self.separator.grid(column=0,row=1, pady=5,sticky='EW')
 
         #Logger frame
-        self.frame_logger = Tk.Frame(self)
+        self.frame_logger = Logger_Frame(self,self.model)
         self.frame_logger.grid(column=0,row=2)
-        
-        #Widgets
+
+        #Quit button
         self.bouton_quitter = Tk.Button(self, text="x", relief=Tk.GROOVE,command = self.stop)
         self.bouton_quitter.grid(column=1,row=0,sticky='EW')
-
-        self.txt_log = Tk.Label(self.frame_logger,text="LOGGER")
-        self.txt_log.grid(column=0,row=6,sticky='EW')
         
         """self.f = Figure(figsize=(4,3), dpi=100)
         self.a = self.f.add_subplot(111)

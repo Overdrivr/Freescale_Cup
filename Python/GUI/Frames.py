@@ -76,4 +76,42 @@ class COM_Frame(Tk.Frame):
             self.txt_connected.config(text="CONNECTED",fg='green')
         self.parent.update_idletasks()
             
+
+
+
+
+class Logger_Frame(Tk.Frame):
+    def __init__(self, parent, model, **kwargs):
+        Tk.Frame.__init__(self,parent)
+        self.parent = parent
+        self.model = model
+
+        self.txt_log = Tk.Label(self,text="LOGGER")
+        self.txt_log.grid(column=0,row=0,sticky='EW')
+
+        self.txt_active = Tk.Label(self,text="INACTIVE", fg='blue', width = 20)
+        self.txt_active.grid(column=0,row=1,sticky='EW')
+
+        self.bouton_activate = Tk.Button(self, text="ACTIVATE", command = self.activate_log)
+        self.bouton_activate.grid(column=0,row=2,sticky='EW')
+
+    def activate_log(self):
+        #Activate serial data interception
+        self.change_state("inprocess")
+        #Change label state
+        time.sleep(0.5)
+        #
+        self.change_state("noconnect")
+        pass
         
+    def change_state(self,state):
+        if state == "inprocess":
+            self.txt_active.config(text="WAITING TABLE",fg="orange")
+        elif state == "noconnect":
+            self.txt_active.config(text="INACTIVE",fg='blue')
+        else:
+            self.txt_active.config(text="ACTIVE",fg='green')
+        self.parent.update_idletasks()
+
+        
+            
