@@ -5,12 +5,18 @@ import time
 from queue import Queue
 import struct
 
-#Serial data processing class
+# Logger class
+# TODO : use is_logger_started
+# TODO : add variable table
+# TODO : parse all datatype
+# TODO : ...?
+
 class Logger():
 
     def __init__(self):
         self.log_table = Queue(0)
         self.variables = list()
+        self.is_logger_started = 0
 
     #Process RX bytes queue
     def new_frame(self,frame):
@@ -46,21 +52,30 @@ class Logger():
                 b2 = frame.get()
                 id = b1 << 8 + b2
                 #Read 32 characters
+
+                #If successful, update logger state
+                self.is_logger_started = 1
         else:
             print("Logger : unknown MCU answer")
 
         pass
 
     #Command for asking the MCU the loggable variables 
-    def get_command_read_variable_table(self):
+    def get_table_cmd(self):
         cmd = Queue(3)
         cmd.put(bytes(0x02))
         cmd.put(bytes(0x07))
         cmd.put(bytes(0x00))
         return cmd
+
+    def is_started(self):
+        return self.is_logger_started
+
+    def stop(self):
+        self.is_logger_started = 0
         
     #Command for asking the MCU to return value of specific variable 
-    def get_command_read_variable(self,var_id):
+    def get_command_read(self,var_id):
         cmd = Queue(5)
         cmd.put(bytes(0x00))
         cmd.put(bytes(0x00))

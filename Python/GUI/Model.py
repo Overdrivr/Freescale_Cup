@@ -12,39 +12,47 @@ import time
 
 #from matplotlib.figure import Figure
 from SerialPortHandler import SerialPortHandler
-from Worker import Worker
+from Worker import SerialWorker
 from Frames import *
 
+
+# Top-level API for the GUI
 class Model():
     def __init__(self, **kwargs):        
-        # Serial port thread
-        self.serialthread = SerialPortHandler()
-        # Main thread 
-        self.workerthread = Worker(self.serialthread)
+       
+        # Serial worker thread (Serial,Protocol,Logger)
+        self.workerthread = SerialWorker()
         
     def get_ports(self):
-        ports_list = self.serialthread.get_ports()
-        return ports_list
+        return self.workerthread.get_ports()
         
-    def start_com(self,COM_port):        
-        print("Chosen port:",COM_port)
-        self.serialthread.connect(COM_port,115200)
-        self.serialthread.start()
+    def start_com(self,COM_port):
+        if not self.workerthread.isAlive():
+            self.workerthread.start()
+            
+        self.workerthread.start_COM(COM_port)
 
-        self.workerthread.start()        
-        self.workerthread.get_MCU_table()
-
-        return True
-
+    def stop_com(self,COM_port):        
+        self.workerthread.stop_COM()
+        print('--- COM stopped.')
+         
     def stop(self):
-        #Stop threads
-        print("--- Stopping threads...")
         self.workerthread.stop()
-        self.serialthread.stop()
 
         if self.workerthread.isAlive():
             self.workerthread.join()
-        if self.serialthread.isAlive():
-            self.serialthread.join()
+        print("--- All threads stopped.")
+        
+    def start_logger(self):
+        self.workerthread.start_logger()        
+        
+    def stop_logger(self):
+        self.workerthread.stop_logger()  
+        print('--- Logger stopped.')
+        
+    
+        
 
-        print('--- Threads stopped.')
+        
+
+        

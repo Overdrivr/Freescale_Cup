@@ -11,8 +11,6 @@ from threading import Thread
 import time
 
 #from matplotlib.figure import Figure
-from SerialPortHandler import SerialPortHandler
-from Worker import Worker
 from Frames import *
 from Model import Model
 

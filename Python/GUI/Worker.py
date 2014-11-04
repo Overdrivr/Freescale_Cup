@@ -2,49 +2,70 @@ import random
 import sys
 from threading import Thread
 import time
-import serial
 import queue
-from serial.tools.list_ports import comports
+
 from SerialProtocol import SerialProtocol
+from SerialPortHandler import SerialPortHandler
 from Logger import Logger
 
-#Serial data processing class
-class Worker(Thread):
+# Reads serial port in a thread
+# and feeds it to serial protocol for processing
+ 
+class SerialWorker(Thread):
 
-    def __init__(self,serial_thread):
-        #Init thread
+    def __init__(self):
         Thread.__init__(self)
         self.stop_signal = 0
-        self.serial_thread = serial_thread
+        self.is_logger_on = 0
 
-        #Init logger
+        # Serial port thread
+        self.serialthread = SerialPortHandler()
+
+        # Logger
         self.logger = Logger()
 
-        #Init serial protocol
+        # Init serial protocol
         self.serial_protocol = SerialProtocol(self.logger.new_frame)
 
+    def get_ports(self):
+        ports_list = self.serialthread.get_ports()
+        return ports_list
 
-    def get_MCU_table(self):
+    def start_COM(self,COM_port):
+        # Connect
+        self.serialthread.connect(COM_port,115200)
+        # Start monitoring thread 
+        self.serialthread.start()
+
+    def stop_COM(self):
         
+        self.stop_logger()
+        self.serialthread.stop()
+
+        if self.serialthread.isAlive():
+            self.serialthread.join()
+        
+    def start_logger(self):
         #Get command for querying variable table MCU side
-        cmd = self.logger.get_command_read_variable_table()
-        
+        cmd = self.logger.get_table_cmd()
         #Feed command to serial protocol payload processor 
         frame = self.serial_protocol.process_tx_payload(cmd)
-
         #Send command
         self.serial_thread.write(frame)
         
+    def stop_logger(self):
+        self.logger.stop()
         
     def stop(self):
         self.stop_signal = 1;
+        self.stop_COM()
 
     def run(self):
         while self.stop_signal == 0:
             #If byte has been received
-            if self.serial_thread.available():
+            if self.serialthread.available():
                 #Get it
-                byte = self.serial_thread.read()
+                byte = self.serialthread.read()
                 #Then feed it to serial protocol
                 self.serial_protocol.new_rx_byte(byte)
 
