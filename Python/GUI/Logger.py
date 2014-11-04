@@ -6,8 +6,6 @@ from queue import Queue
 import struct
 
 # Logger class
-# TODO : use is_logger_started
-# TODO : add variable table
 # TODO : parse all datatype
 # TODO : ...?
 
@@ -16,7 +14,7 @@ class Logger():
     def __init__(self):
         self.log_table = Queue(0)
         self.variables = list()
-        self.is_logger_started = 0
+        self.table_received = 0
 
     #Process RX bytes queue
     def new_frame(self,frame):
@@ -47,14 +45,33 @@ class Logger():
                 
         #Returned variable table
         elif command == 2:
-            while not frame.empty():
+            #Empty list
+            self.variables = list()
+            
+            while frame.qsize() >= 34:
+                #Read variable ID
                 b1 = frame.get()
                 b2 = frame.get()
                 id = b1 << 8 + b2
-                #Read 32 characters
+                
+                # Read name
+                name = ""
+                    #32 characters
+                for x in range(0,32):
+                    c = frame.get()
+                    #TODO : TO CHECK
+                    name += struct.unpack('c',c)
 
-                #If successful, update logger state
-                self.is_logger_started = 1
+                print("New var ",name," with id ",id)
+
+                #Put everything in tuple
+                t = id, name
+
+                #Stock the tuple in the variable list
+                self.variables.append(t)
+                
+            #If successful, update logger state
+            self.table_received = 1
         else:
             print("Logger : unknown MCU answer")
 
@@ -69,10 +86,7 @@ class Logger():
         return cmd
 
     def is_started(self):
-        return self.is_logger_started
-
-    def stop(self):
-        self.is_logger_started = 0
+        return self.table_received
         
     #Command for asking the MCU to return value of specific variable 
     def get_command_read(self,var_id):
@@ -83,6 +97,9 @@ class Logger():
         cmd.put(bytes(var_id >> 2))
         cmd.put(bytes(var_id & 0x00FF))
         return cmd
+
+    def get_var_list():
+        return self.variables
 
 
         

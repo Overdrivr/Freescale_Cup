@@ -54,7 +54,8 @@ class SerialWorker(Thread):
         self.serial_thread.write(frame)
         
     def stop_logger(self):
-        self.logger.stop()
+        #Tell the MCU to stop sending data
+        pass
         
     def stop(self):
         self.stop_signal = 1;
