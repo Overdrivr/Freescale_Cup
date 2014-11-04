@@ -9,6 +9,7 @@ import random
 import sys
 from threading import Thread
 import time
+import ttk as ttk
 
 class COM_Frame(Tk.Frame):
     def __init__(self, parent, model, **kwargs):
@@ -22,7 +23,7 @@ class COM_Frame(Tk.Frame):
         self.txt_ports.grid(column=0,row=0)
 
         self.liste = Tk.Listbox(self,height=1)
-        self.liste.grid(column=0,row=1,sticky='EW')
+        self.liste.grid(column=0,row=1,sticky='EW',columnspan=2)
 
         self.scrollbar_liste = Tk.Scrollbar(self.liste)
         self.scrollbar_liste.config(command = self.liste.yview)
@@ -33,13 +34,14 @@ class COM_Frame(Tk.Frame):
         self.bouton_refresh_ports.grid(column=0,row=2,sticky='EW')
 
         self.bouton_connect = Tk.Button(self, text="CONNECT", command = self.start_com)
-        self.bouton_connect.grid(column=0,row=3,sticky='EW')
+        self.bouton_connect.grid(column=1,row=2,sticky='EW')
         
         self.txt_connected = Tk.Label(self,text="NOT CONNECTED", fg='red', width = 20)
-        self.txt_connected.grid(column=0,row=4,sticky='EW')
+        self.txt_connected.grid(column=1,row=0,sticky='EW')
 
     def set_COM_ports(self):
         ports_list = self.model.get_ports()
+        self.liste.delete(0,Tk.END)
         for p, desc, hwid in sorted(ports_list):
             self.liste.insert(Tk.END,p)
         pass
@@ -90,10 +92,22 @@ class Logger_Frame(Tk.Frame):
         self.txt_log.grid(column=0,row=0,sticky='EW')
 
         self.txt_active = Tk.Label(self,text="INACTIVE", fg='blue', width = 20)
-        self.txt_active.grid(column=0,row=1,sticky='EW')
+        self.txt_active.grid(column=1,row=0,sticky='EW')
 
-        self.bouton_activate = Tk.Button(self, text="ACTIVATE", command = self.activate_log)
+        self.bouton_activate = Tk.Button(self, text="RETRIEVE TABLE", command = self.activate_log)
         self.bouton_activate.grid(column=0,row=2,sticky='EW')
+
+        self.var_list = ttk.Treeview(self, show="headings",columns=("name","type"))
+        self.var_list.grid(column=0,row=3,sticky='EW',columnspan=2)
+        self.var_list.column('name', width=15, anchor='center')
+        self.var_list.heading('name', text='name')
+        self.var_list.column('type', width=5, anchor='center')
+        self.var_list.heading('type', text='type')
+
+        #Test treeview
+        self.var_list.insert('', 'end','row1')
+        self.var_list.set('row1','name','filtered_output')
+        self.var_list.set('row1','type','Float')
 
     def activate_log(self):
         #Activate serial data interception
