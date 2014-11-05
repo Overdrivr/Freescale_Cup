@@ -8,7 +8,7 @@ from pubsub import pub
 
 # Logger class
 # TODO : parse all datatype
-# TODO : ...?
+# TODO : add variable size in tuple
 
 class Logger():
 
@@ -48,7 +48,7 @@ class Logger():
             #Empty list
             self.variables = list()
             
-            while frame.qsize() >= 34:
+            while frame.qsize() >= 36:
                 #Read variable ID
                 b1 = frame.get()
                 b2 = frame.get()
@@ -62,10 +62,16 @@ class Logger():
                     #TODO : TO CHECK
                     name += struct.unpack('c',c)
 
-                print("New var ",name," with id ",id)
+                # Read array size
+                b1 = frame.get()
+                b2 = frame.get()
+                arraysize = b1 << 8 + b2
+
+                
+                print("New var ",name,"[",arraysize,"] with id ",id)
 
                 #Put everything in tuple
-                t = id, name
+                t = id, name, arraysize
 
                 #Stock the tuple in the variable list
                 self.variables.append(t)
