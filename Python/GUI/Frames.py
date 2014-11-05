@@ -159,7 +159,7 @@ class Graph_Frame(Tk.Frame):
 
         # Widgets
         self.liste = Tk.Listbox(self,height=1)
-        self.liste.grid(column=0,row=1,sticky='EW',pady=3,padx=3)
+        self.liste.grid(column=0,row=1,sticky='EW',pady=3,padx=3,rowspan=2)
         
         self.scrollbar_liste = Tk.Scrollbar(self.liste)
         self.scrollbar_liste.config(command = self.liste.yview)
@@ -168,7 +168,7 @@ class Graph_Frame(Tk.Frame):
 
         #
         self.bouton_add_var = Tk.Button(self, text="PLOT", command = self.add_var_to_plot)
-        self.bouton_add_var.grid(column=1,row=1,pady=3,padx=3)
+        self.bouton_add_var.grid(column=1,row=2,pady=3,padx=3)
 
         #
         self.f = Figure(figsize=(5,4), dpi=100)
@@ -183,21 +183,16 @@ class Graph_Frame(Tk.Frame):
         self.dataPlot.get_tk_widget().grid(column=0,row=0,sticky='EW',pady=3,padx=3,columnspan=5)
 
         #
-        self.txt = Tk.Label(self,text="<->")
-        self.txt.grid(column=2,row=1,sticky='EW',pady=3,padx=3)
+        self.selected_var = Tk.Label(self,text="no variable",bd=2,relief=Tk.GROOVE)
+        self.selected_var.grid(column=1,row=1,sticky='EW',pady=3,padx=3)
 
         #
-        self.bouton_remove_var = Tk.Button(self, text="REMOVE", command = self.remove_var_from_plot)
-        self.bouton_remove_var.grid(column=3,row=1,pady=3,padx=3)
+        self.ymin = Tk.Entry(self)
+        self.ymin.grid(column=3,row=1,sticky='EW',pady=3,padx=3)
 
         #
-        self.plotted_var_liste = Tk.Listbox(self,height=1)
-        self.plotted_var_liste.grid(column=4,row=1,sticky='EW',pady=3,padx=3)
-        
-        self.plotted_var_scrollbar = Tk.Scrollbar(self.plotted_var_liste)
-        self.plotted_var_scrollbar.config(command = self.plotted_var_liste.yview)
-        self.plotted_var_liste.config(yscrollcommand = self.plotted_var_scrollbar.set)
-        self.plotted_var_scrollbar.pack(side=Tk.RIGHT)
+        self.ymax = Tk.Entry(self)
+        self.ymax.grid(column=3,row=2,sticky='EW',pady=3,padx=3)
 
 
 
@@ -208,18 +203,17 @@ class Graph_Frame(Tk.Frame):
 
     def listener_new_value_received(self,name,value):
         #Test name against plot list
-
         #Update plot with new value if name is found
 
         pass
 
     def add_var_to_plot(self):
-        #Add selected var to plotted listbox
+        #Add selected var
         #Remove var from available variables
         pass
 
     def remove_var_from_plot(self):
-        #Remove selected var from plotted listbox
+        #Remove selected var
         #Add var to available variables
         pass
             
