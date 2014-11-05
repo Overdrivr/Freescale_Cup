@@ -22,26 +22,26 @@ class Application(Tk.Frame):
 
         #Init master frame
         Tk.Frame.__init__(self,self.root,width=640, height=480)
-        self.pack(fill=Tk.BOTH, expand=1)
+        self.pack()
 
         #Create Model
         self.model = Model()
 
         #COM Frame
-        self.frame_com_ports = COM_Frame(self,self.model)
-        self.frame_com_ports.grid(column=0,row=0)
-
-        #Separator
-        self.separator = Tk.Frame(self,height=2, bg="black", bd=1, relief=Tk.RAISED)
-        self.separator.grid(column=0,row=1, pady=5,sticky='EW')
+        self.frame_com_ports = COM_Frame(self,self.model,bd=2,relief=Tk.GROOVE)
+        self.frame_com_ports.grid(column=0,row=0,sticky='N',pady=5,padx=5)
 
         #Logger frame
-        self.frame_logger = Logger_Frame(self,self.model)
-        self.frame_logger.grid(column=0,row=2)
+        self.frame_logger = Logger_Frame(self,self.model,bd=2,relief=Tk.GROOVE)
+        self.frame_logger.grid(column=0,row=1,sticky='N',pady=5,padx=5)
+
+        #Graph frame
+        self.frame_graph1 = Graph_Frame(self,self.model,bd=2,relief=Tk.GROOVE)
+        self.frame_graph1.grid(column=1,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
 
         #Quit button
-        self.bouton_quitter = Tk.Button(self, text="x", relief=Tk.GROOVE,command = self.stop)
-        self.bouton_quitter.grid(column=1,row=0,sticky='EW')
+        self.bouton_quitter = Tk.Button(self, text="x",command = self.stop)
+        self.bouton_quitter.grid(column=2,row=0,sticky='N')
         
         """self.f = Figure(figsize=(4,3), dpi=100)
         self.a = self.f.add_subplot(111)
