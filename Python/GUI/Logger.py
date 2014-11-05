@@ -4,6 +4,7 @@ from threading import Thread
 import time
 from queue import Queue
 import struct
+from pubsub import pub
 
 # Logger class
 # TODO : parse all datatype
@@ -14,7 +15,6 @@ class Logger():
     def __init__(self):
         self.log_table = Queue(0)
         self.variables = list()
-        self.table_received = 0
 
     #Process RX bytes queue
     def new_frame(self,frame):
@@ -70,8 +70,8 @@ class Logger():
                 #Stock the tuple in the variable list
                 self.variables.append(t)
                 
-            #If successful, update logger state
-            self.table_received = 1
+            #If successful, publish new table
+            pub.sendMessage('logtable_received',self.variables)
         else:
             print("Logger : unknown MCU answer")
 
@@ -85,9 +85,6 @@ class Logger():
         cmd.put(bytes(0x00))
         return cmd
 
-    def is_started(self):
-        return self.table_received
-        
     #Command for asking the MCU to return value of specific variable 
     def get_command_read(self,var_id):
         cmd = Queue(5)
