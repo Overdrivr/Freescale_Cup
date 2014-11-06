@@ -10,7 +10,8 @@ from Logger import Logger
 
 # Reads serial port in a thread
 # and feeds it to serial protocol for processing
- 
+
+# TODO : Print unprocessed serial com
 class SerialWorker(Thread):
 
     def __init__(self):
@@ -67,6 +68,7 @@ class SerialWorker(Thread):
             if self.serialthread.available():
                 #Get it
                 byte = self.serialthread.read()
+                print(byte)
                 #Then feed it to serial protocol
                 self.serial_protocol.new_rx_byte(byte)
 
