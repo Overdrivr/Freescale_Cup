@@ -112,16 +112,17 @@ class Logger_Frame(Tk.Frame):
         self.var_list.column('size',anchor='center',minwidth=0,width=100, stretch=Tk.NO)
         self.var_list.heading('size', text='type')
 
-        #Test treeview
+        # Test treeview
         self.var_list.insert('', 'end','row1')
         self.var_list.set('row1','name','filtered_output')
         self.var_list.set('row1','type','Float')
         self.var_list.set('row1','size',128)
 
     def activate_log(self):
-        #Activate serial data interception
+        # Activate serial data interception
         self.change_state("inprocess")
-        pass
+        # Start logger
+        self.model.start_logger()
         
     def listener_table_received(self,table):
         # Signal new state

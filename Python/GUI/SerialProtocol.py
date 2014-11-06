@@ -21,9 +21,9 @@ class SerialProtocol():
     def __init__(self,newframe_callback):
         self.rx_state = RX_STATE.IDLE;
         self.escape_state = ESC_STATE.IDLE;
-        self.SOF = bytes.fromhex('7f')
-        self.EOF = bytes.fromhex('7f')
-        self.ESC = bytes.fromhex('7d')
+        self.SOF = int('7f',16)
+        self.EOF = int('7f',16)
+        self.ESC = int('7d',16)
         self.frame_queue = Queue(0)
         self.callback = newframe_callback
 
@@ -62,15 +62,15 @@ class SerialProtocol():
 
     def process_tx_payload(self, payload):
         frame = bytearray()
-        frame.extend(self.SOF)
+        frame.append(self.SOF)
         
         while not payload.empty():
-            x = payload.get()
-            if x == self.SOF or x == self.EOF or x == self.ESC:
-                frame.extend(self.ESC)
-            frame.extend(x)
+            c = payload.get()
+            if c == self.SOF or c == self.EOF or c == self.ESC:
+                frame.append(self.ESC)
+            frame.append(c)
                            
-        frame.extend(self.EOF)
+        frame.append(self.EOF)
         
         return frame
         

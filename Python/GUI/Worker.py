@@ -48,10 +48,10 @@ class SerialWorker(Thread):
     def start_logger(self):
         #Get command for querying variable table MCU side
         cmd = self.logger.get_table_cmd()
-        #Feed command to serial protocol payload processor 
-        frame = self.serial_protocol.process_tx_payload(cmd)
+        #Feed command to serial protocol payload processor
+        frame = self.serial_protocol.process_tx_payload(cmd)        
         #Send command
-        self.serial_thread.write(frame)
+        self.serialthread.write(frame)
         
     def stop_logger(self):
         #Tell the MCU to stop sending data

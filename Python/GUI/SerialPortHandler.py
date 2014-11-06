@@ -63,7 +63,7 @@ class SerialPortHandler(Thread):
             return
 
         self.ser.open()
-        print('Connected to port ',port_found)
+        print('Connected to port ',self.ser.port)
         return
 
         
@@ -75,22 +75,22 @@ class SerialPortHandler(Thread):
 
     #Returns amount of available bytes for reading
     def available(self):
-        return self.rxqueue.qsize()
+        return self.rxqueue.qsize() > 0
 
     #Returns first available byte for reading
     def read(self):
         return self.rxqueue.get()
 
     def write(self, frame):
+        print("written :",frame)
         return self.ser.write(frame)
 
     def run(self):
         
         #Main serial loop      
         while self.stop_signal == 0:
-            serialout = ""
-            serialout = self.ser.read()
-            if serialout != "":
+            if self.ser.inWaiting() > 0:
+                serialout = self.ser.read()
                 self.rxqueue.put(serialout)
 
         #Exit
