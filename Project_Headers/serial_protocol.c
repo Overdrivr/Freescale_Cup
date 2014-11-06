@@ -6,7 +6,7 @@
  */
 
 #include "serial_protocol.h"
-
+#include "serial.h"
 
 ByteQueue rx_frame;
 uint8_t rx_frame_storage[INCOMING_FRAME_QUEUE_SIZE];
@@ -53,18 +53,6 @@ void send_serial_frame(uint8_t* framedata, uint16_t framesize)
 	serial_write(&EOF_,1);	
 }
 
-uint16_t full_serial_frame_available()
-{
-	if(protocol_state == 0)
-		return BytesInQueue(&rx_frame);
-	else
-		return 0;
-}
-
-uint8_t get_serial_frame()
-{
-	return ForcedByteDequeue(&rx_frame);
-}
 
 void update_serial_protocol()
 {
@@ -89,6 +77,8 @@ void update_serial_protocol()
 				if(received_byte == EOF_)
 				{
 					protocol_state = IDLE;
+					process_serial(&rx_frame);
+					
 				}
 				else if(received_byte == ESC_)
 				{

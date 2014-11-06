@@ -37,9 +37,8 @@ int main(void)
 	
 	int32_t test = 0;
 	init_serial_protocol();
-	log log_table;
-	init_log(&log_table);
-	add_to_log(&log_table,&test, 4, INT32,1,"test_var");
+	init_log();
+	add_to_log(&test, 4, INT32,1,"test_var");
 	
 	TFC_HBRIDGE_ENABLE;
 	
@@ -55,22 +54,20 @@ int main(void)
 		if(TFC_Ticker[2] > 300)
 		{
 			TFC_Ticker[2] = 0;
-			update_log_serial(&log_table);
+			update_log_serial();
 			test++;
 			if(test > 128)
 				test = -128;
 			update_serial_protocol();
-			serial_printf("TX");
-			serial_printf("\n");
 		}
 		
 		//Led state
-		/*if(TFC_Ticker[5] > 500)
+		if(TFC_Ticker[5] > 500)
 		{
 			TFC_Ticker[5] = 0;
 			led_state ^= 0x01; 
 		}
-		
+		/*
 		//Compute line position
 		if(read_process_data(&data))
 		{
@@ -118,33 +115,33 @@ int main(void)
 			//TERMINAL_PRINTF("%d ", val);
 			//TERMINAL_PRINTF("\n");
 		}
-		
+		*/
 		//Button events
 		if(TFC_PUSH_BUTTON_0_PRESSED)
 		{
 			calibrate_data(&data);
 			error_integral = 0.f;
 			led_state = 3;
-		}*/
+		}
 		
-		/*if(TFC_PUSH_BUTTON_1_PRESSED & TFC_Ticker[6] > 500)
+		if(TFC_PUSH_BUTTON_1_PRESSED & TFC_Ticker[6] > 500)
 		{
 			TFC_Ticker[6] = 0;
 			//Start-Stop engines
 			if(engines_on == 0)
 			{
 				engines_on = 1;
-				TFC_HBRIDGE_ENABLE;//?
-				TFC_BAT_LED3_TOGGLE;
+				TFC_HBRIDGE_ENABLE;
+				TFC_BAT_LED3_ON;
 			}	
 			else
 			{
 				engines_on = 0;
-				TFC_HBRIDGE_DISABLE;//?
-				TFC_BAT_LED3_TOGGLE;
+				TFC_HBRIDGE_DISABLE;
+				TFC_BAT_LED3_OFF;
 			}
 				
-		}*/
+		}
 		/*
 		if(engines_on == 0)
 		{

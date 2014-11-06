@@ -43,22 +43,21 @@ struct log
 	uint16_t current_index;
 };
 
-void init_log(log* Log);
+void init_log();
 
 //Returns 0 if ok, 1 if size exceeds log capacity
-uint8_t add_to_log(log* Log,
-				   uint8_t* adress, 
+uint8_t add_to_log(uint8_t* adress, 
 				   uint16_t octets,
 				   datatype type, 
 				   uint8_t readonly, 
 				   char* name);
 
-void update_log_serial(log* Log);
+void update_log_serial();
 
-//TBD
+
 void process_serial();
 
-//TBD
+
 void send_table();
 
 #endif /* LOGGER_H_ */
