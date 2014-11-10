@@ -19,7 +19,7 @@ class Logger():
         self.log_table = Queue(0)
         self.variables = list()
 
-        pub.subscribe('new_rx_payload',self.new_frame)
+        pub.subscribe(self.new_frame,'new_rx_payload')
 
     #Process RX bytes queue
     def new_frame(self,frame):

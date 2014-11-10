@@ -28,7 +28,7 @@ class SerialWorker(Thread):
         self.logger = Logger()
 
         # Init serial protocol
-        self.serial_protocol = SerialProtocol(self.logger.new_frame)
+        self.serial_protocol = SerialProtocol()
 
     def get_ports(self):
         ports_list = self.serialthread.get_ports()

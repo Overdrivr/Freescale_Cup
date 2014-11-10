@@ -6,6 +6,7 @@ import serial
 from queue import Queue
 from serial.tools.list_ports import comports
 from enum import Enum
+from pubsub import pub
 
 class RX_STATE(Enum):
     IDLE = 0
@@ -26,7 +27,7 @@ class SerialProtocol():
         self.EOF = int('7f',16)
         self.ESC = int('7d',16)
         self.payload = bytearray() 
-        pub.subscribe("new_rx_byte",self.new_rx_byte)
+        pub.subscribe(self.new_rx_byte,"new_rx_byte")
 
     def new_rx_byte(self, newbyte):
         #No frame in process
