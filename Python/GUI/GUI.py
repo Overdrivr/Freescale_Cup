@@ -42,20 +42,11 @@ class Application(Tk.Frame):
         #Quit button
         self.bouton_quitter = Tk.Button(self, text="x",command = self.stop)
         self.bouton_quitter.grid(column=2,row=0,sticky='N')
-        
-        """self.f = Figure(figsize=(4,3), dpi=100)
-        self.a = self.f.add_subplot(111)
-        self.t = arange(0.0,3.0,0.01)
-        self.s = sin(2*pi*self.t)
-        self.a.plot(self.t,self.s)
-
-        #plot sur canvas
-        self.canvas = FigureCanvasTkAgg(self.f, master=fenetre)
-        self.canvas.show()
-        self.canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
-        """          
-
 
     def stop(self):
         self.model.stop()
         
+
+if __name__ == '__main__':
+    app = Application()
+    app.mainloop()
