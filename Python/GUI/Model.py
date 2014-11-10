@@ -1,38 +1,52 @@
-from Worker import SerialWorker
 from pubsub import pub
+from SerialPortHandler import SerialPortHandler
+from Logger import Logger
+from SerialProtocol import SerialProtocol
 
-# Top-level API for the GUI
+# Top-level API
 class Model():
     def __init__(self, **kwargs):        
        
-        # Serial worker thread (Serial,Protocol,Logger)
-        self.workerthread = SerialWorker()
+        # Serial thread
+        self.serialthread = SerialPortHandler()
+        # Logger
+        self.logger = Logger()
+        # Serial protocol
+        self.serial_protocol = SerialProtocol()
         
     def get_ports(self):
-        return self.workerthread.get_ports()
+        return self.serialthread.get_ports()
         
     def start_com(self,COM_port):
-        if not self.workerthread.isAlive():
-            self.workerthread.start()
-            
-        self.workerthread.start_COM(COM_port)
+        # Connect
+        self.serialthread.connect(COM_port,115200)
+        # Start serial thread 
+        self.serialthread.start()
 
-    def stop_com(self,COM_port):        
-        self.workerthread.stop_COM()
+    def stop_com(self,COM_port):
+        self.stop_logger()
+        self.serialthread.stop()
+
+        if self.serialthread.isAlive():
+            self.serialthread.join()
+            
         print('--- COM stopped.')
          
     def stop(self):
-        self.workerthread.stop()
-
-        if self.workerthread.isAlive():
-            self.workerthread.join()
+        self.stop_com()
         print("--- All threads stopped.")
         
     def start_logger(self):
-        self.workerthread.start_logger()        
+        #Get command for querying variable table MCU side
+        cmd = self.logger.get_table_cmd()
+        #Feed command to serial protocol payload processor
+        frame = self.serial_protocol.process_tx_payload(cmd)        
+        #Send command
+        self.serialthread.write(frame)      
         
     def stop_logger(self):
-        self.workerthread.stop_logger()  
+        # Tell MCU to stop sending data ?
+        
         print('--- Logger stopped.')
         
     
