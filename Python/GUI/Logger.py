@@ -9,20 +9,26 @@ from pubsub import pub
 # Logger class
 # TODO : parse all datatype
 # TODO : add variable size in tuple
-
+# TODO : Use bytearray in new_frame
+# TOCHECK : Empty list after update ?
+# TODO : Deal with array var
+# TODO : PUBLISH EVENTS FOR VALUE UPDATE
 class Logger():
 
     def __init__(self):
         self.log_table = Queue(0)
         self.variables = list()
 
+        pub.subscribe('new_rx_payload',self.new_frame)
+
     #Process RX bytes queue
     def new_frame(self,frame):
-        command = int.from_bytes(frame.get(),"big")
-        datatype = int.from_bytes(frame.get(),"big")
+        print("new RX frame :",frame)
+        command = frame.get()
+        datatype = frame.get()
 
-        dataid1 = int.from_bytes(frame.get(),"big")
-        dataid2 = int.from_bytes(frame.get(),"big")
+        dataid1 = frame.get()
+        dataid2 = frame.get()
         dataid = dataid1 << 8 + dataid2
 
         #print("command [",command,"] ; datatype [", datatype,"], dataid [",dataid,"]")
@@ -32,10 +38,10 @@ class Logger():
             if datatype == 6:
                 #while not frame.empty():
                     temp = bytearray()
-                    temp.insert(1,int.from_bytes(frame.get(),"big"))
-                    temp.insert(1,int.from_bytes(frame.get(),"big"))
-                    temp.insert(1,int.from_bytes(frame.get(),"big"))
-                    temp.insert(1,int.from_bytes(frame.get(),"big"))
+                    temp.insert(1,frame.get())
+                    temp.insert(1,frame.get())
+                    temp.insert(1,frame.get())
+                    temp.insert(1,frame.get())
 
                     #Transform value to desired format
                     val = struct.unpack('i',temp)[0]
@@ -70,20 +76,21 @@ class Logger():
                 name = ""
                     #32 characters
                 for x in range(0,32):
-                    c = frame.get()
-                    #TODO : TO CHECK
-                    name += struct.unpack('c',c)
+                    name_bytes = bytes(str(frame.get()),'ascii')
+                    print(name_bytes)
+                    name = struct.unpack('c',name_bytes)
+                    print(name)
                 
-                print("New var ",name,"[",arraysize,"] with id ",id)
+                print("New var ",name,"[",array_size,"] with id ",id)
 
                 #Put everything in tuple
-                t = varid, datatype, arraysize, write_rights, name
+                t = varid, datatype, array_size, write_rights, name
 
                 #Stock the tuple in the variable list
                 self.variables.append(t)
                 
             #If successful, publish new table
-            pub.sendMessage('logtable_received',self.variables)
+            pub.sendMessage('logtable_update',self.variables)
         else:
             print("Logger : unknown MCU answer")
 
@@ -91,18 +98,18 @@ class Logger():
 
     #Command for asking the MCU the loggable variables 
     def get_table_cmd(self):
-        cmd = Queue(0)
-        cmd.put(int('02',16))
-        cmd.put(int('07',16))
-        cmd.put(int('00',16))
+        cmd = bytearray()
+        cmd.append(int('02',16))
+        cmd.append(int('07',16))
+        cmd.append(int('00',16))
         return cmd
 
     #Command for asking the MCU to return value of specific variable 
     def get_command_read(self,var_id):
-        cmd = Queue(0)
-        cmd.put(int('00',16))
-        cmd.put(int('00',16))
-        cmd.put(int('00',16))
+        cmd = bytearray()
+        cmd.append(int('00',16))
+        cmd.append(int('00',16))
+        cmd.append(int('00',16))
         #TO TEST
         cmd.put(var_id >> 2)
         cmd.put(var_id & 255)
