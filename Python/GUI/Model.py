@@ -36,8 +36,17 @@ class Model():
         print('--- Logger stopped.')
         
     
-        
+# List of events that can be subscribed to
+"""
+--- Serial port (SerialPortHandler.py)
+    * When a new byte is received from COM port : 'new_rx_byte',bytes
+    
+--- Serial protocol (SerialProtocol.py)
+    * When a new payload has been decoded by the serial protocol : 'new_rx_payload',bytesarray
+    * When a character is not part of a message on the serial port : 'new_ignored_rx_byte',bytes
 
-        
-
-        
+--- Logger (Logger.py)
+    * When variable table has been received : 'logtable_update',list(varid,datatype,arraysize,write_right,name)
+    * When scalar variable value has been received : 'scalar_var_update',varid,value
+    * When array variable value has been received : 'array_var_update',varid,array(value)
+"""
