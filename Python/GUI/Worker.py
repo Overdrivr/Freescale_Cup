@@ -12,6 +12,8 @@ from Logger import Logger
 # and feeds it to serial protocol for processing
 
 # TODO : Print unprocessed serial com
+
+# TODO : With publisher system, this thread becomes useless. MOVE CODE TO MODEL AND REMOVE 
 class SerialWorker(Thread):
 
     def __init__(self):
@@ -67,7 +69,7 @@ class SerialWorker(Thread):
             #If byte has been received
             if self.serialthread.available():
                 #Get it
-                byte = self.serialthread.read()
+                byte = int.from_bytes(self.serialthread.read(),'big')
                 print(byte)
                 #Then feed it to serial protocol
                 self.serial_protocol.new_rx_byte(byte)
