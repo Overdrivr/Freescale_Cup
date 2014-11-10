@@ -16,16 +16,17 @@ class ESC_STATE(Enum):
     NEXT = 1
 
 #Robust serial protocol with bit stuffing
+#TODO : Use publish suscribe instead of callback for full frame decoded
 class SerialProtocol():
 
-    def __init__(self,newframe_callback):
+    def __init__(self):
         self.rx_state = RX_STATE.IDLE;
         self.escape_state = ESC_STATE.IDLE;
         self.SOF = int('7f',16)
         self.EOF = int('7f',16)
         self.ESC = int('7d',16)
-        self.frame_queue = Queue(0)
-        self.callback = newframe_callback
+        self.payload = bytearray() 
+        pub.subscribe("new_rx_byte",self.new_rx_byte)
 
     def new_rx_byte(self, newbyte):
         #No frame in process
@@ -33,6 +34,9 @@ class SerialProtocol():
             if newbyte == self.SOF:
                 # New frame started
                 self.rx_state = RX_STATE.IN_PROCESS
+                print("--start frame")
+            else:
+                pub.publish('new_ignored_rx_byte',newbyte)
                 
         #Frame is in process        
         else:
@@ -40,7 +44,7 @@ class SerialProtocol():
             if self.escape_state == ESC_STATE.NEXT:
                 #Byte destuffing, this char must not be interpreted as flag
                 #See serial_protocols_definition.xlsx
-                self.frame_queue.put(newbyte)
+                self.payload.append(newbyte)
                 self.escape_state = ESC_STATE.IDLE
                 
                 
@@ -48,17 +52,17 @@ class SerialProtocol():
             elif self.escape_state == ESC_STATE.IDLE:
                 #End of frame, the payload is immediatly send to callback function
                 if newbyte == self.EOF:
-                    frame = self.frame_queue
-                    self.callback(frame)
-                    self.frame_queue = Queue(0)
+                    self.publish("new_rx_payload",self.payload)
+                    self.payload = bytearray()
                     self.rx_state = RX_STATE.IDLE
+                    print("--stop frame")
                     
                 #Escaping
                 elif newbyte == self.ESC:
                     self.escape_state = ESC_STATE.NEXT
                 #Storing data
                 else:
-                    self.frame_queue.put(newbyte)
+                    self.payload.append(newbyte)
 
     def process_tx_payload(self, payload):
         frame = bytearray()
