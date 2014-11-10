@@ -5,7 +5,7 @@ import time
 import serial
 from queue import Queue
 from serial.tools.list_ports import comports
-
+from pubsub import pub
 
 #Serial data processing class
 class SerialPortHandler(Thread):
@@ -65,21 +65,12 @@ class SerialPortHandler(Thread):
         self.ser.open()
         print('Connected to port ',self.ser.port)
         return
-
         
     def get_ports(self):
         return serial.tools.list_ports.comports()
         
     def stop(self):
         self.stop_signal = 1;
-
-    #Returns amount of available bytes for reading
-    def available(self):
-        return self.rxqueue.qsize() > 0
-
-    #Returns first available byte for reading
-    def read(self):
-        return self.rxqueue.get()
 
     def write(self, frame):
         print("written :",frame)
@@ -91,8 +82,8 @@ class SerialPortHandler(Thread):
         while self.stop_signal == 0:
             if self.ser.inWaiting() > 0:
                 serialout = self.ser.read()
-                self.rxqueue.put(serialout)
-
+                pub.publish("new_rx_byte",serial_out)
+    
         #Exit
         self.ser.close()
         
