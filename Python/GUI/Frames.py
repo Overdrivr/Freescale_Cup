@@ -18,6 +18,7 @@ from collections import deque
 """
 COM GUI Frame
 """
+#TODO : Change CONNECT button name and function once connected
 class COM_Frame(Tk.Frame):
     def __init__(self,parent,model,**kwargs):
         Tk.Frame.__init__(self,parent,**kwargs)
