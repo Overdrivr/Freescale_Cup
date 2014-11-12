@@ -64,6 +64,7 @@ class SerialPortHandler(Thread):
 
         self.ser.open()
         print('Connected to port ',self.ser.port)
+        pub.sendMessage('com_port_connected',self.ser.port)
         return
         
     def get_ports(self):
@@ -76,14 +77,18 @@ class SerialPortHandler(Thread):
         print("written :",frame)
         return self.ser.write(frame)
 
+    def close(self):
+        sel.ser.close()
+        pub.sendMessage('com_port_disconnected')
+
     def run(self):
         
         #Main serial loop      
         while self.stop_signal == 0:
-            if self.ser.inWaiting() > 0:
+            if self.ser.isOpen() and self.ser.inWaiting() > 0:
                 serialout = self.ser.read()
                 pub.publish("new_rx_byte",serial_out)
     
         #Exit
-        self.ser.close()
+        self.close()
         
