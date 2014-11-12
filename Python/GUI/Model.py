@@ -23,7 +23,7 @@ class Model():
         # Start serial thread 
         self.serialthread.start()
 
-    def stop_com(self,COM_port):
+    def stop_com(self):
         self.stop_logger()
         self.serialthread.stop()
 
@@ -61,6 +61,5 @@ class Model():
 
 --- Logger (Logger.py)
     * When variable table has been received : 'logtable_update',list(varid,datatype,arraysize,write_right,name)
-    * When scalar variable value has been received : 'scalar_var_update',varid,value
-    * When array variable value has been received : 'array_var_update',varid,array(value)
+    * When variable value has been received : 'var_value_update',varid,list(values)
 """

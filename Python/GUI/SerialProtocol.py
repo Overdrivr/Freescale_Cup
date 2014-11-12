@@ -35,7 +35,6 @@ class SerialProtocol():
             if newbyte == self.SOF:
                 # New frame started
                 self.rx_state = RX_STATE.IN_PROCESS
-                print("--start frame")
             else:
                 pub.publish('new_ignored_rx_byte',newbyte)
                 
@@ -56,7 +55,6 @@ class SerialProtocol():
                     self.publish("new_rx_payload",self.payload)
                     self.payload = bytearray()
                     self.rx_state = RX_STATE.IDLE
-                    print("--stop frame")
                     
                 #Escaping
                 elif newbyte == self.ESC:
