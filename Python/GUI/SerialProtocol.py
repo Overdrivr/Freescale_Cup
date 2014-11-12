@@ -69,8 +69,7 @@ class SerialProtocol():
         frame = bytearray()
         frame.append(self.SOF)
         
-        while not payload.empty():
-            c = payload.get()
+        for c in payload:
             if c == self.SOF or c == self.EOF or c == self.ESC:
                 frame.append(self.ESC)
             frame.append(c)
