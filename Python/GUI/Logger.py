@@ -25,7 +25,7 @@ class Logger():
     def new_frame(self,frame):
         print("new RX frame :",frame)
         command = frame.get()
-        datatype = frame.get()
+        datatype = frame.get() & 0x0F
 
         dataid1 = frame.get()
         dataid2 = frame.get()
@@ -36,7 +36,8 @@ class Logger():
         #Returned variable value
         if command == 0:
             if datatype == 6:
-                #while not frame.empty():
+                new_values = list()
+                while not frame.qsize() >= 4:
                     temp = bytearray()
                     temp.insert(1,frame.get())
                     temp.insert(1,frame.get())
@@ -46,8 +47,11 @@ class Logger():
                     #Transform value to desired format
                     val = struct.unpack('i',temp)[0]
 
-                    #Set new value to table
-                    print("val = ",val)
+                    #Store to list
+                    new_values.append(val)
+                    
+                #Publish the value update
+                pub.sendMessage('var_value_update',dataid,new_values)
                 
         #Returned variable table
         elif command == 2:
@@ -92,7 +96,7 @@ class Logger():
             #If successful, publish new table
             pub.sendMessage('logtable_update',self.variables)
         else:
-            print("Logger : unknown MCU answer")
+            print("Logger : unknown MCU answer : ",command)
 
         pass
 
