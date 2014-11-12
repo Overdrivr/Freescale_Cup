@@ -11,6 +11,9 @@ from threading import Thread
 import time
 import ttk as ttk
 from pubsub import pub
+from time import time
+import numpy as np
+from collections import deque
 
 """
 COM GUI Frame
@@ -151,12 +154,17 @@ class Logger_Frame(Tk.Frame):
 Graph GUI Frame
 """
 class Graph_Frame(Tk.Frame):
-    def __init__(self, parent,model,**kwargs):
+    def __init__(self,parent,model,tkmaster,**kwargs):
         Tk.Frame.__init__(self,parent,**kwargs)
         self.parent = parent
         self.model = model
+        self.plotted_vars = list()
+        self.plotmode = 'scalar'
+        self.index=0
+        self.tkmaster = tkmaster
 
         pub.subscribe(self.listener_table_received,'logtable_received')
+        pub.subscribe(self.listener_new_value_received,'var_value_update')
 
         # Widgets
         self.liste = Tk.Listbox(self,height=1)
@@ -174,9 +182,11 @@ class Graph_Frame(Tk.Frame):
         #
         self.f = Figure(figsize=(5,4), dpi=100)
         self.a = self.f.add_subplot(111)
-        t = arange(0.0,3.0,0.01)
-        s = sin(2*pi*t)
-        self.a.plot(t,s)
+        self.a.set_xlim([0, 127])
+        self.a.set_ylim([-1, 1])
+        self.line1, = self.a.plot([],[])
+        self.x = deque(maxlen=128)
+        self.y = deque(maxlen=128)
 
         #
         self.dataPlot = FigureCanvasTkAgg(self.f, master=self)
@@ -202,10 +212,15 @@ class Graph_Frame(Tk.Frame):
         for name, type, size in table:
             self.liste.insert(Tk.END,name)
 
-    def listener_new_value_received(self,name,value):
-        #Test name against plot list
+    def listener_new_value_received(self,varid,value):
+        #Test id against plot list
+        #TODO
         #Update plot with new value if name is found
-
+        if self.plotmode == "scalar":
+            self.y.appendleft(value)
+            self.line1.set_data(np.arange(len(self.y))[::-1],self.y)
+            self.dataPlot.draw()
+            
         pass
 
     def add_var_to_plot(self):
