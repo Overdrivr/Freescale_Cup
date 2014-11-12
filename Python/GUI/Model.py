@@ -42,7 +42,8 @@ class Model():
         #Feed command to serial protocol payload processor
         frame = self.serial_protocol.process_tx_payload(cmd)        
         #Send command
-        self.serialthread.write(frame)      
+        if self.serialthread.isAlive():
+            self.serialthread.write(frame)      
         
     def stop_logger(self):
         # Tell MCU to stop sending data ?
@@ -53,6 +54,8 @@ class Model():
 # List of events that can be subscribed to
 """
 --- Serial port (SerialPortHandler.py)
+    * When COM port is connected : 'com_port_connected',com_port
+    * When COM port is disconnected : 'com_port_disconnected'
     * When a new byte is received from COM port : 'new_rx_byte',bytes
     
 --- Serial protocol (SerialProtocol.py)
