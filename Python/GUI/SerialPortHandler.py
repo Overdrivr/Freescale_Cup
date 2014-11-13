@@ -64,7 +64,7 @@ class SerialPortHandler(Thread):
 
         self.ser.open()
         print('Connected to port ',self.ser.port)
-        pub.sendMessage('com_port_connected',self.ser.port)
+        pub.sendMessage('com_port_connected',port=self.ser.port)
         return
         
     def get_ports(self):

@@ -47,6 +47,10 @@ class COM_Frame(Tk.Frame):
         self.txt_connected = Tk.Label(self,text="NOT CONNECTED",fg='red')
         self.txt_connected.grid(column=1,row=0,sticky='EW')
 
+        #Subscriptions
+        pub.subscribe(self.com_connected,'com_port_connected')
+        pub.subscribe(self.com_disconnected,'com_port_disconnected')
+
     def set_COM_ports(self):
         ports_list = self.model.get_ports()
         self.liste.delete(0,Tk.END)
@@ -62,20 +66,24 @@ class COM_Frame(Tk.Frame):
         
         if not self.liste.curselection():
             print("No port selected, aborting.")
-            time.sleep(0.5)
             self.change_COM_state(state="noconnect")
             return
                   
         chosen_port = self.liste.get(Tk.ACTIVE)
+        self.model.connect_com(chosen_port)
 
-        self.model.start_com(chosen_port)   
-
-        self.change_COM_state(state="connected")
-
-        self.connected = True
-        
     def stop_com():
-        pass
+        self.model.disconnect_com(self)
+        
+    def com_connected(self,port):
+        #TODO : Change connect button name and function
+        self.change_COM_state(state="connected")
+        self.connected = True
+
+    def com_disconnected(self):
+        #TODO : Change connect button name and function
+        self.change_COM_state(state="noconnect")
+        self.connected = False
     
     def change_COM_state(self,state):
         if state == "connecting":
