@@ -17,23 +17,22 @@ class Model():
     def get_ports(self):
         return self.serialthread.get_ports()
         
-    def start_com(self,COM_port):
+    def connect_com(self,COM_port):
         # Connect
         self.serialthread.connect(COM_port,115200)
         # Start serial thread 
         self.serialthread.start()
 
-    def stop_com(self):
+    def disconnect_com(self):
+        self.serialthread.close()
+         
+    def stop(self):
         self.stop_logger()
         self.serialthread.stop()
 
         if self.serialthread.isAlive():
             self.serialthread.join()
-            
-        print('--- COM stopped.')
-         
-    def stop(self):
-        self.stop_com()
+        
         print("--- All threads stopped.")
         
     def start_logger(self):
