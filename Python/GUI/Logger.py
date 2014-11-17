@@ -25,7 +25,6 @@ class Logger():
     def new_frame(self,rxpayload):
         frame = rxpayload
         index = 0
-        print("new RX frame :",frame)
         command = frame[0]
         datatype = frame[1] & 0x0F
 
@@ -61,37 +60,39 @@ class Logger():
         elif command == 2:
             #Empty list
             self.variables = list()
-            
-            while len(frame) >= 37:
+            index = 4
+            while len(frame) - index >= 37:
                 # Read datatype
-                databyte = frame[4]
+                databyte = frame[index]
                 datatype = databyte & 0x0F
+                index+=1
                 
                 # Read rights
                 write_rights = (databyte >> 4) == 0x0F
                 
                 # Read variable ID
-                b1 = frame[5]
-                b2 = frame[6]
+                b1 = frame[index]
+                index += 1
+                b2 = frame[index]
+                index += 1
                 varid = b1 << 8 + b2
 
                 # Read variable size (1 if scalar, n if array)
-                array_size1 = frame[7]
-                array_size2 = frame[8]
+                array_size1 = frame[index]
+                index += 1
+                array_size2 = frame[index]
+                index += 1
                 array_size = array_size1 << 8 + array_size2
                 
                 # Read name
                 name = ""
-                index = 9
                     #32 characters
                 for x in range(0,32):
-                    name_bytes = bytes(str(frame[index]),'ascii')
+                    c = str(chr(frame[index]))
+                    name += c
                     index += 1
-                    print(name_bytes)
-                    name = struct.unpack('c',name_bytes)
-                    print(name)
                 
-                print("New var ",name,"[",array_size,"] with id ",id)
+                print("New var ",name,"[",array_size,"] with id ",varid)
 
                 #Put everything in tuple
                 t = varid, datatype, array_size, write_rights, name
@@ -100,7 +101,7 @@ class Logger():
                 self.variables.append(t)
                 
             #If successful, publish new table
-            pub.sendMessage('logtable_update',self.variables)
+            pub.sendMessage('logtable_update',varlist=self.variables)
         else:
             print("Logger : unknown MCU answer : ",command)
 
