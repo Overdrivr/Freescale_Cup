@@ -62,6 +62,6 @@ class Model():
     * When a character is not part of a message on the serial port : 'new_ignored_rx_byte',rxbyte
 
 --- Logger (Logger.py)
-    * When variable table has been received : 'logtable_update',list(varid,datatype,arraysize,write_right,name)
+    * When variable table has been received : 'logtable_update',varlist
     * When variable value has been received : 'var_value_update',varid,list(values)
 """
