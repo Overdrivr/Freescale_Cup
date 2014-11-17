@@ -22,13 +22,15 @@ class Logger():
         pub.subscribe(self.new_frame,'new_rx_payload')
 
     #Process RX bytes queue
-    def new_frame(self,frame):
+    def new_frame(self,rxpayload):
+        frame = rxpayload
+        index = 0
         print("new RX frame :",frame)
-        command = frame.get()
-        datatype = frame.get() & 0x0F
+        command = frame[0]
+        datatype = frame[1] & 0x0F
 
-        dataid1 = frame.get()
-        dataid2 = frame.get()
+        dataid1 = frame[2]
+        dataid2 = frame[3]
         dataid = dataid1 << 8 + dataid2
 
         #print("command [",command,"] ; datatype [", datatype,"], dataid [",dataid,"]")
@@ -37,12 +39,14 @@ class Logger():
         if command == 0:
             if datatype == 6:
                 new_values = list()
-                while not frame.qsize() >= 4:
+                index = 4
+                while not len(frame) >= 4:
                     temp = bytearray()
-                    temp.insert(1,frame.get())
-                    temp.insert(1,frame.get())
-                    temp.insert(1,frame.get())
-                    temp.insert(1,frame.get())
+                    temp.insert(1,frame[index])
+                    temp.insert(1,frame[index+1])
+                    temp.insert(1,frame[index+2])
+                    temp.insert(1,frame[index+3])
+                    index += 4
 
                     #Transform value to desired format
                     val = struct.unpack('i',temp)[0]
@@ -58,29 +62,31 @@ class Logger():
             #Empty list
             self.variables = list()
             
-            while frame.qsize() >= 37:
+            while len(frame) >= 37:
                 # Read datatype
-                databyte = frame.get()
+                databyte = frame[4]
                 datatype = databyte & 0x0F
                 
                 # Read rights
                 write_rights = (databyte >> 4) == 0x0F
                 
                 # Read variable ID
-                b1 = frame.get()
-                b2 = frame.get()
+                b1 = frame[5]
+                b2 = frame[6]
                 varid = b1 << 8 + b2
 
                 # Read variable size (1 if scalar, n if array)
-                array_size1 = frame.get()
-                array_size2 = frame.get()
+                array_size1 = frame[7]
+                array_size2 = frame[8]
                 array_size = array_size1 << 8 + array_size2
                 
                 # Read name
                 name = ""
+                index = 9
                     #32 characters
                 for x in range(0,32):
-                    name_bytes = bytes(str(frame.get()),'ascii')
+                    name_bytes = bytes(str(frame[index]),'ascii')
+                    index += 1
                     print(name_bytes)
                     name = struct.unpack('c',name_bytes)
                     print(name)

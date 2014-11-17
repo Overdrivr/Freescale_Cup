@@ -53,11 +53,19 @@ def test_new_log_value():
         x += 0.05
         pub.sendMessage('var_value_update',varid=0,value=test)
 
+def printout_unused_char(rxbyte):
+    print("-un-",rxbyte)
+
+def printout_char(rxbyte):
+    print("----",rxbyte)
+
 """
 Program startup
 """
 if __name__ == '__main__':
     app = Application()
-    t = Timer(1.0,test_new_log_value)
-    t.start()
+    #t = Timer(1.0,test_new_log_value)
+    #t.start()
+    pub.subscribe(printout_unused_char,'new_ignored_rx_byte')
+    pub.subscribe(printout_char,'new_rx_byte')
     app.mainloop()

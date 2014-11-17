@@ -77,9 +77,10 @@ class SerialPortHandler(Thread):
         print("written :",frame)
         return self.ser.write(frame)
 
-    def close(self):
-        sel.ser.close()
-        pub.sendMessage('com_port_disconnected')
+    def disconnect(self):
+        if self.ser.isOpen():
+            self.ser.close()
+            pub.sendMessage('com_port_disconnected')
 
     def run(self):
         
@@ -87,8 +88,7 @@ class SerialPortHandler(Thread):
         while self.stop_signal == 0:
             if self.ser.isOpen() and self.ser.inWaiting() > 0:
                 serialout = self.ser.read()
-                pub.publish("new_rx_byte",serial_out)
-    
-        #Exit
-        self.close()
-        
+                pub.sendMessage("new_rx_byte",rxbyte=serialout)
+
+        #Disconnect - freeze issue if called twice ?
+        #self.disconnect()
