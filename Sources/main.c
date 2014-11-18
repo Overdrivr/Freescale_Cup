@@ -40,7 +40,7 @@ int main(void)
 	init_log();
 	add_to_log(&test, 4, INT32,1,"test_var");
 	
-	TFC_HBRIDGE_ENABLE;
+	//TFC_HBRIDGE_ENABLE;
 	
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
@@ -66,6 +66,8 @@ int main(void)
 		{
 			TFC_Ticker[5] = 0;
 			led_state ^= 0x01; 
+			//serial_printf("A");
+			
 		}
 		/*
 		//Compute line position
@@ -117,7 +119,7 @@ int main(void)
 		}
 		*/
 		//Button events
-		if(TFC_PUSH_BUTTON_0_PRESSED)
+		/*if(TFC_PUSH_BUTTON_0_PRESSED)
 		{
 			calibrate_data(&data);
 			error_integral = 0.f;
@@ -141,7 +143,7 @@ int main(void)
 				TFC_BAT_LED3_OFF;
 			}
 				
-		}
+		}*/
 		/*
 		if(engines_on == 0)
 		{
@@ -152,11 +154,11 @@ int main(void)
 			command_engines =  TFC_ReadPot(0);
 			TFC_SetMotorPWM(command_engines , command_engines);
 			command_engines *= 1000;
-		}
+		}*/
 		
 		//send_serial_frame(&command_engines,2);
 	
-		TFC_SetBatteryLED_Level(led_state);*/
+		TFC_SetBatteryLED_Level(led_state);
 	}
 	return 0;
 }

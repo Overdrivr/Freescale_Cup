@@ -6,7 +6,7 @@
  */
 
 #include "serial_protocol.h"
-#include "serial.h"
+#include "logger.h"
 
 ByteQueue rx_frame;
 uint8_t rx_frame_storage[INCOMING_FRAME_QUEUE_SIZE];
@@ -77,7 +77,7 @@ void update_serial_protocol()
 				if(received_byte == EOF_)
 				{
 					protocol_state = IDLE;
-					process_serial(&rx_frame);
+					log_process_serial(&rx_frame);
 					
 				}
 				else if(received_byte == ESC_)

@@ -22,6 +22,7 @@ void init_log()
 		Log.variables[i].rw_rights = 1;//1 means readonly
 		Log.variables[i].id = i;
 		strcpy(Log.variables[i].name,default_name);
+		Log.variables[i].send = 0;
 	}
 		
 }
@@ -49,7 +50,7 @@ uint8_t add_to_log(uint8_t* adress, uint16_t octets, datatype type, uint8_t read
 
 void update_log_serial()
 {
-	/*
+	
 	uint16_t i,j,k;
 	uint8_t *temp_ptr;
 	uint8_t type;
@@ -59,6 +60,9 @@ void update_log_serial()
 	//Transmit data to serial
 	for(i = 0 ; i < Log.current_index ; i++)
 	{
+		if(Log.variables[i].send == 0)
+			continue;
+		
 		j = 0;
 		
 		//Write command
@@ -112,25 +116,45 @@ void update_log_serial()
 		//Send to serial protocol
 		send_serial_frame(buffer,j);
 	}
-	*/
 }
 
 
-void process_serial(ByteQueue* rx_queue)
+void log_process_serial(ByteQueue* rx_queue)
 {
 	//Get payload byte by byte
 	
 	uint8_t byte = ForcedByteDequeue(rx_queue);
+	uint8_t byte2;
+	uint16_t id;
 	
 	//If command is return table to master
 	if(byte == 0x02)
 	{
 		send_table();
 	}
+	//If command is write variable value
+	else if(byte == 0x01)
+	{
 		
+	}
+	//If command is return variable
+	else if(byte == 0x00 && BytesInQueue(rx_queue) >= 3)
+	{
+		byte = ForcedByteDequeue(rx_queue);
+		byte2 = ForcedByteDequeue(rx_queue);
 		
+		id = byte;
+		id = (id << 4) + byte2;
 		
+		if(id >= Log.current_index)
+		{
+			Log.variables[id].send = 1;
+		}		
+	}
 	
+	//Clean queue
+	while(BytesInQueue(rx_queue))
+		ForcedByteDequeue(rx_queue);
 }
 
 
