@@ -37,7 +37,8 @@ class SerialProtocol():
                 # New frame started
                 self.rx_state = RX_STATE.IN_PROCESS
             else:
-                pub.sendMessage('new_ignored_rx_byte',rxbyte=newbyte)
+                t = newbyte,
+                pub.sendMessage('new_ignored_rx_byte',rxbyte=bytes(t))
                 
         #Frame is in process        
         else:
