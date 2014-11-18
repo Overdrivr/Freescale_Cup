@@ -57,24 +57,44 @@ def test_new_log_value():
 def test_rx_table():
     print("logger table test started.")
     c = bytearray()
+    #SOF
     c.append(int('7f',16))
+    #CMD
     c.append(int('02',16))
+    #DATATYPE
     c.append(int('07',16))
+    #DATAID
     c.append(int('00',16))
     c.append(int('00',16))
     #Table
+        #DATATYPE
     c.append(int('01',16))
-    
+        #DATAID
     c.append(int('00',16))
     c.append(int('00',16))
-
+        #DATASIZE
     c.append(int('00',16))
-    c.append(int('00',16))
-
+    c.append(int('01',16))
+        #NAME
     s = 'test_var                        '
     h = bytearray(s,'ascii')
     c.extend(h)
 
+        #DATATYPE
+    c.append(int('03',16))
+        #DATAID
+    c.append(int('00',16))
+    c.append(int('01',16))
+        #DATASIZE
+    c.append(int('0F',16))
+    c.append(int('F3',16))
+        #NAME
+    s = 'test_array                      '
+    h = bytearray(s,'ascii')
+    c.extend(h)
+
+    
+    #EOF
     c.append(int('7f',16))
 
     print("Test frame :",c)
@@ -95,6 +115,6 @@ if __name__ == '__main__':
     
     pub.subscribe(printout_unused_char,'new_ignored_rx_byte')
     t = Timer(1.0,test_rx_table)
-    #t.start()
+    t.start()
     
     app.mainloop()
