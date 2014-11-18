@@ -187,7 +187,7 @@ class Graph_Frame(Tk.Frame):
         self.f = Figure(figsize=(5,4), dpi=100)
         self.a = self.f.add_subplot(111)
         self.a.set_xlim([0, 127])
-        self.a.set_ylim([-1, 1])
+        self.a.set_ylim([-255, 255])
         self.line1, = self.a.plot([],[])
         self.x = deque(maxlen=128)
         self.y = deque(maxlen=128)
@@ -216,21 +216,21 @@ class Graph_Frame(Tk.Frame):
         for item in varlist:
             self.liste.insert(Tk.END,item[4])
 
-    def listener_new_value_received(self,varid,value):
-        #Test id against plot list
-        #TODO
+    def listener_new_value_received(self,varid,value_list):
+        #TODO : Test id against plot list
+        
+        value = value_list[0]
         #Update plot with new value if name is found
         if self.plotmode == "scalar":
             self.y.appendleft(value)
             self.line1.set_data(np.arange(len(self.y))[::-1],self.y)
             self.dataPlot.draw()
-            
-        pass
 
     def add_var_to_plot(self):
-        #Add selected var
-        #Remove var from available variables
-        pass
+        if not self.liste.curselection():
+            return
+        varid = self.liste.curselection()[0]
+        self.model.log_var(varid)
 
     def remove_var_from_plot(self):
         #Remove selected var
