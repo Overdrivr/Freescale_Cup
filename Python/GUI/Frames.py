@@ -142,8 +142,8 @@ class Logger_Frame(Tk.Frame):
         for item in varlist:
             i = self.var_list.insert('','end')
             self.var_list.set(i,'name',item[4])
-            self.var_list.set(i,'type',item[2])
-            self.var_list.set(i,'size',item[3])
+            self.var_list.set(i,'type',item[1])
+            self.var_list.set(i,'size',item[2])
             
     def change_state(self,state):
         if state == "inprocess":
