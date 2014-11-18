@@ -9,7 +9,6 @@ from pubsub import pub
 # Logger class
 # TODO : parse all datatype
 # TODO : Deal with array var
-# TODO : Fix parsing of 'table_received'
 
 class Logger():
 
@@ -73,14 +72,16 @@ class Logger():
                 index += 1
                 b2 = frame[index]
                 index += 1
-                varid = b1 << 8 + b2
+                varid = (b1 << 8) + b2
 
                 # Read variable size (1 if scalar, n if array)
                 array_size1 = frame[index]
                 index += 1
                 array_size2 = frame[index]
                 index += 1
-                array_size = array_size1 << 8 + array_size2
+                array_size = (array_size1 << 8) + array_size2
+
+                print(array_size1,' ',array_size2)
                 
                 # Read name
                 name = ""
@@ -90,7 +91,7 @@ class Logger():
                     name += c
                     index += 1
                 
-                print("New var ",name,"[",array_size,"] with id ",varid)
+                print("New var ",name,"[",array_size,"] with id ",varid, 'of type ',datatype, 'with rights ',write_rights)
 
                 #Put everything in tuple
                 t = varid, datatype, array_size, write_rights, name
