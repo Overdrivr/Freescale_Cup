@@ -4,6 +4,10 @@ from Logger import Logger
 from SerialProtocol import SerialProtocol
 
 # Top-level API
+#TODO : Log var API
+#TODO : Rename start_logger in request_table ?
+#TODO : Remove stop_logger ?
+
 class Model():
     def __init__(self, **kwargs):        
        
@@ -48,6 +52,13 @@ class Model():
         # Tell MCU to stop sending data ?
         
         print('--- Logger stopped.')
+
+    def log_var(self, varid):
+        #Tell MCU to return variable 'varid' at given interval
+        #Get command
+
+        #Send it
+        pass
         
     
 # List of events that can be subscribed to
