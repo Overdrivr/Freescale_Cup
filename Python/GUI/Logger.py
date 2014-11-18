@@ -8,11 +8,9 @@ from pubsub import pub
 
 # Logger class
 # TODO : parse all datatype
-# TODO : add variable size in tuple
-# TODO : Use bytearray in new_frame
-# TOCHECK : Empty list after update ?
 # TODO : Deal with array var
-# TODO : PUBLISH EVENTS FOR VALUE UPDATE
+# TODO : Fix parsing of 'table_received'
+
 class Logger():
 
     def __init__(self):
@@ -34,7 +32,7 @@ class Logger():
 
         #print("command [",command,"] ; datatype [", datatype,"], dataid [",dataid,"]")
         
-        #Returned variable value
+        # Parse 'received_variable_value' payload
         if command == 0:
             if datatype == 6:
                 new_values = list()
@@ -56,7 +54,7 @@ class Logger():
                 #Publish the value update
                 pub.sendMessage('var_value_update',dataid,new_values)
                 
-        #Returned variable table
+        # Parse 'received_table' payload
         elif command == 2:
             #Empty list
             self.variables = list()
