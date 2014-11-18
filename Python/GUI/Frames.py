@@ -19,6 +19,7 @@ from collections import deque
 COM GUI Frame
 """
 #TODO : Change CONNECT button name and function once connected
+#TODO : Plot button should call Model.log_var with selected id
 class COM_Frame(Tk.Frame):
     def __init__(self,parent,model,**kwargs):
         Tk.Frame.__init__(self,parent,**kwargs)
@@ -104,7 +105,7 @@ class Logger_Frame(Tk.Frame):
         self.parent = parent
         self.model = model
 
-        pub.subscribe(self.listener_table_received,'logtable_received')
+        pub.subscribe(self.listener_table_received,'logtable_update')
 
         self.txt_log = Tk.Label(self,text="LOGGER")
         self.txt_log.grid(column=0,row=0,sticky='EW',pady=3,padx=3)
@@ -122,13 +123,7 @@ class Logger_Frame(Tk.Frame):
         self.var_list.column('type',anchor='center',minwidth=0,width=100, stretch=Tk.NO)
         self.var_list.heading('type', text='type')
         self.var_list.column('size',anchor='center',minwidth=0,width=100, stretch=Tk.NO)
-        self.var_list.heading('size', text='type')
-
-        # Test treeview
-        self.var_list.insert('', 'end','row1')
-        self.var_list.set('row1','name','filtered_output')
-        self.var_list.set('row1','type','Float')
-        self.var_list.set('row1','size',128)
+        self.var_list.heading('size', text='size')
 
     def activate_log(self):
         # Activate serial data interception
@@ -136,7 +131,7 @@ class Logger_Frame(Tk.Frame):
         # Start logger
         self.model.start_logger()
         
-    def listener_table_received(self,table):
+    def listener_table_received(self,varlist):
         # Signal new state
         self.change_state(state="active")
         # Empty table
@@ -144,11 +139,11 @@ class Logger_Frame(Tk.Frame):
         for item in x:
             self.var_list.delete(item)
         # Fill table with new values
-        for item in table:
+        for item in varlist:
             i = self.var_list.insert('','end')
-            self.var_list.set(i,'name',item[0])
-            self.var_list.set(i,'type',item[1])
-            self.var_list.set(i,'size',item[2])
+            self.var_list.set(i,'name',item[4])
+            self.var_list.set(i,'type',item[2])
+            self.var_list.set(i,'size',item[3])
             
     def change_state(self,state):
         if state == "inprocess":
@@ -172,7 +167,7 @@ class Graph_Frame(Tk.Frame):
         self.index=0
         self.tkmaster = tkmaster
 
-        pub.subscribe(self.listener_table_received,'logtable_received')
+        pub.subscribe(self.listener_table_received,'logtable_update')
         pub.subscribe(self.listener_new_value_received,'var_value_update')
 
         # Widgets
@@ -216,10 +211,10 @@ class Graph_Frame(Tk.Frame):
 
 
 
-    def listener_table_received(self,table):
+    def listener_table_received(self,varlist):
         self.liste.delete(0,Tk.END)
-        for name, type, size in table:
-            self.liste.insert(Tk.END,name)
+        for item in varlist:
+            self.liste.insert(Tk.END,item[4])
 
     def listener_new_value_received(self,varid,value):
         #Test id against plot list
