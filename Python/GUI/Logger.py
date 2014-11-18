@@ -27,7 +27,7 @@ class Logger():
 
         dataid1 = frame[2]
         dataid2 = frame[3]
-        dataid = dataid1 << 8 + dataid2
+        dataid = dataid2 << 8 + dataid1
 
         #print("command [",command,"] ; datatype [", datatype,"], dataid [",dataid,"]")
         
@@ -36,7 +36,7 @@ class Logger():
             if datatype == 6:
                 new_values = list()
                 index = 4
-                while not len(frame) >= 4:
+                while len(frame) - index >= 4:
                     temp = bytearray()
                     temp.insert(1,frame[index])
                     temp.insert(1,frame[index+1])
@@ -49,9 +49,9 @@ class Logger():
 
                     #Store to list
                     new_values.append(val)
-                    
+
                 #Publish the value update
-                pub.sendMessage('var_value_update',dataid,new_values)
+                pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
                 
         # Parse 'received_table' payload
         elif command == 2:
@@ -72,16 +72,14 @@ class Logger():
                 index += 1
                 b2 = frame[index]
                 index += 1
-                varid = (b1 << 8) + b2
+                varid = (b2 << 8) + b1
 
                 # Read variable size (1 if scalar, n if array)
                 array_size1 = frame[index]
                 index += 1
                 array_size2 = frame[index]
                 index += 1
-                array_size = (array_size1 << 8) + array_size2
-
-                print(array_size1,' ',array_size2)
+                array_size = (array_size2 << 8) + array_size1
                 
                 # Read name
                 name = ""
@@ -115,18 +113,19 @@ class Logger():
         return cmd
 
     #Command for asking the MCU to return value of specific variable 
-    def get_command_read(self,var_id):
+    def get_read_cmd(self,var_id):
         cmd = bytearray()
         cmd.append(int('00',16))
         cmd.append(int('00',16))
-        cmd.append(int('00',16))
-        #TO TEST
-        cmd.put(var_id >> 2)
-        cmd.put(var_id & 255)
+        #TO TEST FOR IDs > 255
+        cmd.append(var_id)
+        cmd.append((var_id >> 8))
         return cmd
 
     def get_var_list():
         return self.variables
+
+    
 
 
         
