@@ -115,6 +115,6 @@ if __name__ == '__main__':
     
     pub.subscribe(printout_unused_char,'new_ignored_rx_byte')
     t = Timer(1.0,test_rx_table)
-    t.start()
+    #t.start()
     
     app.mainloop()

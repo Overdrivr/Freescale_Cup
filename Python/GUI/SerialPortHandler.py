@@ -74,7 +74,6 @@ class SerialPortHandler(Thread):
         self.stop_signal = 1;
 
     def write(self, frame):
-        print("written :",frame)
         return self.ser.write(frame)
 
     def disconnect(self):
