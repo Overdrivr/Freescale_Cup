@@ -18,6 +18,7 @@ class Model():
         # Serial protocol
         self.serial_protocol = SerialProtocol()
         
+        
     def get_ports(self):
         return self.serialthread.get_ports()
         
@@ -53,12 +54,17 @@ class Model():
         
         print('--- Logger stopped.')
 
-    def log_var(self, varid):
-        #Tell MCU to return variable 'varid' at given interval
-        #Get command
-
-        #Send it
-        pass
+    # Tell MCU to return variable 'varid' at given interval
+    def log_var(self, varid):        
+        # Get command
+        cmd = self.logger.get_read_cmd(varid)
+        
+        # Feed command to serial protocol payload processor
+        frame = self.serial_protocol.process_tx_payload(cmd)
+        
+        # Send command
+        if self.serialthread.isAlive():
+            self.serialthread.write(frame)
         
     
 # List of events that can be subscribed to
@@ -74,5 +80,5 @@ class Model():
 
 --- Logger (Logger.py)
     * When variable table has been received : 'logtable_update',varlist
-    * When variable value has been received : 'var_value_update',varid,list(values)
+    * When variable value has been received : 'var_value_update',varid,value_list
 """
