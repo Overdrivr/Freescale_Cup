@@ -30,13 +30,17 @@ class Application(Tk.Frame):
         self.frame_logger = Logger_Frame(self,self.model,bd=2,relief=Tk.GROOVE)
         self.frame_logger.grid(column=0,row=1,sticky='N',pady=5,padx=5)
 
-        #Graph frame
+        #Graph 1 frame
         self.frame_graph1 = Graph_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
         self.frame_graph1.grid(column=1,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
 
+        #Graph 2 frame
+        self.frame_graph2 = Graph_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
+        self.frame_graph2.grid(column=2,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
+
         #Quit button
         self.bouton_quitter = Tk.Button(self, text="x",command = self.stop)
-        self.bouton_quitter.grid(column=2,row=0,sticky='N')
+        self.bouton_quitter.grid(column=3,row=0,sticky='N')
 
     def stop(self):
         self.model.stop()
@@ -73,8 +77,8 @@ def test_rx_table():
     c.append(int('00',16))
     c.append(int('00',16))
         #DATASIZE
-    c.append(int('00',16))
     c.append(int('01',16))
+    c.append(int('00',16))
         #NAME
     s = 'test_var                        '
     h = bytearray(s,'ascii')
@@ -83,11 +87,11 @@ def test_rx_table():
         #DATATYPE
     c.append(int('03',16))
         #DATAID
-    c.append(int('00',16))
     c.append(int('01',16))
+    c.append(int('00',16))
         #DATASIZE
-    c.append(int('0F',16))
     c.append(int('F3',16))
+    c.append(int('0F',16))
         #NAME
     s = 'test_array                      '
     h = bytearray(s,'ascii')
