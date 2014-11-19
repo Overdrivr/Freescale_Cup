@@ -184,6 +184,10 @@ class Graph_Frame(Tk.Frame):
         self.bouton_add_var.grid(column=1,row=2,pady=3,padx=3)
 
         #
+        self.bouton_switch_mode = Tk.Button(self, text="SWITCH MODE", command = self.switch_plot_mode)
+        self.bouton_switch_mode.grid(column=2,row=2,pady=3,padx=3)
+
+        #
         self.f = Figure(figsize=(5,4), dpi=100)
         self.a = self.f.add_subplot(111)
         self.a.set_xlim([0, 127])
@@ -226,6 +230,10 @@ class Graph_Frame(Tk.Frame):
             self.line1.set_data(np.arange(len(self.y))[::-1],self.y)
             self.dataPlot.draw()
 
+    def switch_plot_mode(self):
+        #TODO : Switch x axis between time and array index
+        pass
+    
     def add_var_to_plot(self):
         if not self.liste.curselection():
             return
