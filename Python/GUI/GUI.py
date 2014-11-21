@@ -108,7 +108,7 @@ def test_rx_table():
         a = bytes(t)
         pub.sendMessage('new_rx_byte',rxbyte=a)
 
-def printout_unused_char(rxbyte):
+def printout_char(rxbyte):
     print(rxbyte)
 
 """
@@ -117,7 +117,7 @@ Program startup
 if __name__ == '__main__':
     app = Application()
     
-    pub.subscribe(printout_unused_char,'new_ignored_rx_byte')
+    pub.subscribe(printout_char,'new_ignored_rx_byte')
     t = Timer(1.0,test_rx_table)
     #t.start()
     
