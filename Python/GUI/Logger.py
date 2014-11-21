@@ -15,7 +15,9 @@ class Logger():
     def __init__(self):
         self.log_table = Queue(0)
         self.variables = list()
-
+        self.type_lookup = {0 : 'f',
+                            6 : 'i'
+                            }
         pub.subscribe(self.new_frame,'new_rx_payload')
 
     #Process RX bytes queue
@@ -28,15 +30,20 @@ class Logger():
         dataid1 = frame[2]
         dataid2 = frame[3]
         dataid = dataid2 << 8 + dataid1
-
-        #print("command [",command,"] ; datatype [", datatype,"], dataid [",dataid,"]")
         
         # Parse 'received_variable_value' payload
         if command == 0:
-            if datatype == 6:
+            #4 byte data
+            if datatype == 6 or datatype == 0:
                 new_values = list()
                 index = 4
+                
+                if (len(frame) - 4) < 4:
+                    print("Unvalid frame size")
+                    return
+                
                 while len(frame) - index >= 4:
+                    # Stock raw bytes in byte array
                     temp = bytearray()
                     temp.insert(1,frame[index])
                     temp.insert(1,frame[index+1])
@@ -44,10 +51,13 @@ class Logger():
                     temp.insert(1,frame[index+3])
                     index += 4
 
-                    #Transform value to desired format
-                    val = struct.unpack('i',temp)[0]
+                    # Get format
+                    fmt = self.type_lookup[datatype]
+                    
+                    # Transform value to desired format
+                    val = struct.unpack(fmt,temp)[0]
 
-                    #Store to list
+                    # Store to list
                     new_values.append(val)
 
                 #Publish the value update
