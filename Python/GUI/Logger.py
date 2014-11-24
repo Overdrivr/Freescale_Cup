@@ -27,9 +27,12 @@ class Logger():
         command = frame[0]
         datatype = frame[1] & 0x0F
 
-        dataid1 = frame[2]
-        dataid2 = frame[3]
-        dataid = dataid2 << 8 + dataid1
+        temp2 = bytearray()
+        temp2.insert(1,frame[2])
+        temp2.insert(1,frame[3])
+        temp2.insert(1,0)
+        temp2.insert(1,0)
+        dataid = struct.unpack("i",temp2)[0]
         
         # Parse 'received_variable_value' payload
         if command == 0:

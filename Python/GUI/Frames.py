@@ -166,7 +166,7 @@ class Graph_Frame(Tk.Frame):
         self.plotmode = 'scalar'
         self.index=0
         self.tkmaster = tkmaster
-        self.plotted_varid = -1
+        self.plotted_varid = None
 
         pub.subscribe(self.listener_table_received,'logtable_update')
         pub.subscribe(self.listener_new_value_received,'var_value_update')
@@ -225,6 +225,7 @@ class Graph_Frame(Tk.Frame):
     def listener_new_value_received(self,varid,value_list):
         if not varid == self.plotted_varid:
             return
+        
         #TODO : Compute min max
         #Update plot with new value if name is found
         if self.plotmode == "scalar":
@@ -239,7 +240,7 @@ class Graph_Frame(Tk.Frame):
     def add_var_to_plot(self):
         if not self.liste.curselection():
             return
-        self.plotted_varid = self.liste.curselection()[0]
+        self.plotted_varid = int(self.liste.curselection()[0])
         self.model.log_var(self.plotted_varid)
 
     def remove_var_from_plot(self):
