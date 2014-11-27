@@ -15,7 +15,7 @@ class Logger():
     def __init__(self):
         self.log_table = Queue(0)
         self.variables = list()
-        self.type_lookup = {0 : 'f',
+        self.type_lookup = {0 : '=f',
                             6 : 'i'
                             }
         pub.subscribe(self.new_frame,'new_rx_payload')
@@ -35,9 +35,11 @@ class Logger():
         dataid = struct.unpack("i",temp2)[0]
         
         # Parse 'received_variable_value' payload
+
+        
         if command == 0:
-            #4 byte data
-            if datatype == 6 or datatype == 0:
+            #int
+            if datatype == 6:
                 new_values = list()
                 index = 4
                 
@@ -53,19 +55,50 @@ class Logger():
                     temp.insert(1,frame[index+2])
                     temp.insert(1,frame[index+3])
                     index += 4
+                   
+                    # Get format
+                    fmt = self.type_lookup[datatype]
+                    
+                    # Transform value to desired format
+                    val = struct.unpack(fmt,temp)[0]
+                    
+                    # Store to list
+                    new_values.append(val)
+
+                #Publish the value update
+                pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
+
+                
+            #float
+            elif datatype == 0:
+                new_values = list()
+                index = 4
+                
+                if (len(frame) - 4) < 4:
+                    print("Unvalid frame size")
+                    return
+                
+                while len(frame) - index >= 4:
+                    # Stock raw bytes in byte array
+                    temp = bytearray()
+                    temp.append(frame[index])
+                    temp.append(frame[index+1])
+                    temp.append(frame[index+2])
+                    temp.append(frame[index+3])
+                    index += 4
 
                     # Get format
                     fmt = self.type_lookup[datatype]
                     
                     # Transform value to desired format
                     val = struct.unpack(fmt,temp)[0]
-
+                    
                     # Store to list
                     new_values.append(val)
 
                 #Publish the value update
                 pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
-                
+
         # Parse 'received_table' payload
         elif command == 2:
             #Empty list
