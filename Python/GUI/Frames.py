@@ -196,6 +196,9 @@ class Graph_Frame(Tk.Frame):
         self.line1, = self.a.plot([],[])
         self.x = deque(maxlen=128)
         self.y = deque(maxlen=128)
+        self.ymin = 0
+        self.ymax = 1
+        self.first = False
 
         #
         self.dataPlot = FigureCanvasTkAgg(self.f, master=self)
@@ -207,12 +210,12 @@ class Graph_Frame(Tk.Frame):
         self.selected_var.grid(column=1,row=1,sticky='EW',pady=3,padx=3)
 
         #
-        self.ymin = Tk.Entry(self)
-        self.ymin.grid(column=3,row=1,sticky='EW',pady=3,padx=3)
+        self.ymin_entry = Tk.Entry(self)
+        self.ymin_entry.grid(column=3,row=1,sticky='EW',pady=3,padx=3)
 
         #
-        self.ymax = Tk.Entry(self)
-        self.ymax.grid(column=3,row=2,sticky='EW',pady=3,padx=3)
+        self.ymax_entry = Tk.Entry(self)
+        self.ymax_entry.grid(column=3,row=2,sticky='EW',pady=3,padx=3)
 
 
 
@@ -229,6 +232,18 @@ class Graph_Frame(Tk.Frame):
         #TODO : Compute min max
         #Update plot with new value if name is found
         if self.plotmode == "scalar":
+
+            if self.first:
+                self.ymin = value_list[0]
+                self.ymax = value_list[0]
+            else:
+                self.first = False
+                self.ymin = np.minimum(self.ymin,value_list[0])
+                self.ymax = np.maximum(self.ymax,value_list[0])
+            
+
+            self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
+            
             self.y.appendleft(value_list[0])
             self.line1.set_data(np.arange(len(self.y))[::-1],self.y)
             self.dataPlot.draw()
@@ -242,6 +257,7 @@ class Graph_Frame(Tk.Frame):
             return
         self.plotted_varid = int(self.liste.curselection()[0])
         self.model.log_var(self.plotted_varid)
+        self.first = True
 
     def remove_var_from_plot(self):
         #Remove selected var
