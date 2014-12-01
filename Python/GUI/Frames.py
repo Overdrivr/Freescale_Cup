@@ -31,13 +31,19 @@ class COM_Frame(Tk.Frame):
         self.txt_ports = Tk.Label(self,text="COM PORTS")
         self.txt_ports.grid(column=0,row=0,sticky='EW',pady=3,padx=3)
 
-        self.liste = Tk.Listbox(self,height=1)
-        self.liste.grid(column=0,row=1,sticky='EW',columnspan=2,pady=3,padx=3)
+        #
+        self.listbox_frame = Tk.Frame(self)
+        self.listbox_frame.grid(column=0,row=1,sticky='NSEW',pady=3,padx=3,columnspan=3)
+        
+        self.liste = Tk.Listbox(self.listbox_frame,height=3,width=40)
+        self.liste.pack(side = Tk.LEFT,fill=Tk.X)
 
-        self.scrollbar_liste = Tk.Scrollbar(self.liste)
+        self.scrollbar_liste = Tk.Scrollbar(self.listbox_frame)
         self.scrollbar_liste.config(command = self.liste.yview)
         self.liste.config(yscrollcommand = self.scrollbar_liste.set)
         self.scrollbar_liste.pack(side=Tk.RIGHT)
+
+        
         
         self.bouton_refresh_ports = Tk.Button(self, text="REFRESH", command = self.set_COM_ports)
         self.bouton_refresh_ports.grid(column=0,row=2,sticky='EW',pady=3,padx=3)
@@ -46,7 +52,7 @@ class COM_Frame(Tk.Frame):
         self.bouton_connect.grid(column=1,row=2,sticky='EW',pady=3,padx=3)
         
         self.txt_connected = Tk.Label(self,text="NOT CONNECTED",fg='red')
-        self.txt_connected.grid(column=1,row=0,sticky='EW')
+        self.txt_connected.grid(column=2,row=0,sticky='EW')
 
         #Subscriptions
         pub.subscribe(self.com_connected,'com_port_connected')

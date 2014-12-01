@@ -24,11 +24,11 @@ class Application(Tk.Frame):
 
         #COM Frame
         self.frame_com_ports = COM_Frame(self,self.model,bd=2,relief=Tk.GROOVE)
-        self.frame_com_ports.grid(column=0,row=0,sticky='N',pady=5,padx=5)
+        self.frame_com_ports.grid(column=0,row=0,sticky='NSEW',pady=5,padx=5)
 
         #Logger frame
         self.frame_logger = Logger_Frame(self,self.model,bd=2,relief=Tk.GROOVE)
-        self.frame_logger.grid(column=0,row=1,sticky='N',pady=5,padx=5)
+        self.frame_logger.grid(column=0,row=1,sticky='NSEW',pady=5,padx=5)
 
         #Graph 1 frame
         self.frame_graph1 = Graph_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
@@ -109,7 +109,7 @@ def test_rx_table():
         pub.sendMessage('new_rx_byte',rxbyte=a)
 
 def printout_char(rxbyte):
-    print(rxbyte)
+    print("ignored char : ",rxbyte)
 
 """
 Program startup
@@ -117,7 +117,7 @@ Program startup
 if __name__ == '__main__':
     app = Application()
     
-    pub.subscribe(printout_char,'new_ignored_rx_byte')
+    #pub.subscribe(printout_char,'new_ignored_rx_byte')
     t = Timer(1.0,test_rx_table)
     #t.start()
     
