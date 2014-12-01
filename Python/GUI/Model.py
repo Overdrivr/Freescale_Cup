@@ -37,10 +37,14 @@ class Model():
 
         if self.serialthread.isAlive():
             self.serialthread.join(1)
-            if self.serialthread.isAlive():
-                print("--- Thread not properly joined.")
-            else:
-                print("--- Thread stopped.")
+            
+        if self.serialthread.isAlive():
+            self.serialthread.join(1)
+
+        if self.serialthread.isAlive():
+            print("--- Thread not properly joined.")
+        else:
+            print("--- Thread stopped.")
         
     def start_logger(self):
         #Get command for querying variable table MCU side
