@@ -42,6 +42,7 @@ struct log
 {
 	variable variables[128];
 	uint16_t current_index;
+	uint16_t previous_index;
 };
 
 void init_log();

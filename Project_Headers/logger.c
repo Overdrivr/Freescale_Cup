@@ -15,6 +15,7 @@ void init_log()
 	uint16_t i;
 	char default_name[] = {"undefined"};
 	Log.current_index = 0;
+	Log.previous_index = 0;
 	for(i = 0 ; i < 128 ; i++)
 	{
 		Log.variables[i].size = 0;
@@ -27,6 +28,7 @@ void init_log()
 		
 }
 
+//TODO : Replace octets by array_size ?
 //Returns 0 if ok, 1 if size exceeds log capacity
 uint8_t add_to_log(uint8_t* adress, uint16_t octets, datatype type, uint8_t readonly, char* name)
 {
@@ -57,9 +59,11 @@ void update_log_serial()
 	
 	uint8_t buffer[512];
 	
-	//Transmit data to serial
-	for(i = 0 ; i < Log.current_index ; i++)
-	{
+	uint16_t interval = 1;
+	
+	//Transmit data to serial - Only one variable per mainloop
+	for(i = Log.previous_index ; i < Log.previous_index + interval ; i++)
+	{		
 		if(Log.variables[i].send == 0)
 			continue;
 		
@@ -103,6 +107,7 @@ void update_log_serial()
 		
 		//Write variable ID
 		temp_ptr = (uint8_t*)(&i);
+		serial_printf("%d",*temp_ptr);
 		buffer[j] = *temp_ptr;		j++;
 		buffer[j] = *(temp_ptr+1);	j++;
 			
@@ -112,9 +117,15 @@ void update_log_serial()
 			buffer[j] = *(Log.variables[i].ptr + k);
 			j++;
 		}
-			
+					
 		//Send to serial protocol
 		send_serial_frame(buffer,j);
+	}
+	
+	Log.previous_index += interval;
+	if(Log.previous_index == Log.current_index)
+	{
+		Log.previous_index = 0;
 	}
 }
 
@@ -146,10 +157,10 @@ void log_process_serial(ByteQueue* rx_queue)
 		id = byte;
 		id = (id << 4) + byte2;
 		
-		if(id >= Log.current_index)
+		if(id < Log.current_index)
 		{
 			Log.variables[id].send = 1;
-		}		
+		}
 	}
 	
 	//Clean queue
@@ -160,7 +171,7 @@ void log_process_serial(ByteQueue* rx_queue)
 
 void send_table()
 {
-	uint16_t i,j,k;
+	uint16_t i,j;
 	uint8_t *temp_ptr;
 	uint8_t type;
 	
@@ -223,12 +234,17 @@ void send_table()
 		buffer[j] = *(temp_ptr+1);	j++;
 		
 		//Write name
-		for(k = 0 ; k < 32 ; k++)
-		{
-			buffer[j] = *(Log.variables[i].name + k);
-			j++;
-		}
+		uint8_t k = 0;
 		
+		while(Log.variables[i].name[k] != '\0' || k < 32)
+		{
+			if(k < strlen(Log.variables[i].name))
+				buffer[j] = Log.variables[i].name[k];
+			else
+				buffer[j] = 0;
+			j++;
+			k++;
+		}		
 	
 	}
 	//Send to serial protocol
