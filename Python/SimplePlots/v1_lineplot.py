@@ -20,7 +20,7 @@ import matplotlib.animation as animation
 def main():
 
   #Start connection
-  strPort = 'COM5'
+  strPort = 'COM8'
   ser = serial.Serial(strPort, 115200)
   print('reading from serial port %s...' % strPort)
      
