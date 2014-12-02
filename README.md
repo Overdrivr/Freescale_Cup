@@ -40,9 +40,9 @@ Python for real time data plot
 Python 3.4.2 minimum (https://www.python.org/downloads/)
 
 ### Modules to install (manually or via pip)
-*matplotlib 1.4.2 
-*numpy 1.9.0 minimum
-*scipy 0.14 minimum
-*pyserial
-*pyttk
-*PyPubSub
+* matplotlib 1.4.2 
+* numpy 1.9.0 minimum
+* scipy 0.14 minimum
+* pyserial
+* pyttk
+* PyPubSub
