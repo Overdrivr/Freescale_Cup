@@ -242,8 +242,8 @@ class Graph_Frame(Tk.Frame):
             if self.first:
                 self.ymin = value_list[0]
                 self.ymax = value_list[0]
-            else:
                 self.first = False
+            else:
                 self.ymin = np.minimum(self.ymin,value_list[0])
                 self.ymax = np.maximum(self.ymax,value_list[0])
             
