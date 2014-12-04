@@ -17,7 +17,7 @@ class ESC_STATE(Enum):
     NEXT = 1
 
 #Robust serial protocol with bit stuffing
-#TODO : Use publish suscribe instead of callback for full frame decoded
+# ON RX ERROR, RESET PROTOCOL ?
 class SerialProtocol():
 
     def __init__(self):
