@@ -35,8 +35,12 @@ class Application(Tk.Frame):
         self.frame_graph1.grid(column=1,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
 
         #Graph 2 frame
-        self.frame_graph2 = Graph_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
-        self.frame_graph2.grid(column=2,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
+        #self.frame_graph2 = Graph_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
+        #self.frame_graph2.grid(column=2,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
+
+        #Graph 3 frame
+        self.frame_graph3 = Graph3D_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
+        self.frame_graph3.grid(column=2,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
 
         #Quit button
         self.bouton_quitter = Tk.Button(self, text="x",command = self.stop)
@@ -117,7 +121,7 @@ Program startup
 if __name__ == '__main__':
     app = Application()
     
-    #pub.subscribe(printout_char,'new_ignored_rx_byte')
+    pub.subscribe(printout_char,'new_ignored_rx_byte')
     t = Timer(1.0,test_rx_table)
     #t.start()
     
