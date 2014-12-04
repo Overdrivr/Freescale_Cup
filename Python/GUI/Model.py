@@ -36,7 +36,7 @@ class Model():
         self.serialthread.stop()
 
         if self.serialthread.isAlive():
-            self.serialthread.join(1)
+            self.serialthread.join(0.1)
             
         if self.serialthread.isAlive():
             self.serialthread.join(1)
