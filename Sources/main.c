@@ -58,6 +58,8 @@ int main(void)
 	add_to_log(&command,4,FLOAT,1,"command");
 	add_to_log(test,4*128,FLOAT,1,"table");
 	
+	serial_printf("READY");
+	
 	for(;;)
 	{	   
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)

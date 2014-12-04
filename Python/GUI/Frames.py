@@ -312,16 +312,16 @@ class Graph3D_Frame(Tk.Frame):
         #self.a.set_ylim([-255, 255])
         #self.line1, = add_collection3d(col, zs=0, zdir=u'z')
 
-        v = 127
-        self.x = np.zeros(v*16+1)
-        self.y = np.zeros(v*16+1) 
-        self.z = np.zeros(v*16+1)
+        v = 128
+        self.x = np.empty([16,128])
+        self.y = np.empty([16,128])
+        self.z = np.empty([16,128])        
 
         for y in range(0,16):
-            for x in range(0,v):
-                self.x[y * v + x + 1] = x
-                self.y[y * v + x + 1] = y
-        
+            for x in range(0,128):
+                self.x[y][x] = x
+                self.y[y][x] = y
+                self.z[y][x] = y * 0.01 
         
         self.zmin = 0
         self.zmax = 16
@@ -370,10 +370,12 @@ class Graph3D_Frame(Tk.Frame):
             """
 
         #self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
-        print(value_list)
-        #self.z = np.concatenate(value_list[:126],self.z[:1920])
+        #print(value_list)
+        print(self.z[0:2,:])
+        self.z = np.roll(self.z,1,axis=0)
+        #self.z[0,:] = value_list
         #self.line1.set_data(self.x,self.y,self.z)
-        self.a.plot_wireframe(self.x, self.y, self.z, rstride=10, cstride=10)
+        self.a.plot_wireframe(self.x, self.y, self.z, rstride=1, cstride=1)
         self.dataPlot.draw()
 
     def switch_plot_mode(self):
