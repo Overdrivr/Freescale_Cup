@@ -39,7 +39,12 @@ void init_serial_protocol();
  */
 void send_serial_frame(uint8_t* framedata, uint16_t framesize);
 
-
+/*
+ * Alternative send_serial_frame to send data in chunks
+ */
+void start_serial_frame();
+void append_serial_frame(uint8_t* framedata,uint16_t framesize);
+void end_serial_frame();
 /*
  * Processes raw serial reception queue
  * Call as often as possible

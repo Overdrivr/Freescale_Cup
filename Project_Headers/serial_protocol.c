@@ -54,6 +54,38 @@ void send_serial_frame(uint8_t* framedata, uint16_t framesize)
 }
 
 
+
+void start_serial_frame()
+{
+	//Write start of frame byte
+	serial_write(&SOF_,1);
+}
+
+void append_serial_frame(uint8_t* framedata,uint16_t framesize)
+{
+	uint16_t i;
+	//Write data
+	for(i = 0 ; i < framesize ; i++)
+	{
+		//See serial_protocols_definition.xlsx
+		if(*(framedata + i) == SOF_ ||
+		   *(framedata + i) == EOF_ ||
+		   *(framedata + i) == ESC_)
+		{
+			//If data contains one of the flags, we escape it before
+			serial_write(&ESC_,1);
+		}
+		serial_write(framedata + i,1);
+	}
+}
+
+void end_serial_frame()
+{	
+	//Set EOFrame
+	serial_write(&EOF_,1);	
+}
+
+
 void update_serial_protocol()
 {
 	uint8_t received_byte;
