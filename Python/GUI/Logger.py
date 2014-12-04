@@ -64,7 +64,7 @@ class Logger():
                     
                     # Store to list
                     new_values.append(val)
-
+                    
                 #Publish the value update
                 pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
 
@@ -95,7 +95,7 @@ class Logger():
                     
                     # Store to list
                     new_values.append(val)
-
+                print("Lenght : ",len(new_values))
                 #Publish the value update
                 pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
 
@@ -114,22 +114,25 @@ class Logger():
                 write_rights = (databyte >> 4) == 0x0F
                 
                 # Read variable ID
-                b1 = frame[index]
-                index += 1
-                b2 = frame[index]
-                index += 1
-                varid = (b2 << 8) + b1
+                temp = bytearray()
+                temp.append(frame[index])
+                temp.append(frame[index+1])
+                index += 2
+                
+                varid = struct.unpack('H',temp)[0]
 
                 # Read variable size (1 if scalar, n if array)
-                array_size1 = frame[index]
-                index += 1
-                array_size2 = frame[index]
-                index += 1
-                array_size = (array_size2 << 8) + array_size1
+                temp = bytearray()
+                temp.append(frame[index])
+                temp.append(frame[index+1])
+                index += 2
+                
+                array_size = struct.unpack('H',temp)[0]
                 
                 # Read name
                 name = ""
-                    #32 characters
+                
+                #32 characters max
                 for x in range(0,32):
                     c = str(chr(frame[index]))
                     name += c
