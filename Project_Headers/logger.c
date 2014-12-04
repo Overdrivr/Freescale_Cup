@@ -57,7 +57,7 @@ void update_log_serial()
 	uint8_t *temp_ptr;
 	uint8_t type;
 	
-	uint8_t buffer[512];
+	uint8_t buffer[2048];
 	
 	uint16_t interval = 1;
 	
@@ -107,10 +107,10 @@ void update_log_serial()
 		
 		//Write variable ID
 		temp_ptr = (uint8_t*)(&i);
-		serial_printf("%d",*temp_ptr);
+		//serial_printf("%d",*temp_ptr);
 		buffer[j] = *temp_ptr;		j++;
 		buffer[j] = *(temp_ptr+1);	j++;
-			
+		//serial_printf("size=%d",Log.variables[i].size);
 		//Write data
 		for(k = 0 ; k < Log.variables[i].size ; k++)
 		{
@@ -119,7 +119,14 @@ void update_log_serial()
 		}
 					
 		//Send to serial protocol
+		if(j > 2048)
+			serial_printf("ERROR : payload > 2048. Not sent.");
+			break;
+		
+		//CHECK IF QUEUE IS NOT FULL ?
+			
 		send_serial_frame(buffer,j);
+		serial_printf("sent=%d",j);
 	}
 	
 	Log.previous_index += interval;
@@ -175,7 +182,7 @@ void send_table()
 	uint8_t *temp_ptr;
 	uint8_t type;
 	
-	uint8_t buffer[512];
+	uint8_t buffer[512] = {0};
 	j = 0;
 	
 	//Return table command
@@ -219,6 +226,7 @@ void send_table()
 				type = 0x06;
 				break;
 		}
+		
 		if(Log.variables[i].rw_rights == 0)
 			type += 0xF0;
 		

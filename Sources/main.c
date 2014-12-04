@@ -23,6 +23,7 @@ int main(void)
 	float command = 0.f;
 	float command_engines = 0.f;
 	int engines_on = 1;
+	int i;
 	
 	//Parameters
 	float P = 0.01;
@@ -35,15 +36,27 @@ int main(void)
 	data.edgeright = 15;
 	data.alpha = 0.25;
 	
-	int32_t test = 0;
 	init_serial_protocol();
 	init_log();
-	add_to_log(&test, 4, INT32,1,"test_var");
 	
 	//TFC_HBRIDGE_ENABLE;
 	
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
+	
+	float test[128] = {0};
+	
+	for(i = 0 ; i < 128 ; i++)
+	{
+		test[i] = i;
+	}
+	
+	
+	add_to_log(&position_error, 4, FLOAT,1,"error");
+	add_to_log(&error_derivative, 4, FLOAT,1,"derivative");
+	add_to_log(&error_integral, 4, FLOAT,1,"integral");
+	add_to_log(&command,4,FLOAT,1,"command");
+	add_to_log(test,4*128,FLOAT,1,"table");
 	
 	for(;;)
 	{	   
@@ -51,14 +64,19 @@ int main(void)
 		TFC_Task();
 		
 		//Logger debug
-		if(TFC_Ticker[2] > 300)
+		if(TFC_Ticker[2] > 100)
 		{
 			TFC_Ticker[2] = 0;
 			update_log_serial();
-			test++;
-			if(test > 128)
-				test = -128;
+			
 			update_serial_protocol();
+			
+			for(i = 0 ; i < 128 ; i++)
+			{
+				test[i] += 1.f;
+				if(test[i] > 128.f)
+					test[i] = 0;
+			}
 		}
 		
 		//Led state
@@ -69,7 +87,7 @@ int main(void)
 			//serial_printf("A");
 			
 		}
-		/*
+		
 		//Compute line position
 		if(read_process_data(&data))
 		{
@@ -91,6 +109,8 @@ int main(void)
 			//TERMINAL_PRINTF("%d ",val);
 			//TERMINAL_PRINTF("\n");
 			
+			//send_serial_frame(&(data.raw_image),2*128);
+			
 			//Output image to serial
 			//imageToSerialf(data.calibration_data);
 			//imageToSerialf(data.filtered_image);
@@ -99,12 +119,12 @@ int main(void)
 		}
 		
 		//Update direction every 100ms
-		if(TFC_Ticker[2] > 100)
+		if(TFC_Ticker[7] > 100)
 		{
-			TFC_Ticker[2] = 0;
+			TFC_Ticker[7] = 0;
 			
 			//Compute servo command between -1.0 & 1.0
-			command = P * position_error; //+ I * error_integral;
+			command = P * position_error;// + D * error_derivative + I * error_integral;
 			
 			if(command > 1.f)
 				command = 1.f;
@@ -117,9 +137,9 @@ int main(void)
 			//TERMINAL_PRINTF("%d ", val);
 			//TERMINAL_PRINTF("\n");
 		}
-		*/
+		
 		//Button events
-		/*if(TFC_PUSH_BUTTON_0_PRESSED)
+		if(TFC_PUSH_BUTTON_0_PRESSED)
 		{
 			calibrate_data(&data);
 			error_integral = 0.f;
@@ -132,8 +152,8 @@ int main(void)
 			//Start-Stop engines
 			if(engines_on == 0)
 			{
-				engines_on = 1;
-				TFC_HBRIDGE_ENABLE;
+				//engines_on = 1;
+				//TFC_HBRIDGE_ENABLE;
 				TFC_BAT_LED3_ON;
 			}	
 			else
@@ -143,7 +163,7 @@ int main(void)
 				TFC_BAT_LED3_OFF;
 			}
 				
-		}*/
+		}
 		/*
 		if(engines_on == 0)
 		{
