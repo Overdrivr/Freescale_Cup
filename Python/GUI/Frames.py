@@ -308,24 +308,23 @@ class Graph3D_Frame(Tk.Frame):
         #
         self.f = Figure(figsize=(5,4), dpi=100)
         self.a = self.f.add_subplot(111, projection="3d")
-        #self.a.set_xlim([0, 127])
-        #self.a.set_ylim([-255, 255])
-        #self.line1, = add_collection3d(col, zs=0, zdir=u'z')
 
-        v = 128
-        self.x = np.empty([16,128])
-        self.y = np.empty([16,128])
-        self.z = np.empty([16,128])        
+        self.data = np.zeros((3,16*128))
+        self.a.set_xlim([0, 127])
+        self.a.set_ylim([0, 16])
+        self.a.set_zlim([0, 0.5])
+
+        #X, Y = np.meshgrid([1,2,3], [4,5,6,7])
 
         for y in range(0,16):
             for x in range(0,128):
-                self.x[y][x] = x
-                self.y[y][x] = y
-                self.z[y][x] = y * 0.01 
+                self.data[0,y*128+x] = x
+                self.data[1,y*128+x] = y
+                self.data[2,y*128+x] = y * 0.01
+                
+        print(self.data[:,0:15])
         
-        self.zmin = 0
-        self.zmax = 16
-        self.first = False
+        self.line1, = self.a.plot(self.data[0, 0:1], self.data[1, 0:1], self.data[2, 0:1])
 
         #
         self.dataPlot = FigureCanvasTkAgg(self.f, master=self)
@@ -371,11 +370,14 @@ class Graph3D_Frame(Tk.Frame):
 
         #self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
         #print(value_list)
-        print(self.z[0:2,:])
-        self.z = np.roll(self.z,1,axis=0)
+        #print(self.z[0:2,:])
+        self.data[2,:] = np.roll(self.data[2,:],-128,axis=0)
         #self.z[0,:] = value_list
         #self.line1.set_data(self.x,self.y,self.z)
-        self.a.plot_wireframe(self.x, self.y, self.z, rstride=1, cstride=1)
+        #self.a.plot_wireframe(self.x, self.y, self.z, rstride=1, cstride=1)
+        self.line1.set_data(self.data[0:2,:])
+        self.line1.set_3d_properties(self.data[2,:])
+        #self.line1.set_segments(self.data)
         self.dataPlot.draw()
 
     def switch_plot_mode(self):

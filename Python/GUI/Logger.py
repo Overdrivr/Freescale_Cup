@@ -95,7 +95,7 @@ class Logger():
                     
                     # Store to list
                     new_values.append(val)
-                print("Lenght : ",len(new_values))
+                
                 #Publish the value update
                 pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
 
