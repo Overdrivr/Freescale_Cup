@@ -71,6 +71,19 @@ class Model():
         # Send command
         if self.serialthread.isAlive():
             self.serialthread.write(frame)
+
+    def write_to_var(self,varid,value):
+        # Get command
+        cmd = self.logger.get_write_cmd(varid,value)
+        print(cmd)
+        if cmd == None:
+            return
+        # Feed command to serial protocol payload processor
+        frame = self.serial_protocol.process_tx_payload(cmd)
+        
+        # Send command
+        if self.serialthread.isAlive():
+            self.serialthread.write(frame)
         
     
 # List of events that can be subscribed to

@@ -8,7 +8,7 @@ from pubsub import pub
 
 # Logger class
 # TODO : parse all datatype
-# TODO : Deal with array var
+# TODO : ERROR, bases are 16 not 10 ?
 
 class Logger():
 
@@ -165,10 +165,46 @@ class Logger():
     def get_read_cmd(self,var_id):
         cmd = bytearray()
         cmd.append(int('00',16))
-        cmd.append(int('00',16))
+        cmd.append(int('00',16))#IGNORED ?
         #TO TEST FOR IDs > 255
         cmd.append(var_id)
         cmd.append((var_id >> 8))
+        return cmd
+    
+    def get_write_cmd(self,var_id,value):
+        # Check var in list
+        if var_id >= len(self.variables):
+            return
+        if not self.variables[var_id][0] == var_id:
+            return
+        
+        # Find type
+        fmt = self.variables[var_id][1]
+        print("Parsing to ",fmt)
+        
+        # Parse double to type
+        val = None
+        if fmt == 0:
+            val = float(value)
+        elif fmt == 6:
+            val = int(value)
+        else:
+            return
+        
+        # Build command
+        
+        cmd = bytearray()
+        cmd.append(int('01'))
+        cmd.append(str(fmt))
+        #TO TEST FOR IDs > 255
+        cmd.append(var_id)
+        cmd.append((var_id >> 8))
+        #TODO : DEAL WITH ALL VARIABLE SIZES
+        cmd.append(val)
+        cmd.append((val >> 8))
+        cmd.append((val >> 8))
+        cmd.append((val >> 8))
+        
         return cmd
 
     def get_var_list():
