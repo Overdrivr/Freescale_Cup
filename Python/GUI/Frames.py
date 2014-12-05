@@ -132,6 +132,15 @@ class Logger_Frame(Tk.Frame):
         self.var_list.column('size',anchor='center',minwidth=0,width=100, stretch=Tk.NO)
         self.var_list.heading('size', text='size')
 
+        self.value = Tk.DoubleVar()
+        self.value.set(0.0)
+
+        self.entry = Tk.Entry(self,width=6,textvariable=self.value)
+        self.entry.grid(column = 0, row = 4, sticky="EW",padx=3,pady=3)
+        
+        self.bouton_write = Tk.Button(self, text="WRITE", command = self.write_value)
+        self.bouton_write.grid(column=1,row=4,sticky='EW',pady=3,padx=3)
+
     def activate_log(self):
         # Activate serial data interception
         self.change_state("inprocess")
@@ -160,6 +169,16 @@ class Logger_Frame(Tk.Frame):
         else:
             self.txt_active.config(text="INACTIVE",fg='blue')
         self.parent.update_idletasks()
+
+    def write_value(self):
+        # Find selected variable
+
+        # Check rights
+
+        # Get entry value
+
+        # Tell API to write value
+        self.model.write_to_var(0,0)
 
 """
 Graph GUI Frame
@@ -238,7 +257,7 @@ class Graph_Frame(Tk.Frame):
         
         #TODO : Compute min max
         #Update plot with new value if name is found
-        if self.plotmode == "scalar":
+        if len(value_list) == 1:
 
             if self.first:
                 self.ymin = value_list[0]
@@ -254,7 +273,10 @@ class Graph_Frame(Tk.Frame):
             self.y.appendleft(value_list[0])
             self.line1.set_data(np.arange(len(self.y))[::-1],self.y)
             self.dataPlot.draw()
-
+        else:            
+            self.line1.set_data(np.arange(len(value_list))[::-1],value_list)
+            self.dataPlot.draw()
+        
     def switch_plot_mode(self):
         #TODO : Switch x axis between time and array index
         pass
