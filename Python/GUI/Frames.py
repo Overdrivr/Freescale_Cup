@@ -312,7 +312,7 @@ class Graph3D_Frame(Tk.Frame):
         self.data = np.zeros((3,16*128))
         self.a.set_xlim([0, 127])
         self.a.set_ylim([0, 16])
-        self.a.set_zlim([0, 0.5])
+        self.a.set_zlim([0, 100])
 
         #X, Y = np.meshgrid([1,2,3], [4,5,6,7])
 
@@ -321,9 +321,7 @@ class Graph3D_Frame(Tk.Frame):
                 self.data[0,y*128+x] = x
                 self.data[1,y*128+x] = y
                 self.data[2,y*128+x] = y * 0.01
-                
-        print(self.data[:,0:15])
-        
+                        
         self.line1, = self.a.plot(self.data[0, 0:1], self.data[1, 0:1], self.data[2, 0:1])
 
         #
@@ -370,13 +368,17 @@ class Graph3D_Frame(Tk.Frame):
 
         #self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
         #print(value_list)
-        #print(self.z[0:2,:])
-        self.data[2,:] = np.roll(self.data[2,:],-128,axis=0)
-        #self.z[0,:] = value_list
+        
+        self.data[2,:] = np.roll(self.data[2,:],128,axis=0)
+        self.data[2,0:128] = value_list
+        #print("*****")
+        #print(self.data[2,0:128])
+        #print("-----")
+        #print(self.data[2,128:256])
         #self.line1.set_data(self.x,self.y,self.z)
         #self.a.plot_wireframe(self.x, self.y, self.z, rstride=1, cstride=1)
-        self.line1.set_data(self.data[0:2,:])
-        self.line1.set_3d_properties(self.data[2,:])
+        self.line1.set_data(self.data[0:2,:256])
+        self.line1.set_3d_properties(self.data[2,:256])
         #self.line1.set_segments(self.data)
         self.dataPlot.draw()
 
