@@ -16,7 +16,7 @@ class Logger():
         self.log_table = Queue(0)
         self.variables = list()
         self.type_lookup = {0 : '=f',
-                            6 : 'i'
+                            6 : '=i'
                             }
         pub.subscribe(self.new_frame,'new_rx_payload')
 
@@ -32,7 +32,7 @@ class Logger():
         temp2.insert(1,frame[3])
         temp2.insert(1,0)
         temp2.insert(1,0)
-        dataid = struct.unpack("i",temp2)[0]
+        dataid = struct.unpack("=i",temp2)[0]
         
         # Parse 'received_variable_value' payload
 
@@ -166,9 +166,9 @@ class Logger():
         cmd = bytearray()
         cmd.append(int('00',16))
         cmd.append(int('00',16))#IGNORED ?
-        #TO TEST FOR IDs > 255
-        cmd.append(var_id)
-        cmd.append((var_id >> 8))
+        
+        packed = bytes(struct.pack('=H',var_id))
+        cmd.extend(packed)
         return cmd
     
     def get_write_cmd(self,var_id,value):
@@ -182,35 +182,28 @@ class Logger():
         fmt = self.variables[var_id][1]
         print("Parsing to ",fmt)
         
+        cmd = bytearray()
+        cmd.append(int('01'))
+        cmd.append(int(fmt))
+
+        packed = bytes(struct.pack('=H',var_id))
+        cmd.extend(packed)
+        
         # Parse double to type
         val = None
         if fmt == 0:
             val = float(value)
+            packed = bytes(struct.pack('=f',val))
         elif fmt == 6:
             val = int(value)
+            packed = bytes(struct.pack('=i',val))
         else:
             return
-        
-        # Build command
-        
-        cmd = bytearray()
-        cmd.append(int('01'))
-        cmd.append(str(fmt))
-        #TO TEST FOR IDs > 255
-        cmd.append(var_id)
-        cmd.append((var_id >> 8))
-        #TODO : DEAL WITH ALL VARIABLE SIZES
-        cmd.append(val)
-        cmd.append((val >> 8))
-        cmd.append((val >> 8))
-        cmd.append((val >> 8))
+        cmd.extend(packed)       
         
         return cmd
 
-    def get_var_list():
+    def get_var_list(self):
         return self.variables
 
-    
 
-
-        
