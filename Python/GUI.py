@@ -1,13 +1,11 @@
 import tkinter as Tk
-import random
-import sys
-from threading import Thread
-import time
-from Frames import *
 from Model import Model
 from threading import Timer
 from pubsub import pub
 from array import array
+from Frames.COM_Frame import *
+from Frames.Logger_Frame import *
+from Frames.Plot2D_Frame import *
 
 class Application(Tk.Frame):
         
@@ -31,16 +29,12 @@ class Application(Tk.Frame):
         self.frame_logger.grid(column=0,row=1,sticky='NSEW',pady=5,padx=5)
 
         #Graph 1 frame
-        self.frame_graph1 = Graph_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
+        self.frame_graph1 = Plot2D_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
         self.frame_graph1.grid(column=1,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
 
         #Graph 2 frame
-        self.frame_graph2 = Graph_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
+        self.frame_graph2 = Plot2D_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
         self.frame_graph2.grid(column=2,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
-
-        #Graph 3 frame
-        #self.frame_graph3 = Graph3D_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
-        #self.frame_graph3.grid(column=2,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
 
         #Quit button
         self.bouton_quitter = Tk.Button(self, text="x",command = self.stop)

@@ -17,9 +17,9 @@ import numpy as np
 from collections import deque
 
 """
-Graph GUI Frame
+2D Plot GUI Frame
 """
-class Graph_Frame(Tk.Frame):
+class Plot2D_Frame(Tk.Frame):
     def __init__(self,parent,model,tkmaster,**kwargs):
         Tk.Frame.__init__(self,parent,**kwargs)
         self.parent = parent
@@ -47,7 +47,7 @@ class Graph_Frame(Tk.Frame):
         self.bouton_add_var.grid(column=1,row=2,pady=3,padx=3)
 
         #
-        self.bouton_switch_mode = Tk.Button(self, text="SWITCH MODE", command = self.switch_plot_mode)
+        self.bouton_switch_mode = Tk.Button(self, text="REMOVE VAR", command = self.remove_var_from_plot)
         self.bouton_switch_mode.grid(column=2,row=2,pady=3,padx=3)
 
         #
@@ -91,7 +91,6 @@ class Graph_Frame(Tk.Frame):
         if not varid == self.plotted_varid:
             return
         
-        #TODO : Compute min max
         #Update plot with new value if name is found
         if len(value_list) == 1:
 
@@ -112,10 +111,6 @@ class Graph_Frame(Tk.Frame):
         else:            
             self.line1.set_data(np.arange(len(value_list))[::-1],value_list)
             self.dataPlot.draw()
-        
-    def switch_plot_mode(self):
-        #TODO : Switch x axis between time and array index
-        pass
     
     def add_var_to_plot(self):
         if not self.liste.curselection():
