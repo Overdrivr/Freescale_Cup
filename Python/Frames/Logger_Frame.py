@@ -1,15 +1,6 @@
 import tkinter as Tk
-import random
-import sys
-from threading import Thread
-import time
 import ttk as ttk
 from pubsub import pub
-import numpy as np
-from collections import deque
-
-
-
 
 """
 Logger GUI Frame
@@ -19,7 +10,7 @@ class Logger_Frame(Tk.Frame):
         Tk.Frame.__init__(self,parent,**kwargs)
         self.parent = parent
         self.model = model
-
+        
         pub.subscribe(self.listener_table_received,'logtable_update')
 
         self.txt_log = Tk.Label(self,text="LOGGER")
@@ -80,10 +71,16 @@ class Logger_Frame(Tk.Frame):
 
     def write_value(self):
         # Find selected variable
+        items = tree.selection()
 
+        if items == None:
+            return
+        
         # Check rights
+        # TODO
 
         # Get entry value
+        value = self.value.get()
 
         # Tell API to write value
-        self.model.write_to_var(0,0)
+        self.model.write_to_var(0,value)
