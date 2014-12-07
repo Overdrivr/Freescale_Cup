@@ -12,7 +12,8 @@ class Application(Tk.Frame):
     def __init__(self, **kwargs):
         #Create window
         self.root = Tk.Tk()
-
+        self.root.geometry('+0+0')
+        
         #Init master frame
         Tk.Frame.__init__(self,self.root,width=640, height=480)
         self.pack()

@@ -71,16 +71,13 @@ class Logger_Frame(Tk.Frame):
 
     def write_value(self):
         # Find selected variable
-        items = tree.selection()
-
-        if items == None:
-            return
+        item = self.var_list.selection()
         
-        # Check rights
-        # TODO
+        if len(item) == 0:
+            return
 
         # Get entry value
         value = self.value.get()
 
         # Tell API to write value
-        self.model.write_to_var(0,value)
+        self.model.write_to_var(item[0],value)

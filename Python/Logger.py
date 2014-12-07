@@ -177,10 +177,13 @@ class Logger():
             return
         if not self.variables[var_id][0] == var_id:
             return
+
+        # Check rights
+        if not self.variables[var_id][3] == 1:
+            return
         
         # Find type
         fmt = self.variables[var_id][1]
-        print("Parsing to ",fmt)
         
         cmd = bytearray()
         cmd.append(int('01'))
@@ -205,5 +208,4 @@ class Logger():
 
     def get_var_list(self):
         return self.variables
-
 

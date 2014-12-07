@@ -75,7 +75,7 @@ class Model():
     def write_to_var(self,varid,value):
         # Get command
         cmd = self.logger.get_write_cmd(varid,value)
-        print(cmd)
+        
         if cmd == None:
             return
         # Feed command to serial protocol payload processor
