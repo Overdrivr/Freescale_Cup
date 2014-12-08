@@ -19,7 +19,6 @@ int main(void)
 	float error_derivative = 0.f;
 	float error_integral = 0.f;
 	float looptime = 0.f;
-	int val = 0.f;
 	float command = 0.f;
 	float command_engines = 0.f;
 	int engines_on = 1;
@@ -51,14 +50,19 @@ int main(void)
 		test[i] = i;
 	}
 	
-	
 	add_to_log(&position_error, 4, FLOAT,1,"error");
 	add_to_log(&error_derivative, 4, FLOAT,1,"derivative");
 	add_to_log(&error_integral, 4, FLOAT,1,"integral");
-	add_to_log(&command,4,FLOAT,1,"command");
-	add_to_log(test,4*128,FLOAT,1,"table");
 	
-	serial_printf("READY");
+	add_to_log(&command,4,FLOAT,1,"command");
+	//add_to_log(test,4*128,FLOAT,1,"table");
+	
+	add_to_log(&P,4,FLOAT,0,"P");
+	add_to_log(&I,4,FLOAT,0,"I");
+	add_to_log(&D,4,FLOAT,0,"D");
+	
+	add_to_log(&command_engines,4,FLOAT,0,"engines");
+	TFC_HBRIDGE_ENABLE;
 	
 	for(;;)
 	{	   
@@ -66,7 +70,7 @@ int main(void)
 		TFC_Task();
 		
 		//Logger debug
-		if(TFC_Ticker[2] > 100)
+		if(TFC_Ticker[2] > 25)
 		{
 			TFC_Ticker[2] = 0;
 			update_log_serial();
@@ -85,9 +89,7 @@ int main(void)
 		if(TFC_Ticker[5] > 500)
 		{
 			TFC_Ticker[5] = 0;
-			led_state ^= 0x01; 
-			//serial_printf("A");
-			
+			led_state ^= 0x01; 			
 		}
 		
 		//Compute line position
@@ -102,22 +104,6 @@ int main(void)
 			position_error = data.line_position;
 			error_derivative = (position_error - previous_error) * 1000.f / looptime;
 			error_integral = error_integral + position_error * looptime / 1000.f;
-			
-			
-			//Debug - output to serial
-			//val = position_error;
-			//val = error_integral;
-			//val = error_derivative;
-			//TERMINAL_PRINTF("%d ",val);
-			//TERMINAL_PRINTF("\n");
-			
-			//send_serial_frame(&(data.raw_image),2*128);
-			
-			//Output image to serial
-			//imageToSerialf(data.calibration_data);
-			//imageToSerialf(data.filtered_image);
-			//imageToSerial2(data.threshold_image);
-			//imageToSerial16(data.derivate_image);
 		}
 		
 		//Update direction every 100ms
@@ -134,10 +120,6 @@ int main(void)
 				command = -1.f;
 			
 			TFC_SetServo(0, command);
-			
-			val = command * 1000;
-			//TERMINAL_PRINTF("%d ", val);
-			//TERMINAL_PRINTF("\n");
 		}
 		
 		//Button events
@@ -147,7 +129,7 @@ int main(void)
 			error_integral = 0.f;
 			led_state = 3;
 		}
-		
+		/*
 		if(TFC_PUSH_BUTTON_1_PRESSED & TFC_Ticker[6] > 500)
 		{
 			TFC_Ticker[6] = 0;
@@ -155,7 +137,7 @@ int main(void)
 			if(engines_on == 0)
 			{
 				//engines_on = 1;
-				//TFC_HBRIDGE_ENABLE;
+				TFC_HBRIDGE_ENABLE;
 				TFC_BAT_LED3_ON;
 			}	
 			else
@@ -165,18 +147,12 @@ int main(void)
 				TFC_BAT_LED3_OFF;
 			}
 				
-		}
-		/*
-		if(engines_on == 0)
-		{
-			TFC_SetMotorPWM(0.f , 0.f);
-		}
-		else
-		{
-			command_engines =  TFC_ReadPot(0);
-			TFC_SetMotorPWM(command_engines , command_engines);
-			command_engines *= 1000;
 		}*/
+		
+		if(engines_on == 1)
+		{
+			TFC_SetMotorPWM(command_engines , command_engines);
+		}
 		
 		//send_serial_frame(&command_engines,2);
 	
