@@ -169,8 +169,10 @@ class Logger():
         
         packed = bytes(struct.pack('=H',var_id))
         cmd.extend(packed)
+        print(cmd)
         return cmd
-    
+    #TODO : Solve issue when sending negative int
+    #TODO : Writing to float not working
     def get_write_cmd(self,var_id,value):
         # Check var in list
         if var_id >= len(self.variables):
@@ -203,7 +205,7 @@ class Logger():
         else:
             return
         cmd.extend(packed)       
-        
+        print(cmd)
         return cmd
 
     def get_var_list(self):
