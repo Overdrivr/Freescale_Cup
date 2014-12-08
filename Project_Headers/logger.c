@@ -144,6 +144,9 @@ void log_process_serial(ByteQueue* rx_queue)
 	uint8_t byte2;
 	uint16_t id;
 	
+	void* ptr;
+	float* tmp;
+	
 	float* to_float;
 	int32_t* to_int;
 	uint8_t bytes[4]; 
@@ -169,19 +172,26 @@ void log_process_serial(ByteQueue* rx_queue)
 		if(id < Log.current_index)
 		{
 			if(Log.variables[id].rw_rights == 0 && BytesInQueue(rx_queue) >= 4)
-			{				
+			{
 				bytes[0] = ForcedByteDequeue(rx_queue);
 				bytes[1] = ForcedByteDequeue(rx_queue);
 				bytes[2] = ForcedByteDequeue(rx_queue);
 				bytes[3] = ForcedByteDequeue(rx_queue);
-				
+									
 				if(type == 0x00)
-				{
-					to_float = (float*)(bytes);
-					*(Log.variables[id].ptr) = *to_float;
+				{					
+					to_float = (float *)(&bytes[0]);
+										
+					ptr = (void *)(Log.variables[id].ptr);
+					
+					tmp = (float *)(ptr);
+					
+					*tmp = *to_float;
 				}
 				else if(type == 0x06)
 				{
+					
+									
 					to_int = (int*)(bytes);
 					*(Log.variables[id].ptr) = *to_int;
 				}
