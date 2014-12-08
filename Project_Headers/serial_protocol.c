@@ -23,7 +23,7 @@ void init_serial_protocol()
 	protocol_state = IDLE;
 	escape_state = IDLE;
 	
-	SOF_ = 0x7F;
+	SOF_ = 0xF7;
 	EOF_ = 0x7F;
 	ESC_ = 0x7D;
 }

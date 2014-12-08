@@ -23,7 +23,7 @@ class SerialProtocol():
     def __init__(self):
         self.rx_state = RX_STATE.IDLE;
         self.escape_state = ESC_STATE.IDLE;
-        self.SOF = int('7f',16)
+        self.SOF = int('f7',16)
         self.EOF = int('7f',16)
         self.ESC = int('7d',16)
         self.payload = bytearray() 
