@@ -144,6 +144,11 @@ void log_process_serial(ByteQueue* rx_queue)
 	uint8_t byte2;
 	uint16_t id;
 	
+	float* to_float;
+	int32_t* to_int;
+	uint8_t bytes[4]; 
+	uint8_t type;
+	
 	//If command is return table to master
 	if(byte == 0x02)
 	{
@@ -152,16 +157,54 @@ void log_process_serial(ByteQueue* rx_queue)
 	//If command is write variable value
 	else if(byte == 0x01)
 	{
+		type = ForcedByteDequeue(rx_queue);
 		
-	}
-	//If command is return variable
-	else if(byte == 0x00 && BytesInQueue(rx_queue) >= 3)
-	{
 		byte = ForcedByteDequeue(rx_queue);
 		byte2 = ForcedByteDequeue(rx_queue);
 		
 		id = byte;
-		id = (id << 4) + byte2;
+		//TOCHECK : 4 or 8 shift ?
+		id = byte + (byte2<<8);
+		
+		if(id < Log.current_index)
+		{
+			if(Log.variables[id].rw_rights == 0 && BytesInQueue(rx_queue) >= 4)
+			{				
+				bytes[0] = ForcedByteDequeue(rx_queue);
+				bytes[1] = ForcedByteDequeue(rx_queue);
+				bytes[2] = ForcedByteDequeue(rx_queue);
+				bytes[3] = ForcedByteDequeue(rx_queue);
+				
+				if(type == 0x00)
+				{
+					to_float = (float*)(bytes);
+					*(Log.variables[id].ptr) = *to_float;
+				}
+				else if(type == 0x06)
+				{
+					to_int = (int*)(bytes);
+					*(Log.variables[id].ptr) = *to_int;
+				}
+				
+			}
+			else
+			{
+				serial_printf("NOT ENOUGH BYTES");
+			}
+				
+		}
+	}
+	//If command is return variable
+	else if(byte == 0x00 && BytesInQueue(rx_queue) >= 3)
+	{
+		type = ForcedByteDequeue(rx_queue);
+		
+		byte = ForcedByteDequeue(rx_queue);
+		byte2 = ForcedByteDequeue(rx_queue);
+		
+		id = byte;
+		//TOCHECK : 4 or 8 shift ?
+		id = byte + (byte2<<8);
 		
 		if(id < Log.current_index)
 		{
