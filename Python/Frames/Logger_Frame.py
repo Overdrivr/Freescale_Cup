@@ -75,10 +75,10 @@ class Logger_Frame(Tk.Frame):
         
         if len(item) == 0:
             return
-        
+        print(item[0])
         #Process tuple from selection() to index
         #TOCHECK : WHAT HAPPENS WHEN NUMBER > 9
-        id = int(item[0][-1]) - 1
+        id = int(item[0][-1],16) - 1
         
         # Get entry value
         value = self.value.get()
