@@ -169,7 +169,7 @@ class Logger():
         
         packed = bytes(struct.pack('=H',var_id))
         cmd.extend(packed)
-        print(cmd)
+        
         return cmd
     
     def get_write_cmd(self,var_id,value):

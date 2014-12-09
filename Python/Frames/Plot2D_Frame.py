@@ -108,7 +108,22 @@ class Plot2D_Frame(Tk.Frame):
             self.y.appendleft(value_list[0])
             self.line1.set_data(np.arange(len(self.y))[::-1],self.y)
             self.dataPlot.draw()
-        else:            
+        else:
+
+            if self.first:
+                self.ymin = value_list[0]
+                self.ymax = value_list[0]
+                self.first = False
+
+            tmp = value_list
+            tmp.append(self.ymin)
+            tmp.append(self.ymax)
+            
+            self.ymin = np.amin(tmp)
+            self.ymax = np.amax(tmp)
+            
+            self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
+                
             self.line1.set_data(np.arange(len(value_list))[::-1],value_list)
             self.dataPlot.draw()
     
