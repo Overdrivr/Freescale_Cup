@@ -1,7 +1,7 @@
-import random
-import sys
+# Copyright (C) 2014 Rémi Bèges
+# For conditions of distribution and use, see copyright notice in the LICENSE file
+
 from threading import Thread
-import time
 import serial
 from queue import Queue
 from serial.tools.list_ports import comports

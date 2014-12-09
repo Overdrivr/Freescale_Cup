@@ -1,11 +1,9 @@
+# Copyright (C) 2014 Rémi Bèges
+# For conditions of distribution and use, see copyright notice in the LICENSE file
+
 import tkinter as Tk
-import random
-import sys
-from threading import Thread
-import time
 import ttk as ttk
 from pubsub import pub
-from time import time
 import numpy as np
 from collections import deque
 
@@ -37,8 +35,6 @@ class COM_Frame(Tk.Frame):
         self.liste.config(yscrollcommand = self.scrollbar_liste.set)
         self.scrollbar_liste.pack(side=Tk.RIGHT)
 
-        
-        
         self.bouton_refresh_ports = Tk.Button(self, text="REFRESH", command = self.set_COM_ports)
         self.bouton_refresh_ports.grid(column=0,row=2,sticky='EW',pady=3,padx=3)
 

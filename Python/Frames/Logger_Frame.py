@@ -1,3 +1,6 @@
+# Copyright (C) 2014 Rémi Bèges
+# For conditions of distribution and use, see copyright notice in the LICENSE file
+
 import tkinter as Tk
 import ttk as ttk
 from pubsub import pub
@@ -75,9 +78,9 @@ class Logger_Frame(Tk.Frame):
         
         if len(item) == 0:
             return
-        print(item[0])
+        
         #Process tuple from selection() to index
-        #TOCHECK : WHAT HAPPENS WHEN NUMBER > 9
+        # TODO : Get id from tree contents instead        
         id = int(item[0][-1],16) - 1
         
         # Get entry value

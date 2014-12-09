@@ -1,18 +1,15 @@
+# Copyright (C) 2014 Rémi Bèges
+# For conditions of distribution and use, see copyright notice in the LICENSE file
+
 import matplotlib, sys
 matplotlib.use('TkAgg')
 from numpy import arange, sin, pi
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
-from mpl_toolkits.mplot3d import Axes3D
 
 import tkinter as Tk
-import random
-import sys
-from threading import Thread
-import time
 import ttk as ttk
 from pubsub import pub
-from time import time
 import numpy as np
 from collections import deque
 
