@@ -64,7 +64,7 @@ def test_rx_table():
     print("logger table test started.")
     c = bytearray()
     #SOF
-    c.append(int('7f',16))
+    c.append(int('f7',16))
     #CMD
     c.append(int('02',16))
     #DATATYPE
