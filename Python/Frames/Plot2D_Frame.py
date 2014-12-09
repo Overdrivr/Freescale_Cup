@@ -26,9 +26,10 @@ class Plot2D_Frame(Tk.Frame):
         self.index=0
         self.tkmaster = tkmaster
         self.plotted_varid = None
+        self.selected_varid = None
 
-        pub.subscribe(self.listener_table_received,'logtable_update')
         pub.subscribe(self.listener_new_value_received,'var_value_update')
+        pub.subscribe(self.listener_var_selected,'new_var_selected')
 
         # Widgets
         self.liste = Tk.Listbox(self,height=1)
@@ -76,13 +77,8 @@ class Plot2D_Frame(Tk.Frame):
         self.ymax_entry = Tk.Entry(self)
         self.ymax_entry.grid(column=3,row=2,sticky='EW',pady=3,padx=3)
 
-
-
-    def listener_table_received(self,varlist):
-        self.log_vars = varlist
-        self.liste.delete(0,Tk.END)
-        for item in varlist:
-            self.liste.insert(Tk.END,item[4])
+    def listener_var_selected(self,varid):
+        self.selected_varid = varid
 
     def listener_new_value_received(self,varid,value_list):
         if not varid == self.plotted_varid:
@@ -125,9 +121,9 @@ class Plot2D_Frame(Tk.Frame):
             self.dataPlot.draw()
     
     def add_var_to_plot(self):
-        if not self.liste.curselection():
+        if self.selected_varid == None:
             return
-        self.plotted_varid = int(self.liste.curselection()[0])
+        self.plotted_varid = self.selected_varid
         self.model.log_var(self.plotted_varid)
         self.first = True
 

@@ -103,4 +103,8 @@ class Model():
 --- Logger (Logger.py)
     * When variable table has been received : 'logtable_update',varlist
     * When variable value has been received : 'var_value_update',varid,value_list
+
+--- GUI
+    * When the selection of a variable to do something with (read, write) changes:
+    'new_var_selected',varid
 """

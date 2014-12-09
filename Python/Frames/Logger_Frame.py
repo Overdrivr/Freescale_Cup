@@ -25,7 +25,7 @@ class Logger_Frame(Tk.Frame):
         self.bouton_activate = Tk.Button(self, text="RETRIEVE TABLE", command = self.activate_log)
         self.bouton_activate.grid(column=0,row=2,sticky='EW',pady=3,padx=3)
 
-        self.var_list = ttk.Treeview(self, show="headings",columns=("name","type","size"))
+        self.var_list = ttk.Treeview(self, show="headings",columns=("name","type","size"),selectmode="browse")
         self.var_list.grid(column=0,row=3,sticky='EW',columnspan=2,pady=3,padx=3)
         self.var_list.column('name',anchor='center',minwidth=0,width=100)
         self.var_list.heading('name', text='name')
@@ -33,6 +33,7 @@ class Logger_Frame(Tk.Frame):
         self.var_list.heading('type', text='type')
         self.var_list.column('size',anchor='center',minwidth=0,width=100, stretch=Tk.NO)
         self.var_list.heading('size', text='size')
+        self.var_list.bind("<<TreeviewSelect>>", self.variable_selected)
 
         self.value = Tk.DoubleVar()
         self.value.set(0.0)
@@ -50,6 +51,7 @@ class Logger_Frame(Tk.Frame):
         self.model.start_logger()
         
     def listener_table_received(self,varlist):
+        pub.sendMessage("new_var_selected",varid=None)#TO CHECK IF WORKS
         # Signal new state
         self.change_state(state="active")
         # Empty table
@@ -81,10 +83,26 @@ class Logger_Frame(Tk.Frame):
         
         #Process tuple from selection() to index
         # TODO : Get id from tree contents instead        
-        id = int(item[0][-1],16) - 1
+        varid = int(item[0][-1],16) - 1
         
         # Get entry value
         value = self.value.get()
 
         # Tell API to write value
-        self.model.write_to_var(id,value)
+        self.model.write_to_var(varid,value)
+
+    def variable_selected(self,event):
+        # Find selected variable
+        item = self.var_list.selection()
+        
+        if len(item) == 0:
+            return
+        
+        #Process tuple from selection() to index
+        # TODO : Get id from tree contents instead        
+        var_id = int(item[0][-1],16) - 1
+
+        pub.sendMessage("new_var_selected",varid=var_id)
+
+        
+        
