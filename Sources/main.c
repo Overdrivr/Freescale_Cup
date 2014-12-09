@@ -6,6 +6,7 @@
 #include "logger.h"
 
 int main(void)
+
 {
 	TFC_Init();
 	
@@ -49,20 +50,21 @@ int main(void)
 	{
 		test[i] = i;
 	}
-	
+
+	//Readonly variables
+	add_to_log(data.filtered_image,4*128,FLOAT,1,"filtered_line");
+	add_to_log(data.raw_image,4*128,FLOAT,1,"raw_line");
 	add_to_log(&position_error, 4, FLOAT,1,"error");
 	add_to_log(&error_derivative, 4, FLOAT,1,"derivative");
 	add_to_log(&error_integral, 4, FLOAT,1,"integral");
-	
 	add_to_log(&command,4,FLOAT,1,"command");
-	//add_to_log(test,4*128,FLOAT,1,"table");
-	
+	//Read/write variables
 	add_to_log(&P,4,FLOAT,0,"P");
 	add_to_log(&I,4,FLOAT,0,"I");
 	add_to_log(&D,4,FLOAT,0,"D");
-	
 	add_to_log(&command_engines,4,FLOAT,0,"engines");
-	TFC_HBRIDGE_ENABLE;
+	//Test variables (as reference in case of MCU or GUI malfunction)
+	add_to_log(test,4*128,FLOAT,1,"table");
 	
 	for(;;)
 	{	   
@@ -70,11 +72,11 @@ int main(void)
 		TFC_Task();
 		
 		//Logger debug
-		if(TFC_Ticker[2] > 25)
+		if(TFC_Ticker[2] > 100)
 		{
 			TFC_Ticker[2] = 0;
-			update_log_serial();
 			
+			update_log_serial();
 			update_serial_protocol();
 			
 			for(i = 0 ; i < 128 ; i++)
@@ -112,7 +114,7 @@ int main(void)
 			TFC_Ticker[7] = 0;
 			
 			//Compute servo command between -1.0 & 1.0
-			command = P * position_error;// + D * error_derivative + I * error_integral;
+			command = P * position_error + D * error_derivative + I * error_integral;
 			
 			if(command > 1.f)
 				command = 1.f;
@@ -120,6 +122,16 @@ int main(void)
 				command = -1.f;
 			
 			TFC_SetServo(0, command);
+			
+			if(command_engines != 0.f)
+			{
+				TFC_HBRIDGE_ENABLE;
+			}
+			else
+				TFC_HBRIDGE_DISABLE;
+			
+			TFC_SetMotorPWM(command_engines , command_engines);
+			
 		}
 		
 		//Button events
@@ -129,32 +141,6 @@ int main(void)
 			error_integral = 0.f;
 			led_state = 3;
 		}
-		/*
-		if(TFC_PUSH_BUTTON_1_PRESSED & TFC_Ticker[6] > 500)
-		{
-			TFC_Ticker[6] = 0;
-			//Start-Stop engines
-			if(engines_on == 0)
-			{
-				//engines_on = 1;
-				TFC_HBRIDGE_ENABLE;
-				TFC_BAT_LED3_ON;
-			}	
-			else
-			{
-				engines_on = 0;
-				TFC_HBRIDGE_DISABLE;
-				TFC_BAT_LED3_OFF;
-			}
-				
-		}*/
-		
-		if(engines_on == 1)
-		{
-			TFC_SetMotorPWM(command_engines , command_engines);
-		}
-		
-		//send_serial_frame(&command_engines,2);
 	
 		TFC_SetBatteryLED_Level(led_state);
 	}
