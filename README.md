@@ -11,14 +11,13 @@ This repository contains :
   This code is located in /Project_Headers/TFC/ and /Sources/TFC/
   * Custom MCU code to process linescan camera, compute car position on the road and give commands to the direction/motors 
   * Logger files (It is actually not a logger, simply a module that processes serial input on the MCU side and changes variable values/returns variable values to the computer)
-  The code is in logger.h & logger.c 
+  The code is in serial.h serial.c logger.h logger.c serial_protocol.h serial_protocol.c)
 
 2. Computer side
-  * Very simple debug programs written in Python (for plotting, printing serial output)
-  This code is located in /Python/SimplePlots/
-  * Advanced logging & debugging interface that communicates with the MCU 'logger' to write to/read variables on the MCU in real time
+![gui screenshot](https://github.com/Overdrivr/Freescale_Cup/gui.png "GUI Screenshot")
+  Advanced logging & debugging interface that communicates with the MCU 'logger' to write to/read variables on the MCU in 'real' time
   Protocols are defined in serial_protocols_definition.xlsx
-  Python program is located /Python/GUI/ and the file to execute is GUI.py. Extension modules are required, see below for more information
+  Python program is located /Python/ and the file to execute is GUI.py. Extension modules are required, see below for more information
 
 ## Hardware
 
