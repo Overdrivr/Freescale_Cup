@@ -26,9 +26,9 @@ int main(void)
 	int i;
 	
 	//Parameters
-	float P = 0.01;
-	float I = 0.01;
-	float D = 0.001;
+	float P = 0.015;
+	float I = 0;
+	float D = 0.0035;
 	
 	//Camera processing parameters
 	data.threshold_coefficient = 0.65;
