@@ -108,12 +108,14 @@ class Plot2D_Frame(Tk.Frame):
                 self.ymax = value_list[0]
                 self.first = False
 
-            tmp = value_list
-            tmp.append(self.ymin)
-            tmp.append(self.ymax)
+            value_list.append(self.ymin)
+            value_list.append(self.ymax)
             
-            self.ymin = np.amin(tmp)
-            self.ymax = np.amax(tmp)
+            self.ymin = np.amin(value_list)
+            self.ymax = np.amax(value_list)
+
+            value_list.pop()
+            value_list.pop()
             
             self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
                 
