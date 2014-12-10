@@ -199,7 +199,7 @@ void log_process_serial(ByteQueue* rx_queue)
 			}
 			else
 			{
-				serial_printf("NOT ENOUGH BYTES");
+				
 			}
 				
 		}
@@ -230,7 +230,7 @@ void log_process_serial(ByteQueue* rx_queue)
 
 void send_table()
 {
-	uint16_t i,j;
+	uint32_t i,j;
 	uint8_t *temp_ptr;
 	uint8_t type;
 	
@@ -290,6 +290,7 @@ void send_table()
 		buffer[j] = type;			j++;
 		
 		//Data id
+		//TODO : USE void* instead ???
 		temp_ptr = (uint8_t*)(&i);
 		buffer[j] = *temp_ptr;		j++;
 		buffer[j] = *(temp_ptr+1);	j++;
@@ -299,7 +300,7 @@ void send_table()
 		buffer[j] = *(temp_ptr+1);	j++;				
 		
 		//Write name
-		uint8_t k = 0;
+		uint32_t k = 0;
 		
 		while(Log.variables[i].name[k] != '\0' || k < 32)
 		{

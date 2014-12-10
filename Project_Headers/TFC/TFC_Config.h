@@ -13,7 +13,7 @@
 #define NUM_TFC_TICKERS			8
 
 //This is what the exposure time for the Linescan will be set to out of bootup
-#define TFC_DEFAULT_LINESCAN_EXPOSURE_TIME_uS	50000
+#define TFC_DEFAULT_LINESCAN_EXPOSURE_TIME_uS	1000//50000
 
 #define TFC_MOTOR_SWITCHING_FREQUENCY	((float)(4000.0))
 

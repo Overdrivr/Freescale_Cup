@@ -21,14 +21,16 @@ int main(void)
 	float error_integral = 0.f;
 	float looptime = 0.f;
 	float command = 0.f;
-	float command_engines = 0.f;
-	int engines_on = 1;
+	float command_engines = -0.4f;
 	int i;
+	float commandD = 0.f;
+	float commandI = 0.f;
+	float commandP = 0.f;
 	
 	//Parameters
-	float P = 0.015;
+	float P = 0.01;
 	float I = 0;
-	float D = 0.0035;
+	float D = 0.001;
 	
 	//Camera processing parameters
 	data.threshold_coefficient = 0.65;
@@ -66,10 +68,69 @@ int main(void)
 	//Test variables (as reference in case of MCU or GUI malfunction)
 	add_to_log(test,4*128,FLOAT,1,"table");
 	
+	/*TICKERS
+	0 : read line data
+	1 : servo update
+	2 : logger update
+	3 : led update
+	4 : line calibration
+	5 : PID loop time
+	*/
+	uint32_t exposure_time_us = 2000;
+	uint32_t exposure_time_ms = exposure_time_us / 1000;
+	uint32_t servo_update_ms = 20;
+	
+	TFC_SetLineScanExposureTime(exposure_time_us);
+	
 	for(;;)
 	{	   
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
 		TFC_Task();
+		
+		//Compute line position
+		if(read_process_data(&data,exposure_time_ms))
+		{
+			//Compute looptime
+			looptime = TFC_Ticker[5];
+			TFC_Ticker[5] = 0;
+			
+			//Compute errors for PID
+			previous_error = position_error;
+			position_error = data.line_position;
+			error_derivative = (position_error - previous_error) * 1000.f / looptime;
+			error_integral = error_integral + position_error * looptime / 1000.f;
+			
+			commandP = P * position_error;
+			commandI = I * error_integral;
+			commandD = D * error_derivative;
+			
+			//Compute servo command between -1.0 & 1.0
+			command = commandD + commandI + commandP;
+			
+			if(command > 1.f)
+				command = 1.f;
+			if(command < -1.f)
+				command = -1.f;
+		
+		}
+		
+		//Update servo command
+		if(TFC_Ticker[1] > servo_update_ms)
+		{
+			TFC_Ticker[1] = 0;
+			
+			TFC_SetServo(0, command);
+			
+			if(command_engines != 0.f)
+			{
+				TFC_HBRIDGE_ENABLE;
+			}
+			else
+				TFC_HBRIDGE_DISABLE;
+			
+			TFC_SetMotorPWM(command_engines , command_engines);
+			
+		}
 		
 		//Logger debug
 		if(TFC_Ticker[2] > 100)
@@ -88,58 +149,27 @@ int main(void)
 		}
 		
 		//Led state
-		if(TFC_Ticker[5] > 500)
+		if(TFC_Ticker[3] > 500)
 		{
-			TFC_Ticker[5] = 0;
+			TFC_Ticker[3] = 0;
 			led_state ^= 0x01; 			
 		}
 		
-		//Compute line position
-		if(read_process_data(&data))
-		{
-			//Compute looptime
-			looptime = TFC_Ticker[1];
-			TFC_Ticker[1] = 0;
-			
-			//Compute errors for PID
-			previous_error = position_error;
-			position_error = data.line_position;
-			error_derivative = (position_error - previous_error) * 1000.f / looptime;
-			error_integral = error_integral + position_error * looptime / 1000.f;
-		}
-		
-		//Update direction every 100ms
-		if(TFC_Ticker[7] > 100)
-		{
-			TFC_Ticker[7] = 0;
-			
-			//Compute servo command between -1.0 & 1.0
-			command = P * position_error + D * error_derivative + I * error_integral;
-			
-			if(command > 1.f)
-				command = 1.f;
-			if(command < -1.f)
-				command = -1.f;
-			
-			TFC_SetServo(0, command);
-			
-			if(command_engines != 0.f)
-			{
-				TFC_HBRIDGE_ENABLE;
-			}
-			else
-				TFC_HBRIDGE_DISABLE;
-			
-			TFC_SetMotorPWM(command_engines , command_engines);
-			
-		}
-		
-		//Button events
+		//Calibrate
 		if(TFC_PUSH_BUTTON_0_PRESSED)
 		{
-			calibrate_data(&data);
+			calibrate_data(&data,exposure_time_ms);
 			error_integral = 0.f;
 			led_state = 3;
+		}
+		
+		if(TFC_GetDIP_Switch() == 0)
+		{
+			TFC_HBRIDGE_DISABLE;
+		}
+		else
+		{
+			TFC_HBRIDGE_ENABLE;
 		}
 	
 		TFC_SetBatteryLED_Level(led_state);

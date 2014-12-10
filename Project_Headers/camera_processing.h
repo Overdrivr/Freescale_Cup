@@ -32,6 +32,7 @@ struct cameraData
 	int edgeleft;
 	int edgeright;
 	float alpha;
+	int offset;
 };
 
 
@@ -45,7 +46,7 @@ void init_data(cameraData* data);
 
 
 //////////////////////////////////////////////
-int read_process_data(cameraData* data);
+int read_process_data(cameraData* data, uint32_t update_delay_ms);
 /*
  * Reads camera image through serial port, process image and computes line position 
  * data : data structure for holding all informations (for filtering, optimizations, etc.)
@@ -53,7 +54,7 @@ int read_process_data(cameraData* data);
  */
 
 //////////////////////////////////////////////
-void calibrate_data(cameraData* data);
+void calibrate_data(cameraData* data, uint32_t update_delay_ms);
 /*
  * Camera will read 10 frames and compute a correct threshold value
  * 
