@@ -17,7 +17,7 @@ class SerialPortHandler(Thread):
         self.force = False
         self.default_to = False
         self.rxqueue = Queue(0)
-        self.stop_signal = 0;
+        self.running = True;
 
     def connect(self,port,baudrate,force=False,default_to=False):
         self.ser.baudrate = baudrate
@@ -60,21 +60,30 @@ class SerialPortHandler(Thread):
         #Exit prematurely if error
         if terminate:
             print(port, 'port non valid, aborting.')
-            return
+            return False
+        
+        try:
+            self.ser.open()
+        except:
+            print("Error while opening serial port")
+            self.ser.close()
+            return False
 
-        self.ser.open()
-        print('Connected to port ',self.ser.port)
-        pub.sendMessage('com_port_connected',port=self.ser.port)
-        return
+        if self.ser.isOpen():
+            print('Connected to port ',self.ser.port)
+            pub.sendMessage('com_port_connected',port=self.ser.port)
+            return True
+
+        print("Unknow serial connection error, aborting")
         
     def get_ports(self):
         return serial.tools.list_ports.comports()
         
     def stop(self):
-        self.stop_signal = 1;
+        self.running = False;
 
     def write(self, frame):
-        if self.ser.isOpen():
+        if self.ser.isOpen() and self.running:
             return self.ser.write(frame)
 
     def disconnect(self):
@@ -84,12 +93,13 @@ class SerialPortHandler(Thread):
 
     def run(self):
         #Main serial loop      
-        while self.stop_signal == 0:
+        while self.running:
             if self.ser.isOpen() and self.ser.inWaiting() > 0:
                 serialout = self.ser.read()
                 # Freezing on exit after that ?
                 pub.sendMessage("new_rx_byte",rxbyte=serialout)
 
+        #self.disconnect()
         print("Serial thread stopped.")
         
         
