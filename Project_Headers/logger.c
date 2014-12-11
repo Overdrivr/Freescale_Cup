@@ -302,14 +302,13 @@ void send_table()
 		//Write name
 		uint32_t k = 0;
 		
-		while(Log.variables[i].name[k] != '\0' || k < 32)
+		for(k = 0 ; k < 32 ; k++)
 		{
 			if(k < strlen(Log.variables[i].name))
 				buffer[j] = Log.variables[i].name[k];
 			else
 				buffer[j] = 0;
 			j++;
-			k++;
 		}
 		append_serial_frame(buffer,j);
 		j = 0;
