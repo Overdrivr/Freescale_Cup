@@ -21,7 +21,7 @@ int main(void)
 	float error_integral = 0.f;
 	float looptime = 0.f;
 	float command = 0.f;
-	float command_engines = -0.32f;
+	float command_engines = -0.4f;
 	int i;
 	float commandD = 0.f;
 	float commandI = 0.f;
@@ -76,8 +76,8 @@ int main(void)
 	4 : line calibration
 	5 : PID loop time
 	*/
-	uint32_t exposure_time_us = 50000;
-	uint32_t exposure_time_ms = 50;
+	uint32_t exposure_time_us = 10000;
+	uint32_t exposure_time_ms = 10;
 	uint32_t servo_update_ms = 20;
 	
 	TFC_SetLineScanExposureTime(exposure_time_us);
