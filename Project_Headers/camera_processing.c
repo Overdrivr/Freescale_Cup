@@ -6,6 +6,7 @@
  */
 
 #include "camera_processing.h"
+#include "serial.h"
 
 void init_data(cameraData* data)
 {
@@ -22,6 +23,7 @@ void init_data(cameraData* data)
 	}
 	data->edges_count = 0;
 	data->line_position = 0;
+	data->valid_line_position = 0;
 	
 	data->threshold = 1000.f;
 	data->threshold_coefficient = 0.65;
@@ -40,11 +42,11 @@ int read_process_data(cameraData* data, uint32_t update_delay_ms)
 	uint8_t edge_signal;
 	uint16_t i;
 	
-	if(TFC_Ticker[0] < update_delay_ms)
+	if(TFC_Ticker[8] < update_delay_ms)
 		return 0;
 	
-	TFC_Ticker[0] = 0;
-		
+	TFC_Ticker[8] = 0;
+	
 	//Record current image & detect min max
 	min = 65535;
 	max = 0;
@@ -120,19 +122,20 @@ int read_process_data(cameraData* data, uint32_t update_delay_ms)
 	if(data->edges_count == 0)
 	{
 		//No edge detected, keep line position
+		//TODO : Monitor when loop goes there, many times it seems
 	}
 	else if(data->edges_count == 1)
 	{
 		//1 edge - compute center & record
 		position = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2;
 		position -= 64;
-		data->line_position = position + data->offset;
+		data->line_position = position;
 	}
 	else if(data->edges_count == 3)
 	{			
 		position = (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2;
 		position -= 64;
-		data->line_position = position + data->offset;
+		data->line_position = position;
 		//TODO : CALL FUNCTION TO SIGNAL START LINE
 	}
 	//Any other value is error
@@ -140,8 +143,21 @@ int read_process_data(cameraData* data, uint32_t update_delay_ms)
 	{
 		//FOR NOW : DO NOT CHANGE THE VALUE
 	}
-	
 	return 1;
+}
+
+
+//Detects erratic behavior of line position, and puts a corrected value in valid_line_position
+//Locks line value if changes from left to right are too big
+uint8_t compute_valid_line_position(cameraData* data)
+{
+	//If the distance between previous and new valid line is > 50
+	int16_t distance = data->valid_line_position - data->line_position;
+	if(distance > 50 || distance < -50)
+		return 1;
+	
+	data->valid_line_position = data->line_position;
+	return 0;
 }
 
 void calibrate_data(cameraData* data, uint32_t update_delay_ms)
@@ -160,10 +176,8 @@ void calibrate_data(cameraData* data, uint32_t update_delay_ms)
 	//Record raw camera image 20 times or stop at 5000 seconds
 	while(counter < 20 && TFC_Ticker[4] < 5000)
 	{
-		if(TFC_Ticker[0] > update_delay_ms)
+		if(read_process_data(data,update_delay_ms))
 		{
-			TFC_Ticker[0] = 0;
-			
 			for(i=0;i<128;i++)
 			{
 				data->calibration_data[i] += LineScanImage1[i];
@@ -182,10 +196,11 @@ void calibrate_data(cameraData* data, uint32_t update_delay_ms)
 	min = data->calibration_data[0];
 	max = data->calibration_data[0];
 	
-	for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
+	for(i = data->edgeleft ; i < (128 - data->edgeright) ; i++)
 	{
 		if(data->calibration_data[i] > max)
 			max = data->calibration_data[i];
+		
 		if(data->calibration_data[i] < min)
 			min = data->calibration_data[i];
 	}		

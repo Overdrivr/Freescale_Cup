@@ -190,12 +190,10 @@ void log_process_serial(ByteQueue* rx_queue)
 				}
 				else if(type == 0x06)
 				{
-					
-									
+					//TODO : Use void ptr
 					to_int = (int*)(bytes);
 					*(Log.variables[id].ptr) = *to_int;
 				}
-				
 			}
 			else
 			{

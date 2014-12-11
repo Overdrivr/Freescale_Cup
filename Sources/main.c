@@ -21,7 +21,7 @@ int main(void)
 	float error_integral = 0.f;
 	float looptime = 0.f;
 	float command = 0.f;
-	float command_engines = -0.4f;
+	float command_engines = -0.32f;
 	int i;
 	float commandD = 0.f;
 	float commandI = 0.f;
@@ -29,8 +29,8 @@ int main(void)
 	
 	//Parameters
 	float P = 0.01;
-	float I = 0;
-	float D = 0.001;
+	float I = 0.f;
+	float D = 0.f;
 	
 	//Camera processing parameters
 	data.threshold_coefficient = 0.65;
@@ -76,11 +76,12 @@ int main(void)
 	4 : line calibration
 	5 : PID loop time
 	*/
-	uint32_t exposure_time_us = 2000;
-	uint32_t exposure_time_ms = exposure_time_us / 1000;
+	uint32_t exposure_time_us = 50000;
+	uint32_t exposure_time_ms = 50;
 	uint32_t servo_update_ms = 20;
 	
 	TFC_SetLineScanExposureTime(exposure_time_us);
+
 	
 	for(;;)
 	{	   
@@ -88,7 +89,7 @@ int main(void)
 		TFC_Task();
 		
 		//Compute line position
-		if(read_process_data(&data,exposure_time_ms))
+		if(read_process_data(&data,exposure_time_ms) == 1)
 		{
 			//Compute looptime
 			looptime = TFC_Ticker[5];
@@ -120,16 +121,6 @@ int main(void)
 			TFC_Ticker[1] = 0;
 			
 			TFC_SetServo(0, command);
-			
-			if(command_engines != 0.f)
-			{
-				TFC_HBRIDGE_ENABLE;
-			}
-			else
-				TFC_HBRIDGE_DISABLE;
-			
-			TFC_SetMotorPWM(command_engines , command_engines);
-			
 		}
 		
 		//Logger debug
@@ -166,10 +157,12 @@ int main(void)
 		if(TFC_GetDIP_Switch() == 0)
 		{
 			TFC_HBRIDGE_DISABLE;
+			TFC_SetMotorPWM(0 , 0);
 		}
 		else
 		{
 			TFC_HBRIDGE_ENABLE;
+			TFC_SetMotorPWM(command_engines , command_engines);
 		}
 	
 		TFC_SetBatteryLED_Level(led_state);

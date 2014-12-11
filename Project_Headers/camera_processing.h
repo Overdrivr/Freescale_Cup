@@ -22,6 +22,7 @@ struct cameraData
 	int rising_edges_position[128];
 	uint16_t edges_count;
 	int16_t line_position;
+	int16_t valid_line_position;
 	
 	//Calibration data
 	float calibration_data[128];
