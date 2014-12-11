@@ -14,7 +14,7 @@ This repository contains :
   The code is in serial.h serial.c logger.h logger.c serial_protocol.h serial_protocol.c)
 
 2. Computer side
-![gui screenshot](https://github.com/Overdrivr/Freescale_Cup/master/gui.png "GUI Screenshot")
+![gui screenshot](https://raw.githubusercontent.com/Overdrivr/Freescale_Cup/master/gui.png) "GUI Screenshot")
   Advanced logging & debugging interface that communicates with the MCU 'logger' to write to/read variables on the MCU in 'real' time
   Protocols are defined in serial_protocols_definition.xlsx
   Python program is located /Python/ and the file to execute is GUI.py. Extension modules are required, see below for more information
