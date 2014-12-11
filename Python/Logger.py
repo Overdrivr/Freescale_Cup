@@ -136,8 +136,6 @@ class Logger():
                     c = str(chr(frame[index]))
                     name += c
                     index += 1
-                
-                print("New var ",name,"[",array_size,"] with id ",varid, 'of type ',datatype, 'with rights ',write_rights)
 
                 #Put everything in tuple
                 t = varid, datatype, array_size, write_rights, name
