@@ -24,6 +24,7 @@ class SerialProtocol():
         self.ESC = int('7d',16)
         self.payload = bytearray() 
         pub.subscribe(self.new_rx_byte,"new_rx_byte")
+        self.framesize = 0;
 
     def new_rx_byte(self, rxbyte):
         newbyte = int.from_bytes(rxbyte,byteorder='big')
@@ -32,6 +33,7 @@ class SerialProtocol():
             if newbyte == self.SOF:
                 # New frame started
                 self.rx_state = RX_STATE.IN_PROCESS
+                self.framesize = 0;
             else:
                 t = newbyte,
                 pub.sendMessage('new_ignored_rx_byte',rxbyte=bytes(t))
@@ -44,6 +46,7 @@ class SerialProtocol():
                 #See serial_protocols_definition.xlsx
                 self.payload.append(newbyte)
                 self.escape_state = ESC_STATE.IDLE
+                self.framesize += 1;
                 
                 
             #Next char can be data or flag (EOF, SOF,..)    
@@ -60,6 +63,7 @@ class SerialProtocol():
                 #Storing data
                 else:
                     self.payload.append(newbyte)
+                    self.framesize += 1;
 
     def process_tx_payload(self, rxpayload):
         frame = bytearray()
