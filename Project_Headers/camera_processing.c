@@ -40,12 +40,12 @@ int read_process_data(cameraData* data, uint32_t update_delay_ms)
 	float val;
 	float position;
 	uint8_t edge_signal;
-	uint16_t i;
+	int16_t i;
 	
-	if(TFC_Ticker[8] < update_delay_ms)
-		return 0;
+	if(TFC_Ticker[0] < update_delay_ms)
+		return 1;
 	
-	TFC_Ticker[8] = 0;
+	TFC_Ticker[0] = 0;
 	
 	//Record current image & detect min max
 	min = 65535;
@@ -143,7 +143,7 @@ int read_process_data(cameraData* data, uint32_t update_delay_ms)
 	{
 		//FOR NOW : DO NOT CHANGE THE VALUE
 	}
-	return 1;
+	return 0;
 }
 
 

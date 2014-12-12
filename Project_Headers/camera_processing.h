@@ -30,8 +30,8 @@ struct cameraData
 	
 	//Parameters
 	float threshold_coefficient;
-	int edgeleft;
-	int edgeright;
+	int16_t edgeleft;
+	int16_t edgeright;
 	float alpha;
 	int offset;
 };

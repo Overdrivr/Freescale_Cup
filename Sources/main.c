@@ -55,7 +55,7 @@ int main(void)
 
 	//Readonly variables
 	add_to_log(data.filtered_image,4*128,FLOAT,1,"filtered_line");
-	add_to_log(data.raw_image,4*128,FLOAT,1,"raw_line");
+	add_to_log(data.raw_image,4*128,UINT16,1,"raw_line");
 	add_to_log(&position_error, 4, FLOAT,1,"error");
 	add_to_log(&error_derivative, 4, FLOAT,1,"derivative");
 	add_to_log(&error_integral, 4, FLOAT,1,"integral");
@@ -89,8 +89,9 @@ int main(void)
 		TFC_Task();
 		
 		//Compute line position
-		if(read_process_data(&data,exposure_time_ms) == 1)
+		if(read_process_data(&data,exposure_time_ms))
 		{
+			//TODO : Check this loop runs at minimal time 
 			//Compute looptime
 			looptime = TFC_Ticker[5];
 			TFC_Ticker[5] = 0;
