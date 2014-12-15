@@ -35,6 +35,8 @@ class Logger_Frame(Tk.Frame):
         self.var_list.heading('size', text='size')
         self.var_list.bind("<<TreeviewSelect>>", self.variable_selected)
 
+        self.var_dict = dict()
+
         self.value = Tk.DoubleVar()
         self.value.set(0.0)
 
@@ -64,6 +66,8 @@ class Logger_Frame(Tk.Frame):
             self.var_list.set(i,'name',item[4])
             self.var_list.set(i,'type',item[1])
             self.var_list.set(i,'size',item[2])
+            #Put ID, name, type, size in dict
+            self.var_dict[i] = (item[0],item[4],item[1],item[2])
             
     def change_state(self,state):
         if state == "inprocess":
@@ -77,19 +81,18 @@ class Logger_Frame(Tk.Frame):
     def write_value(self):
         # Find selected variable
         item = self.var_list.selection()
-        
+
         if len(item) == 0:
             return
-        
-        #Process tuple from selection() to index
-        # TODO : Get id from tree contents instead        
-        varid = int(item[0][-1],16) - 1
+       
+        # Get associated var_id       
+        var_id = self.var_dict[item[0]][0]
         
         # Get entry value
         value = self.value.get()
 
         # Tell API to write value
-        self.model.write_to_var(varid,value)
+        self.model.write_to_var(var_id,value)
 
     def variable_selected(self,event):
         # Find selected variable
@@ -97,10 +100,9 @@ class Logger_Frame(Tk.Frame):
         
         if len(item) == 0:
             return
-        
-        #Process tuple from selection() to index
-        # TODO : Get id from tree contents instead        
-        var_id = int(item[0][-1],16) - 1
+
+        # Get associated var_id       
+        var_id = self.var_dict[item[0]][0]
 
         pub.sendMessage("new_var_selected",varid=var_id)
 
