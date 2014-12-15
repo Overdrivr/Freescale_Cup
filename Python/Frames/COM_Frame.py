@@ -35,7 +35,7 @@ class COM_Frame(Tk.Frame):
         self.liste.config(yscrollcommand = self.scrollbar_liste.set)
         self.scrollbar_liste.pack(side=Tk.RIGHT)
 
-        self.bouton_refresh_ports = Tk.Button(self, text="REFRESH", command = self.set_COM_ports)
+        self.bouton_refresh_ports = Tk.Button(self, text="REFRESH", command = self.refresh_COM_ports)
         self.bouton_refresh_ports.grid(column=0,row=2,sticky='EW',pady=3,padx=3)
 
         self.bouton_connect = Tk.Button(self, text="CONNECT", command = self.start_com)
@@ -48,7 +48,9 @@ class COM_Frame(Tk.Frame):
         pub.subscribe(self.com_connected,'com_port_connected')
         pub.subscribe(self.com_disconnected,'com_port_disconnected')
 
-    def set_COM_ports(self):
+        self.refresh_COM_ports()
+
+    def refresh_COM_ports(self):
         ports_list = self.model.get_ports()
         self.liste.delete(0,Tk.END)
         for p, desc, hwid in sorted(ports_list):
