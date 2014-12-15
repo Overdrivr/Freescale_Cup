@@ -69,14 +69,6 @@ class Plot2D_Frame(Tk.Frame):
         self.selected_var = Tk.Label(self,text="no variable",bd=2,relief=Tk.GROOVE)
         self.selected_var.grid(column=1,row=1,sticky='EW',pady=3,padx=3)
 
-        #
-        self.ymin_entry = Tk.Entry(self)
-        self.ymin_entry.grid(column=3,row=1,sticky='EW',pady=3,padx=3)
-
-        #
-        self.ymax_entry = Tk.Entry(self)
-        self.ymax_entry.grid(column=3,row=2,sticky='EW',pady=3,padx=3)
-
     def listener_var_selected(self,varid):
         self.selected_varid = varid
 
@@ -125,6 +117,7 @@ class Plot2D_Frame(Tk.Frame):
     def add_var_to_plot(self):
         if self.selected_varid == None:
             return
+        
         self.plotted_varid = self.selected_varid
         self.model.log_var(self.plotted_varid)
         self.first = True

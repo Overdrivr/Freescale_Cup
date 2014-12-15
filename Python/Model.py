@@ -87,6 +87,9 @@ class Model():
         # Send command
         if self.serialthread.isAlive():
             self.serialthread.write(frame)
+
+    def get_var_info(self,varid):
+        return self.logger.get_var_info(varid)
         
     
 # List of events that can be subscribed to

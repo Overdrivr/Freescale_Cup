@@ -17,6 +17,8 @@ class Logger():
         self.type_lookup = {0 : '=f',
                             6 : '=i'
                             }
+        self.size_lookup = {0 : 4,
+                            6 : 4}
         pub.subscribe(self.new_frame,'new_rx_payload')
 
     #Process RX bytes queue
@@ -120,13 +122,15 @@ class Logger():
                 
                 varid = struct.unpack('H',temp)[0]
 
-                # Read variable size (1 if scalar, n if array)
+                # Read variable size in octets
                 temp = bytearray()
                 temp.append(frame[index])
                 temp.append(frame[index+1])
                 index += 2
                 
-                array_size = struct.unpack('H',temp)[0]
+                octets = struct.unpack('H',temp)[0]
+
+                # TODO : Compute array size if array
                 
                 # Read name
                 name = ""
@@ -138,7 +142,7 @@ class Logger():
                     index += 1
 
                 #Put everything in tuple
-                t = varid, datatype, array_size, write_rights, name
+                t = varid, datatype, octets, write_rights, name
 
                 #Stock the tuple in the variable list
                 self.variables.append(t)
@@ -206,4 +210,7 @@ class Logger():
 
     def get_var_list(self):
         return self.variables
+
+    def get_var_info(self,varid):
+        return self.variables[var_id]
 
