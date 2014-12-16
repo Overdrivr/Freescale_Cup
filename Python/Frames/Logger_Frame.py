@@ -50,7 +50,7 @@ class Logger_Frame(Tk.Frame):
         # Activate serial data interception
         self.change_state("inprocess")
         # Start logger
-        self.model.start_logger()
+        self.model.start_controller()
         
     def listener_table_received(self,varlist):
         pub.sendMessage("new_var_selected",varid=None)#TO CHECK IF WORKS
@@ -92,7 +92,7 @@ class Logger_Frame(Tk.Frame):
         value = self.value.get()
 
         # Tell API to write value
-        self.model.write_to_var(var_id,value)
+        self.model.write_var(var_id,value)
 
     def variable_selected(self,event):
         # Find selected variable

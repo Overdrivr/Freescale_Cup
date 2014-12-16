@@ -5,11 +5,10 @@ from queue import Queue
 import struct
 from pubsub import pub
 
-# Logger class
+# DistantIO class : to read and write variables on the MCU from distant computer
 # TODO : parse all datatype
-# TODO : ERROR, bases are 16 not 10 ?
 
-class Logger():
+class DistantIO():
 
     def __init__(self):
         self.log_table = Queue(0)
@@ -23,10 +22,10 @@ class Logger():
                             2 : 2,
                             3 : 4,
                             6 : 4}
-        pub.subscribe(self.new_frame,'new_rx_payload')
+        pub.subscribe(self.decode,'new_rx_payload')
 
     #Process RX bytes queue
-    def new_frame(self,rxpayload):
+    def decode(self,rxpayload):
         frame = rxpayload
         index = 0
         command = frame[0]
@@ -214,58 +213,61 @@ class Logger():
         pass
 
     #Command for asking the MCU the loggable variables 
-    def get_table_cmd(self):
-        cmd = bytearray()
-        cmd.append(int('02',16))
-        cmd.append(int('07',16))
-        cmd.append(int('00',16))
-        return cmd
-
-    #Command for asking the MCU to return value of specific variable 
-    def get_read_cmd(self,var_id):
-        cmd = bytearray()
-        cmd.append(int('00',16))
-        cmd.append(int('00',16))#IGNORED ?
-        
-        packed = bytes(struct.pack('=H',var_id))
-        cmd.extend(packed)
-        
-        return cmd
+    def encode(self, cmd, var_id=0 ,value=0): 
+        frame = bytearray()
     
-    def get_write_cmd(self,var_id,value):
-        # Check var in list
-        if var_id >= len(self.variables):
-            return
-        if not self.variables[var_id][0] == var_id:
-            return
+        if cmd == 'table':
+            frame.append(int('02',16))
+            frame.append(int('07',16))
+            frame.append(int('00',16))
+            
+        elif cmd == 'read':        
+            frame = bytearray()
+            frame.append(int('00',16))
+            frame.append(int('00',16))#IGNORED ?
+            packed = bytes(struct.pack('=H',var_id))
+            frame.extend(packed)
+            
+        elif cmd == 'write':
+            # Check var is in list
+            # TODO : Actually check against id values directly
+            if var_id >= len(self.variables):
+                return
+            
+            if not self.variables[var_id][0] == var_id:
+                return
 
-        # Check rights
-        if not self.variables[var_id][3] == 1:
-            return
-        
-        # Find type
-        fmt = self.variables[var_id][1]
-        
-        cmd = bytearray()
-        cmd.append(int('01'))
-        cmd.append(int(fmt))
+            # Check rights
+            if not self.variables[var_id][3] == 1:
+                print("Not rights to write variable.")
+                return
 
-        packed = bytes(struct.pack('=H',var_id))
-        cmd.extend(packed)
+            # Find type
+            fmt = self.variables[var_id][1]
         
-        # Parse double to type
-        val = None
-        if fmt == 0:
-            val = float(value)
-            packed = bytes(struct.pack('=f',val))
-        elif fmt == 6:
-            val = int(value)
-            packed = bytes(struct.pack('=i',val))
+            frame.append(int('01'))
+            frame.append(int(fmt))
+
+            packed = bytes(struct.pack('=H',var_id))
+            frame.extend(packed)
+        
+            # Parse double to type
+            val = None
+            if fmt == 0:
+                val = float(value)
+                packed = bytes(struct.pack('=f',val))
+            elif fmt == 6:
+                val = int(value)
+                packed = bytes(struct.pack('=i',val))
+            else:
+                print("Write format not supported.")
+                return
+            
+            frame.extend(packed)       
         else:
             return
-        cmd.extend(packed)       
-
-        return cmd
+        
+        return frame
 
     def get_var_list(self):
         return self.variables

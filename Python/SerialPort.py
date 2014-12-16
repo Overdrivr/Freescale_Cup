@@ -8,7 +8,7 @@ from serial.tools.list_ports import comports
 from pubsub import pub
 
 #Serial data processing class
-class SerialPortHandler(Thread):
+class SerialPort(Thread):
 
     def __init__(self):
         Thread.__init__(self)
@@ -99,7 +99,6 @@ class SerialPortHandler(Thread):
                 # Freezing on exit after that ?
                 pub.sendMessage("new_rx_byte",rxbyte=serialout)
 
-        #self.disconnect()
         print("Serial thread stopped.")
         
         

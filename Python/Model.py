@@ -2,40 +2,36 @@
 # For conditions of distribution and use, see copyright notice in the LICENSE file
 
 from pubsub import pub
-from SerialPortHandler import SerialPortHandler
-from Logger import Logger
-from SerialProtocol import SerialProtocol
+from SerialPort import SerialPort
+from DistantIO import DistantIO
+from Protocol import Protocol
 
 # Top-level API
 #TODO : Log var API
-#TODO : Rename start_logger in request_table ?
-#TODO : Remove stop_logger ?
 
 class Model():
     def __init__(self, **kwargs):        
-       
         # Serial thread
-        self.serialthread = SerialPortHandler()
-        # Logger
-        self.logger = Logger()
+        self.serialthread = SerialPort()
+        # Controller Read/Write variables over serial
+        self.controller = DistantIO()
         # Serial protocol
-        self.serial_protocol = SerialProtocol()
-        
-        
+        self.protocol = Protocol()
+        # Start serial thread (can run without COM port connected)
+        self.serialthread.start()
+                
     def get_ports(self):
         return self.serialthread.get_ports()
         
     def connect_com(self,COM_port):
-        # Connect
         self.serialthread.connect(COM_port,115200)
-        # Start serial thread 
-        self.serialthread.start()
 
     def disconnect_com(self):
-        self.serialthread.close()
+        self.serialthread.disconnect()
          
     def stop(self):
         self.stop_logger()
+        self.serialthread.disconnect()
         self.serialthread.stop()
 
         if self.serialthread.isAlive():
@@ -49,47 +45,40 @@ class Model():
         else:
             print("--- Thread stopped.")
         
-    def start_logger(self):
+    def start_controller(self):
         #Get command for querying variable table MCU side
-        cmd = self.logger.get_table_cmd()
+        cmd = self.controller.encode(cmd='table')
         #Feed command to serial protocol payload processor
-        frame = self.serial_protocol.process_tx_payload(cmd)        
+        frame = self.protocol.process_tx(cmd)        
         #Send command
-        if self.serialthread.isAlive():
-            self.serialthread.write(frame)      
+        self.serialthread.write(frame)      
         
-    def stop_logger(self):
-        # Tell MCU to stop sending data ?
-        
+    def stop_controller(self):
+        #TODO : Tell MCU to stop sending all data
         print('--- Logger stopped.')
 
-    # Tell MCU to return variable 'varid' at given interval
-    def log_var(self, varid):        
+    def read_var(self, varid):        
         # Get command
-        cmd = self.logger.get_read_cmd(varid)
-        
+        cmd = self.controller.encode(cmd='read',var_id=varid)
         # Feed command to serial protocol payload processor
-        frame = self.serial_protocol.process_tx_payload(cmd)
-        
+        frame = self.protocol.process_tx(cmd)
         # Send command
-        if self.serialthread.isAlive():
-            self.serialthread.write(frame)
+        self.serialthread.write(frame)
 
-    def write_to_var(self,varid,value):
+    def write_var(self,varid,value):
         # Get command
-        cmd = self.logger.get_write_cmd(varid,value)
+        cmd = self.controller.encode(cmd='write',var_id=varid,value=value)
         
         if cmd == None:
             return
         # Feed command to serial protocol payload processor
-        frame = self.serial_protocol.process_tx_payload(cmd)
+        frame = self.protocol.process_tx(cmd)
         
         # Send command
-        if self.serialthread.isAlive():
-            self.serialthread.write(frame)
+        self.serialthread.write(frame)
 
     def get_var_info(self,varid):
-        return self.logger.get_var_info(varid)
+        return self.controller.get_var_info(varid)
         
     
 # List of events that can be subscribed to

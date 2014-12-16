@@ -14,7 +14,7 @@ class ESC_STATE(Enum):
 
 #Robust serial protocol with bit stuffing
 # ON RX ERROR, RESET PROTOCOL ?
-class SerialProtocol():
+class Protocol():
 
     def __init__(self):
         self.rx_state = RX_STATE.IDLE;
@@ -23,10 +23,10 @@ class SerialProtocol():
         self.EOF = int('7f',16)
         self.ESC = int('7d',16)
         self.payload = bytearray() 
-        pub.subscribe(self.new_rx_byte,"new_rx_byte")
+        pub.subscribe(self.process_rx,"new_rx_byte")
         self.framesize = 0;
 
-    def new_rx_byte(self, rxbyte):
+    def process_rx(self, rxbyte):
         newbyte = int.from_bytes(rxbyte,byteorder='big')
         #No frame in process
         if self.rx_state == RX_STATE.IDLE:
@@ -65,7 +65,7 @@ class SerialProtocol():
                     self.payload.append(newbyte)
                     self.framesize += 1;
 
-    def process_tx_payload(self, rxpayload):
+    def process_tx(self, rxpayload):
         frame = bytearray()
         frame.append(self.SOF)
         

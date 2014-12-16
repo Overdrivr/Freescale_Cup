@@ -119,7 +119,7 @@ class Plot2D_Frame(Tk.Frame):
             return
         
         self.plotted_varid = self.selected_varid
-        self.model.log_var(self.plotted_varid)
+        self.model.read_var(self.plotted_varid)
         self.first = True
 
     def remove_var_from_plot(self):
