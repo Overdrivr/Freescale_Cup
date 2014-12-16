@@ -168,6 +168,15 @@ void calibrate_data(cameraData* data, uint32_t update_delay_ms)
 	
 	TFC_Ticker[4] = 0; 
 	
+	while(TFC_Ticker[4] < 1000)
+	{
+		//Wait 1 second
+	}
+	
+	TFC_Ticker[4] = 0; 
+	
+	data->offset = 0.f;
+	
 	//Record raw camera image 20 times or stop at 5000 seconds
 	while(counter < 20 && TFC_Ticker[4] < 5000)
 	{
@@ -186,6 +195,6 @@ void calibrate_data(cameraData* data, uint32_t update_delay_ms)
 	//Compute average
 	center /= div;
 	
-	data->offset = -center;
+	data->offset = -(int16_t)(center);
 }
 
