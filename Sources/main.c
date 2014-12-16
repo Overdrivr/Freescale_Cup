@@ -16,22 +16,28 @@ int main(void)
 	init_data(&data);
 	
 	//Computation variables
-	float position_error = 0.f, new_error = 0.f, alpha_error = 0.7;
+	float position_error = 0.f, new_error = 0.f, alpha_error = 0.8;
 	float previous_error = 0.f;
 	float error_derivative = 0.f, new_derivative = 0.f, alpha_deriv = 0.85;
 	float error_integral = 0.f;
 	float looptime = 0.f;
 	float command = 0.f;
-	float command_engines = -0.4f;
+	float servo_offset = 0.25;
+	float command_engines = 0.45f;
 	int i;
 	float commandD = 0.f;
 	float commandI = 0.f;
 	float commandP = 0.f;
+	float I = 0.f;
 	
 	//Parameters
-	float P = 0.01;
-	float I = 0.f;
-	float D = 0.f;
+	//Stable a 0.40
+	//float P = 0.013;
+	//float D = 0.0005f;
+	
+	//Stable a 0.45
+	float P = 0.011;
+	float D = 0.00035f;
 	
 	//To check loop times
 	chrono chr_camera,chr_main; 
@@ -69,12 +75,14 @@ int main(void)
 	add_to_log(&P,4,FLOAT,0,"P");
 	add_to_log(&I,4,FLOAT,0,"I");
 	add_to_log(&D,4,FLOAT,0,"D");
-	add_to_log(&alpha_deriv,4,FLOAT,0,"alpha_deriv");
+	add_to_log(&alpha_error,4,FLOAT,0,"alpha P");
+	add_to_log(&alpha_deriv,4,FLOAT,0,"alpha_D");
 	add_to_log(&command_engines,4,FLOAT,0,"engines");
 	
 	
 	
-	add_to_log(&data.offset,4,UINT32,1,"offset");
+	add_to_log(&data.offset,4,INT16,1,"offset");
+	add_to_log(&servo_offset,4,FLOAT,0,"servo_offset");
 	//add_to_log(&looptime,4,FLOAT,1,"looptime");
 	//add_to_log(&chr_main.duration,4,UINT32,1,"main loop");
 	
@@ -96,6 +104,7 @@ int main(void)
 	uint32_t servo_update_ms = 20;
 	
 	TFC_SetLineScanExposureTime(exposure_time_us);
+	TFC_SetServo(0, servo_offset);
 
 	
 	for(;;)
@@ -117,10 +126,12 @@ int main(void)
 			
 			//Compute errors for PID
 			previous_error = position_error;
-			position_error = data.line_position;
+			position_error =  position_error * alpha_error + data.line_position * (1 - alpha_error);
 			
 			new_derivative = (position_error - previous_error) * 1000.f / looptime;
 			error_derivative = error_derivative * alpha_deriv + (1 - alpha_deriv) * new_derivative;
+			
+			//error_derivative = (position_error - previous_error) * 1000.f / looptime;
 			
 			error_integral = error_integral + position_error * looptime / 1000.f;
 			
@@ -129,7 +140,7 @@ int main(void)
 			commandD = D * error_derivative;
 			
 			//Compute servo command between -1.0 & 1.0
-			command = commandD + commandI + commandP;
+			command = commandD + commandI + commandP + servo_offset;
 			
 			if(command > 1.f)
 				command = 1.f;
@@ -179,7 +190,7 @@ int main(void)
 		else
 		{
 			TFC_HBRIDGE_ENABLE;
-			TFC_SetMotorPWM(command_engines , command_engines);
+			TFC_SetMotorPWM(-command_engines , -command_engines);
 		}
 	
 		TFC_SetBatteryLED_Level(led_state);
