@@ -15,10 +15,13 @@ class Logger():
         self.log_table = Queue(0)
         self.variables = list()
         self.type_lookup = {0 : '=f',
+                            2 : '=H',
                             3 : '=I',
                             6 : '=i'
                             }
         self.size_lookup = {0 : 4,
+                            2 : 2,
+                            3 : 4,
                             6 : 4}
         pub.subscribe(self.new_frame,'new_rx_payload')
 
@@ -116,6 +119,34 @@ class Logger():
                     temp.append(frame[index+2])
                     temp.append(frame[index+3])
                     index += 4
+
+                    # Get format
+                    fmt = self.type_lookup[datatype]
+                    
+                    # Transform value to desired format
+                    val = struct.unpack(fmt,temp)[0]
+                    
+                    # Store to list
+                    new_values.append(val)
+                
+                #Publish the value update
+                pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
+            #############    
+            #uint16
+            elif datatype == 2:
+                new_values = list()
+                index = 4
+                
+                if (len(frame) - 4) < 4:
+                    print("Unvalid frame size")
+                    return
+                
+                while len(frame) - index >= 4:
+                    # Stock raw bytes in byte array
+                    temp = bytearray()
+                    temp.append(frame[index])
+                    temp.append(frame[index+1])
+                    index += 2
 
                     # Get format
                     fmt = self.type_lookup[datatype]
