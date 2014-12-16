@@ -18,19 +18,21 @@ uint8_t ESC_;
 
 #define INCOMING_FRAME_QUEUE_SIZE 2048
 
-typedef enum state state;
+
 enum state
 {
 	IDLE,
 	IN_PROCESS
 };
+typedef enum state state;
 
-typedef enum ESC_state ESC_state;
+
 enum ESC_state
 {
 	NONE,
 	NEXT
 };
+typedef enum ESC_state ESC_state;
 
 void init_serial_protocol();
 

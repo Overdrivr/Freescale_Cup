@@ -21,7 +21,7 @@ void init_serial_protocol()
 {
 	InitByteQueue(&rx_frame,INCOMING_FRAME_QUEUE_SIZE,rx_frame_storage);
 	protocol_state = IDLE;
-	escape_state = IDLE;
+	escape_state = NONE;
 	
 	SOF_ = 0xF7;
 	EOF_ = 0x7F;

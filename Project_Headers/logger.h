@@ -56,9 +56,7 @@ uint8_t add_to_log(uint8_t* adress,
 
 void update_log_serial();
 
-
-void log_process_serial();
-
+void log_process_serial(ByteQueue* rx_queue);
 
 void send_table();
 
