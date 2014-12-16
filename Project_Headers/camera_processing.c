@@ -19,7 +19,6 @@ void init_data(cameraData* data)
 		data->threshold_image[i] = 0;
 		data->falling_edges_position[i] = 0;
 		data->rising_edges_position[i] = 0;
-		data->calibration_data[i] = 0.f;
 	}
 	data->edges_count = 0;
 	data->line_position = 0;
@@ -129,13 +128,13 @@ int read_process_data(cameraData* data, uint32_t update_delay_ms)
 		//1 edge - compute center & record
 		position = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2;
 		position -= 64;
-		data->line_position = position;
+		data->line_position = position + data->offset;
 	}
 	else if(data->edges_count == 3)
 	{			
 		position = (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2;
 		position -= 64;
-		data->line_position = position;
+		data->line_position = position + data->offset;
 		//TODO : CALL FUNCTION TO SIGNAL START LINE
 	}
 	//Any other value is error
@@ -163,49 +162,30 @@ uint8_t compute_valid_line_position(cameraData* data)
 void calibrate_data(cameraData* data, uint32_t update_delay_ms)
 {
 	
-	int i = 0, counter = 0;
-	float min, max, val;
+	int i = 0,  counter = 0;
+	float div = 1.f;
+	float center = 0.f;
 	
 	TFC_Ticker[4] = 0; 
-	
-	for(i=0;i<128;i++)
-	{
-		data->calibration_data[i] = 0;
-	}
 	
 	//Record raw camera image 20 times or stop at 5000 seconds
 	while(counter < 20 && TFC_Ticker[4] < 5000)
 	{
 		if(read_process_data(data,update_delay_ms))
 		{
-			for(i=0;i<128;i++)
-			{
-				data->calibration_data[i] += LineScanImage1[i];
-			}
+			center += data->line_position;
 			counter++;
 		}
 	}
 	
+	if(counter == 0)
+		return;
+	
+	div = (float)(counter);
+	
 	//Compute average
-	for(i=0;i<128;i++)
-	{
-		data->calibration_data[i] /= (1.0f * counter);
-	}
+	center /= div;
 	
-	//Min Max detection
-	min = data->calibration_data[0];
-	max = data->calibration_data[0];
-	
-	for(i = data->edgeleft ; i < (128 - data->edgeright) ; i++)
-	{
-		if(data->calibration_data[i] > max)
-			max = data->calibration_data[i];
-		
-		if(data->calibration_data[i] < min)
-			min = data->calibration_data[i];
-	}		
-	
-	//Compute fixed threshold level
-	data->threshold = data->threshold_coefficient * (max - min) + min;
+	data->offset = -center;
 }
 

@@ -25,15 +25,15 @@ struct cameraData
 	int16_t valid_line_position;
 	
 	//Calibration data
-	float calibration_data[128];
 	float threshold;
+	int16_t offset;
 	
 	//Parameters
 	float threshold_coefficient;
 	int16_t edgeleft;
 	int16_t edgeright;
 	float alpha;
-	int offset;
+	
 };
 
 
