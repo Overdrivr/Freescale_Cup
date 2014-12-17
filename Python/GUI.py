@@ -2,6 +2,7 @@
 # For conditions of distribution and use, see copyright notice in the LICENSE file
 
 import tkinter as Tk
+import tkinter.ttk as ttk
 from Model import Model
 from threading import Timer
 from pubsub import pub
@@ -10,37 +11,36 @@ from Frames.COM_Frame import *
 from Frames.Logger_Frame import *
 from Frames.Plot2D_Frame import *
 
-class Application(Tk.Frame):
+class Application(ttk.Frame):
         
-    def __init__(self, **kwargs):
-        #Create window
-        self.root = Tk.Tk()
-        self.root.geometry('+0+0')
+    def __init__(self,parent,**kwargs):
+        # Init
+        self.parent = parent
+        ttk.Frame.__init__(self,parent,**kwargs)
+        # Init configuration
+        ttk.Style().configure("BW.TLabel", foreground="white", background="black")
+        ttk.Style().configure("BW.TButton")
         
-        #Init master frame
-        Tk.Frame.__init__(self,self.root,width=640, height=480)
-        self.pack()
-
-        #Create Model
+        # Create Model
         self.model = Model()
 
-        #COM Frame
-        self.frame_com_ports = COM_Frame(self,self.model,bd=2,relief=Tk.GROOVE)
+        # COM Frame
+        self.frame_com_ports = COM_Frame(self,self.model,relief=Tk.GROOVE)
         self.frame_com_ports.grid(column=0,row=0,sticky='NSEW',pady=5,padx=5)
 
-        #Logger frame
+        # Logger frame
         self.frame_logger = Logger_Frame(self,self.model,bd=2,relief=Tk.GROOVE)
         self.frame_logger.grid(column=0,row=1,sticky='NSEW',pady=5,padx=5)
 
-        #Graph 1 frame
-        self.frame_graph1 = Plot2D_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
-        self.frame_graph1.grid(column=1,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
+        # Graph 1 frame
+        self.frame_graph1 = Plot2D_Frame(self,self.model,self.parent,bd=2,relief=Tk.GROOVE)
+        self.frame_graph1.grid(column=1,row=0,sticky='EW',pady=5,padx=0,rowspan=2)
 
-        #Graph 2 frame
-        self.frame_graph2 = Plot2D_Frame(self,self.model,self.root,bd=2,relief=Tk.GROOVE)
-        self.frame_graph2.grid(column=2,row=0,sticky='EW',pady=5,padx=5,rowspan=2)
+        # Graph 2 frame
+        self.frame_graph2 = Plot2D_Frame(self,self.model,self.parent,bd=2,relief=Tk.GROOVE)
+        self.frame_graph2.grid(column=2,row=0,sticky='EW',pady=5,padx=0,rowspan=2)
 
-        #Quit button
+        # Quit button
         self.bouton_quitter = Tk.Button(self, text="x",command = self.stop)
         self.bouton_quitter.grid(column=3,row=0,sticky='N')
 
@@ -98,7 +98,6 @@ def test_rx_table():
     s = 'test_array                      '
     h = bytearray(s,'ascii')
     c.extend(h)
-
     
     #EOF
     c.append(int('7f',16))
@@ -117,7 +116,11 @@ def printout_char(rxbyte):
 Program startup
 """
 if __name__ == '__main__':
-    app = Application()
+    # Create window
+    root = Tk.Tk()
+    root.geometry('+0+0')   
+    app = Application(root,width=640, height=480)
+    app.pack()
     
     pub.subscribe(printout_char,'new_ignored_rx_byte')
     t = Timer(1.0,test_rx_table)

@@ -11,36 +11,37 @@ from collections import deque
 COM GUI Frame
 """
 
-class COM_Frame(Tk.Frame):
+class COM_Frame(ttk.Frame):
     def __init__(self,parent,model,**kwargs):
-        Tk.Frame.__init__(self,parent,**kwargs)
+        ttk.Frame.__init__(self,parent,**kwargs)
         self.parent = parent
         self.model = model
         self.connected = False
         
         #Widgets
-        self.txt_ports = Tk.Label(self,text="COM PORTS")
+        self.txt_ports = ttk.Label(self,text="COM PORT :",style="BW.TLabel")
         self.txt_ports.grid(column=0,row=0,sticky='EW',pady=3,padx=3)
 
         #
-        self.listbox_frame = Tk.Frame(self)
+        self.listbox_frame = ttk.Frame(self)
         self.listbox_frame.grid(column=0,row=1,sticky='NSEW',pady=3,padx=3,columnspan=3)
-        
+
         self.liste = Tk.Listbox(self.listbox_frame,height=3,width=40)
         self.liste.pack(side = Tk.LEFT,fill=Tk.X)
 
-        self.scrollbar_liste = Tk.Scrollbar(self.listbox_frame)
+        self.scrollbar_liste = ttk.Scrollbar(self.listbox_frame)
         self.scrollbar_liste.config(command = self.liste.yview)
         self.liste.config(yscrollcommand = self.scrollbar_liste.set)
         self.scrollbar_liste.pack(side=Tk.RIGHT)
 
-        self.bouton_refresh_ports = Tk.Button(self, text="REFRESH", command = self.refresh_COM_ports)
+        #
+        self.bouton_refresh_ports = ttk.Button(self, text="REFRESH", command = self.refresh_COM_ports)
         self.bouton_refresh_ports.grid(column=0,row=2,sticky='EW',pady=3,padx=3)
 
-        self.bouton_connect = Tk.Button(self, text="CONNECT", command = self.start_com)
+        self.bouton_connect = ttk.Button(self, text="CONNECT", command = self.start_com)
         self.bouton_connect.grid(column=1,row=2,sticky='EW',pady=3,padx=3)
 
-        self.bouton_disconnect = Tk.Button(self, text="DISCONNECT", command = self.stop_com)
+        self.bouton_disconnect = ttk.Button(self, text="DISCONNECT", command = self.stop_com)
         self.bouton_disconnect.grid(column=2,row=2,sticky='EW',pady=3,padx=3)
         
         self.txt_connected = Tk.Label(self,text="NOT CONNECTED",fg='red')
