@@ -33,7 +33,7 @@ class Plot2D_Frame(Tk.Frame):
 
         # Widgets
         self.liste = Tk.Listbox(self,height=1)
-        self.liste.grid(column=0,row=1,sticky='EW',pady=3,padx=3,rowspan=2)
+        self.liste.grid(column=1,row=1,sticky='EW',pady=3,padx=3,rowspan=2)
         
         self.scrollbar_liste = Tk.Scrollbar(self.liste)
         self.scrollbar_liste.config(command = self.liste.yview)
@@ -41,8 +41,8 @@ class Plot2D_Frame(Tk.Frame):
         self.scrollbar_liste.pack(side=Tk.RIGHT)
 
         #
-        self.bouton_add_var = Tk.Button(self, text="PLOT", command = self.add_var_to_plot)
-        self.bouton_add_var.grid(column=1,row=2,pady=3,padx=3)
+        self.bouton_add_var = Tk.Button(self, text="PLOT SELECTION", command = self.add_var_to_plot)
+        self.bouton_add_var.grid(column=0,row=1,rowspan=2,pady=3,padx=3,sticky='NSEW')
 
         #
         self.bouton_switch_mode = Tk.Button(self, text="REMOVE VAR", command = self.remove_var_from_plot)

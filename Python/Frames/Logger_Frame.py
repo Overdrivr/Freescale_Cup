@@ -9,7 +9,7 @@ from pubsub import pub
 Logger GUI Frame
 """
 class Logger_Frame(Tk.Frame):
-    def __init__(self, parent,model,**kwargs):
+    def __init__(self,parent,model,**kwargs):
         Tk.Frame.__init__(self,parent,**kwargs)
         self.parent = parent
         self.model = model
