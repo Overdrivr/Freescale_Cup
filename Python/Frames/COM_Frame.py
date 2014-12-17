@@ -10,8 +10,7 @@ from collections import deque
 """
 COM GUI Frame
 """
-#TODO : Change CONNECT button name and function once connected
-#TODO : Plot button should call Model.log_var with selected id
+
 class COM_Frame(Tk.Frame):
     def __init__(self,parent,model,**kwargs):
         Tk.Frame.__init__(self,parent,**kwargs)
@@ -40,6 +39,9 @@ class COM_Frame(Tk.Frame):
 
         self.bouton_connect = Tk.Button(self, text="CONNECT", command = self.start_com)
         self.bouton_connect.grid(column=1,row=2,sticky='EW',pady=3,padx=3)
+
+        self.bouton_disconnect = Tk.Button(self, text="DISCONNECT", command = self.stop_com)
+        self.bouton_disconnect.grid(column=2,row=2,sticky='EW',pady=3,padx=3)
         
         self.txt_connected = Tk.Label(self,text="NOT CONNECTED",fg='red')
         self.txt_connected.grid(column=2,row=0,sticky='EW')
@@ -71,16 +73,16 @@ class COM_Frame(Tk.Frame):
         chosen_port = self.liste.get(Tk.ACTIVE)
         self.model.connect_com(chosen_port)
 
-    def stop_com():
-        self.model.disconnect_com(self)
+    def stop_com(self):
+        self.model.disconnect_com()
         
     def com_connected(self,port):
-        #TODO : Change connect button name and function
         self.change_COM_state(state="connected")
         self.connected = True
+        #Autoselect first port
+        self.liste.selection_set(Tk.BEGIN)
 
     def com_disconnected(self):
-        #TODO : Change connect button name and function
         self.change_COM_state(state="noconnect")
         self.connected = False
     

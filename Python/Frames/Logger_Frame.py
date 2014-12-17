@@ -46,11 +46,18 @@ class Logger_Frame(Tk.Frame):
         self.bouton_write = Tk.Button(self, text="WRITE", command = self.write_value)
         self.bouton_write.grid(column=1,row=4,sticky='EW',pady=3,padx=3)
 
+        # Subscriptions
+        pub.subscribe(self.listener_COM_connected,'com_port_connected')
+
     def activate_log(self):
         # Activate serial data interception
         self.change_state("inprocess")
         # Start logger
         self.model.start_controller()
+
+    def listener_COM_connected(self,port):
+        # We activate the distant IO controller immediately after the COM port was connected
+        self.activate_log()
         
     def listener_table_received(self,varlist):
         pub.sendMessage("new_var_selected",varid=None)#TO CHECK IF WORKS
