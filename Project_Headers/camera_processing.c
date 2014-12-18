@@ -6,7 +6,6 @@
  */
 
 #include "camera_processing.h"
-#include "serial.h"
 
 void init_data(cameraData* data)
 {

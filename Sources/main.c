@@ -1,9 +1,8 @@
 #include "derivative.h" /* include peripheral declarations */
 #include "TFC\TFC.h"
 #include "camera_processing.h"
-#include "serial.h"
-#include "serial_protocol.h"
-#include "logger.h"
+#include "Serial\serial.h"
+#include "DistantIO\distantio.h"
 #include "chrono.h"
 
 //TODO : Select servo offset with potard
@@ -18,20 +17,17 @@ int main(void)
 	init_data(&data);
 	
 	//Computation variables
-	float position_error = 0.f, new_error = 0.f, alpha_error = 0.8;
+	float position_error = 0.f, alpha_error = 0.8;
 	float previous_error = 0.f;
 	float error_derivative = 0.f, new_derivative = 0.f, alpha_deriv = 0.85;
-	float error_integral = 0.f;
 	
 	float looptime = 0.f;
 	float command = 0.f,new_command = 0.f, alpha_command = 0.0;
 	float servo_offset = 0.05;
 	float command_engines = 0.5f;
-	int i;
+	
 	float commandD = 0.f;
-	float commandI = 0.f;
 	float commandP = 0.f;
-	float I = 0.f;
 	
 	//Parameters
 	
@@ -64,25 +60,15 @@ int main(void)
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
 	
-	float test[128] = {0};
-	
-	for(i = 0 ; i < 128 ; i++)
-	{
-		test[i] = i;
-	}
-
 	//Readonly variables
 	register_scalar(&position_error, FLOAT,0,"error");
 	register_scalar(&error_derivative, FLOAT,0,"derivative");
-	register_scalar(&error_integral, FLOAT,0,"integral");
 	register_scalar(&command,FLOAT,0,"command");
 	register_scalar(&commandP,FLOAT,0,"cmdP");
-	register_scalar(&commandI,FLOAT,0,"cmdI");
 	register_scalar(&commandD,FLOAT,0,"cmdD");
 	
 	//Read/write variables
 	register_scalar(&P,FLOAT,1,"P");
-	register_scalar(&I,FLOAT,1,"I");
 	register_scalar(&D,FLOAT,1,"D");
 	register_scalar(&alpha_error,FLOAT,1,"alpha P");
 	register_scalar(&alpha_deriv,FLOAT,1,"alpha_D");
@@ -133,23 +119,18 @@ int main(void)
 			looptime = TFC_Ticker[5];
 			TFC_Ticker[5] = 0;
 			
-			//Compute errors for PID
+			//Compute errors for PD
 			previous_error = position_error;
 			position_error =  position_error * alpha_error + data.line_position * (1 - alpha_error);
 			
 			new_derivative = (position_error - previous_error) * 1000.f / looptime;
 			error_derivative = error_derivative * alpha_deriv + (1 - alpha_deriv) * new_derivative;
 			
-			//error_derivative = (position_error - previous_error) * 1000.f / looptime;
-			
-			error_integral = error_integral + position_error * looptime / 1000.f;
-			
 			commandP = P * position_error;
-			commandI = I * error_integral;
 			commandD = D * error_derivative;
 			
 			//Compute servo command between -1.0 & 1.0
-			new_command = commandD + commandI + commandP + servo_offset;
+			new_command = commandD + commandP + servo_offset;
 			command = command * alpha_command + (1 - alpha_command) * new_command;
 			
 			if(command > 1.f)
@@ -164,9 +145,7 @@ int main(void)
 		{
 			TFC_Ticker[2] = 0;
 			
-			update_log_serial();
-			update_serial_protocol();
-			
+			update_distantio();			
 		}
 		
 		//Update servo command
@@ -188,7 +167,6 @@ int main(void)
 		 if(TFC_PUSH_BUTTON_0_PRESSED)
 		{
 			calibrate_data(&data,exposure_time_ms);
-			error_integral = 0.f;
 			led_state = 3;
 		}
 		
