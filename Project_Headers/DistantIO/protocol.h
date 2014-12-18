@@ -9,7 +9,7 @@
 #define SERIAL_PROTOCOL_H_
 
 #include "TFC/TFC.h"
-#include "serial.h"
+#include "..\Serial\serial.h"
 
 uint8_t SOF_;
 uint8_t EOF_;
