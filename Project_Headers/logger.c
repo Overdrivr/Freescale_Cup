@@ -8,6 +8,8 @@
 #include "logger.h"
 #include "serial.h"
 
+uint8_t register_(uint8_t* adress, uint16_t octets, datatype type, uint8_t writeable, char* name);
+
 log Log;
 
 void init_log()
@@ -20,7 +22,7 @@ void init_log()
 	{
 		Log.variables[i].size = 0;
 		Log.variables[i].ptr = 0;
-		Log.variables[i].rw_rights = 1;//1 means readonly
+		Log.variables[i].writeable = 0;
 		Log.variables[i].id = i;
 		strcpy(Log.variables[i].name,default_name);
 		Log.variables[i].send = 0;
@@ -30,7 +32,7 @@ void init_log()
 
 //TODO : Replace octets by array_size ?
 //Returns 0 if ok, 1 if size exceeds log capacity
-uint8_t add_to_log(uint8_t* adress, uint16_t octets, datatype type, uint8_t readonly, char* name)
+uint8_t register_(uint8_t* adress, uint16_t octets, datatype type, uint8_t writeable, char* name)
 {
 	if(Log.current_index == 127)
 		return 1;
@@ -41,13 +43,95 @@ uint8_t add_to_log(uint8_t* adress, uint16_t octets, datatype type, uint8_t read
 	
 	Log.variables[Log.current_index].ptr = adress;
 	Log.variables[Log.current_index].size = octets;
-	Log.variables[Log.current_index].rw_rights = readonly;
+	Log.variables[Log.current_index].writeable = writeable;
 	Log.variables[Log.current_index].type = type;
 	strcpy(Log.variables[Log.current_index].name,name);
 	
 	Log.current_index++;
 	
 	return 0;
+}
+
+uint8_t register_scalar(void* adress, datatype type, uint8_t writeable, char* name)
+{
+	uint16_t octets = 0;
+	switch(type)
+	{
+	case FLOAT:
+		octets = 4;
+		break;
+		
+	case UINT8:
+		octets = 1;
+		break;
+	
+	case UINT16:
+		octets = 2;
+		break;
+	
+	case UINT32:
+		octets = 4;
+		break;
+		
+	case INT8:
+		octets = 1;
+		break;
+	
+	case INT16:
+		octets = 2;
+		break;
+		
+	case INT32:
+		octets = 4;
+		break;
+	
+	default:
+		octets = 1;
+		break;
+	}
+	
+	return register_((uint8_t*)(adress), octets, type, writeable, name);
+}
+
+uint8_t register_array(void* adress, uint16_t size, datatype type, uint8_t writeable, char* name)
+{
+	uint16_t octets = 0;
+		switch(type)
+		{
+		case FLOAT:
+			octets = 4;
+			break;
+			
+		case UINT8:
+			octets = 1;
+			break;
+		
+		case UINT16:
+			octets = 2;
+			break;
+		
+		case UINT32:
+			octets = 4;
+			break;
+			
+		case INT8:
+			octets = 1;
+			break;
+		
+		case INT16:
+			octets = 2;
+			break;
+			
+		case INT32:
+			octets = 4;
+			break;
+		
+		default:
+			octets = 1;
+			break;
+		}
+		
+	return register_((uint8_t*)(adress), octets * size, type, writeable, name);
 }
 
 void update_log_serial()
@@ -145,10 +229,13 @@ void log_process_serial(ByteQueue* rx_queue)
 	uint16_t id;
 	
 	void* ptr;
-	float* tmp;
+	
+	float* tmp_float;
+	uint32_t* tmp_uint32;
 	
 	float* to_float;
 	int32_t* to_int;
+	
 	uint8_t bytes[4]; 
 	uint8_t type;
 	
@@ -171,7 +258,7 @@ void log_process_serial(ByteQueue* rx_queue)
 		
 		if(id < Log.current_index)
 		{
-			if(Log.variables[id].rw_rights == 0 && BytesInQueue(rx_queue) >= 4)
+			if(Log.variables[id].writeable == 1 && BytesInQueue(rx_queue) >= 4)
 			{
 				bytes[0] = ForcedByteDequeue(rx_queue);
 				bytes[1] = ForcedByteDequeue(rx_queue);
@@ -183,16 +270,19 @@ void log_process_serial(ByteQueue* rx_queue)
 					to_float = (float *)(&bytes[0]);
 										
 					ptr = (void *)(Log.variables[id].ptr);
+					tmp_float = (float *)(ptr);
 					
-					tmp = (float *)(ptr);
-					
-					*tmp = *to_float;
+					*tmp_float = *to_float;
 				}
 				else if(type == 0x06)
 				{
 					//TODO : Use void ptr
-					to_int = (int*)(bytes);
-					*(Log.variables[id].ptr) = *to_int;
+					to_int = (int32_t*)(&bytes[0]);
+					
+					ptr = (void *)(Log.variables[id].ptr);
+					tmp_uint32 = (uint32_t*)(ptr);
+							
+					*tmp_uint32 = *to_int;
 				}
 			}
 			else
@@ -282,7 +372,7 @@ void send_table()
 				break;
 		}
 		
-		if(Log.variables[i].rw_rights == 0)
+		if(Log.variables[i].writeable == 1)
 			type += 0xF0;
 		
 		buffer[j] = type;			j++;

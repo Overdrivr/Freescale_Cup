@@ -30,7 +30,7 @@ struct variable
 {
 	uint8_t* ptr;
 	uint16_t size;
-	uint8_t rw_rights;
+	uint8_t writeable;
 	uint16_t id;
 	datatype type;
 	char name[32];
@@ -47,12 +47,16 @@ struct log
 
 void init_log();
 
-//Returns 0 if ok, 1 if size exceeds log capacity
-uint8_t add_to_log(uint8_t* adress, 
-				   uint16_t octets,
-				   datatype type, 
-				   uint8_t readonly, 
-				   char* name);
+uint8_t register_scalar(void* adress, 
+					    datatype type, 
+					    uint8_t writeable, 
+					    char* name);
+
+uint8_t register_array(void* adress,
+					   uint16_t size,
+					   datatype type, 
+					   uint8_t writeable, 
+					   char* name);
 
 void update_log_serial();
 
