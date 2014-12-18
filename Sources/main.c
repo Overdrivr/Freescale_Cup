@@ -6,6 +6,8 @@
 #include "logger.h"
 #include "chrono.h"
 
+//TODO : Select servo offset with potard
+
 int main(void)
 
 {
@@ -20,10 +22,11 @@ int main(void)
 	float previous_error = 0.f;
 	float error_derivative = 0.f, new_derivative = 0.f, alpha_deriv = 0.85;
 	float error_integral = 0.f;
+	
 	float looptime = 0.f;
-	float command = 0.f;
-	float servo_offset = 0.25;
-	float command_engines = 0.45f;
+	float command = 0.f,new_command = 0.f, alpha_command = 0.0;
+	float servo_offset = 0.05;
+	float command_engines = 0.5f;
 	int i;
 	float commandD = 0.f;
 	float commandI = 0.f;
@@ -31,14 +34,19 @@ int main(void)
 	float I = 0.f;
 	
 	//Parameters
+	
 	//Stable a 0.40
 	//float P = 0.013;
 	//float D = 0.0005f;
 	
 	//Stable a 0.45
-	float P = 0.011;
-	float D = 0.00035f;
+	//float P = 0.011;
+	//float D = 0.00035f;
 	
+	//a 0.45
+	float P = 0.01;
+	float D = 0.00015f;
+		
 	//To check loop times
 	chrono chr_camera,chr_main; 
 	
@@ -64,30 +72,31 @@ int main(void)
 	}
 
 	//Readonly variables
-	add_to_log(&position_error, 4, FLOAT,1,"error");
-	add_to_log(&error_derivative, 4, FLOAT,1,"derivative");
-	add_to_log(&error_integral, 4, FLOAT,1,"integral");
-	add_to_log(&command,4,FLOAT,1,"command");
-	add_to_log(&commandP,4,FLOAT,1,"cmdP");
-	add_to_log(&commandI,4,FLOAT,1,"cmdI");
-	add_to_log(&commandD,4,FLOAT,1,"cmdD");
+	register_scalar(&position_error, FLOAT,0,"error");
+	register_scalar(&error_derivative, FLOAT,0,"derivative");
+	register_scalar(&error_integral, FLOAT,0,"integral");
+	register_scalar(&command,FLOAT,0,"command");
+	register_scalar(&commandP,FLOAT,0,"cmdP");
+	register_scalar(&commandI,FLOAT,0,"cmdI");
+	register_scalar(&commandD,FLOAT,0,"cmdD");
+	
 	//Read/write variables
-	add_to_log(&P,4,FLOAT,0,"P");
-	add_to_log(&I,4,FLOAT,0,"I");
-	add_to_log(&D,4,FLOAT,0,"D");
-	add_to_log(&alpha_error,4,FLOAT,0,"alpha P");
-	add_to_log(&alpha_deriv,4,FLOAT,0,"alpha_D");
-	add_to_log(&command_engines,4,FLOAT,0,"engines");
+	register_scalar(&P,FLOAT,1,"P");
+	register_scalar(&I,FLOAT,1,"I");
+	register_scalar(&D,FLOAT,1,"D");
+	register_scalar(&alpha_error,FLOAT,1,"alpha P");
+	register_scalar(&alpha_deriv,FLOAT,1,"alpha_D");
+	register_scalar(&alpha_command,FLOAT,1,"alpha cmd");
+	register_scalar(&command_engines,FLOAT,1,"engines");
+	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
 	
+	register_scalar(&data.offset,INT16,0,"offset");
 	
-	
-	add_to_log(&data.offset,4,INT16,1,"offset");
-	add_to_log(&servo_offset,4,FLOAT,0,"servo_offset");
 	//add_to_log(&looptime,4,FLOAT,1,"looptime");
 	//add_to_log(&chr_main.duration,4,UINT32,1,"main loop");
 	
-	add_to_log(data.filtered_image,4*128,FLOAT,1,"filtered_line");
-	add_to_log(data.raw_image,4*128,UINT16,1,"raw_line");
+	register_array(data.filtered_image,128,FLOAT,1,"filtered_line");
+	register_array(data.raw_image,128,UINT16,1,"raw_line");
 	//add_to_log(data.calibration_data,4*128,FLOAT,1,"cal_data");
 	
 	/*TICKERS
@@ -140,7 +149,8 @@ int main(void)
 			commandD = D * error_derivative;
 			
 			//Compute servo command between -1.0 & 1.0
-			command = commandD + commandI + commandP + servo_offset;
+			new_command = commandD + commandI + commandP + servo_offset;
+			command = command * alpha_command + (1 - alpha_command) * new_command;
 			
 			if(command > 1.f)
 				command = 1.f;
