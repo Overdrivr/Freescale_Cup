@@ -5,12 +5,12 @@
  *      Author: B48923
  */
 
-#ifndef LOGGER_H_
-#define LOGGER_H_
+#ifndef DISTANTIO_H_
+#define DISTANTIO_H_
 
 //1 log can retain 128 different variables (=ptr adress) (A table only counts 1)
-#include "TFC\TFC.h"
-#include "serial_protocol.h"
+#include "..\TFC\TFC.h"
+#include "protocol.h"
 
 typedef enum datatype datatype;
 enum datatype
@@ -58,10 +58,11 @@ uint8_t register_array(void* adress,
 					   uint8_t writeable, 
 					   char* name);
 
-void update_log_serial();
+// To call as often as possible
+void update_distantio();
 
 void log_process_serial(ByteQueue* rx_queue);
 
 void send_table();
 
-#endif /* LOGGER_H_ */
+#endif /* DISTANTIO_H_ */

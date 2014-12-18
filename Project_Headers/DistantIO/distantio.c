@@ -5,8 +5,8 @@
  *      Author: B48923
  */
 
-#include "logger.h"
-#include "serial.h"
+#include "distantio.h"
+#include "..\Serial\serial.h"
 
 uint8_t register_(uint8_t* adress, uint16_t octets, datatype type, uint8_t writeable, char* name);
 
@@ -134,7 +134,7 @@ uint8_t register_array(void* adress, uint16_t size, datatype type, uint8_t write
 	return register_((uint8_t*)(adress), octets * size, type, writeable, name);
 }
 
-void update_log_serial()
+void update_distantio()
 {
 	
 	uint16_t i,j,k;
@@ -217,6 +217,8 @@ void update_log_serial()
 	{
 		Log.previous_index = 0;
 	}
+	
+	update_serial_protocol();
 }
 
 
