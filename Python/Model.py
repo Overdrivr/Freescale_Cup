@@ -17,20 +17,23 @@ class Model():
         self.controller = DistantIO()
         # Serial protocol
         self.protocol = Protocol()
-        # Start serial thread (can run without COM port connected)
-        self.serialthread.start()
+        
                 
     def get_ports(self):
         return self.serialthread.get_ports()
         
     def connect_com(self,COM_port):
+        # Start serial thread (can run without COM port connected)
+        if not self.serialthread.isAlive():
+            self.serialthread.start()
+            
         self.serialthread.connect(COM_port,115200)
 
     def disconnect_com(self):
         self.serialthread.disconnect()
          
     def stop(self):
-        self.stop_logger()
+        self.stop_controller()
         self.serialthread.disconnect()
         self.serialthread.stop()
 
