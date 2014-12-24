@@ -4,7 +4,10 @@ Autonomous vehicle competition using Freescale hardware
 https://community.freescale.com/groups/tfc-emea
 https://community.freescale.com/docs/DOC-1284
 
-This repository contains :
+### Author
+Rémi Bèges
+
+## Contents of this repository
 
 1. MCU side
   * Base code for the MCU provided by Freescale (Licence for this code is unknown, I do claim any rights on it)
@@ -28,11 +31,13 @@ http://www.freescale.com/webapp/sps/site/prod_summary.jsp?code=FRDM-KL25Z
 https://community.freescale.com/docs/DOC-93914
 
 ## Software
-CodeWarrior for MCU development & debug
-Usb serial port drivers are available at : http://www.pemicro.com/opensda/
+CodeWarrior Special Edition for MCU development (10.6 or more, Eclipse, offline) :
+http://www.freescale.com/webapp/sps/site/prod_summary.jsp?code=CW-SUITE-SPECIAL&fpsp=1&tab=Design_Tools_Tab
 
+Usb serial port drivers (PEDrivers_install.exe) are available at :
+http://www.pemicro.com/opensda/
 
-Python for real time data plot
+Python for real time data plot (see below for version and required modules)
 
 ## Python 
 ### Core version
