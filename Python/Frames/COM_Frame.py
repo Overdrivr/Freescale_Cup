@@ -81,7 +81,7 @@ class COM_Frame(ttk.Frame):
         self.change_COM_state(state="connected")
         self.connected = True
         #Autoselect first port
-        self.liste.selection_set(Tk.BEGIN)
+        self.liste.selection_set(0)
 
     def com_disconnected(self):
         self.change_COM_state(state="noconnect")
