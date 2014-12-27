@@ -33,8 +33,7 @@ class Model():
         self.serialthread.disconnect()
          
     def stop(self):
-        self.stop_controller()
-        self.serialthread.disconnect()
+        #self.serialthread.disconnect()
         self.serialthread.stop()
 
         if self.serialthread.isAlive():
@@ -47,6 +46,8 @@ class Model():
             print("--- Thread not properly joined.")
         else:
             print("--- Thread stopped.")
+            
+        self.stop_controller()
         
     def start_controller(self):
         #Get command for querying variable table MCU side
@@ -58,8 +59,7 @@ class Model():
         
     def stop_controller(self):
         #TODO : Tell MCU to stop sending all data
-        print('--- Logger stopped.')
-
+        pass
     def read_var(self, varid):        
         # Get command
         cmd = self.controller.encode(cmd='read',var_id=varid)
