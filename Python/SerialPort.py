@@ -94,10 +94,13 @@ class SerialPort(Thread):
     def run(self):
         #Main serial loop      
         while self.running:
-            if self.ser.isOpen() and self.ser.inWaiting() > 0:
-                serialout = self.ser.read()
-                # Freezing on exit after that ?
-                pub.sendMessage("new_rx_byte",rxbyte=serialout)
+            try:
+                if self.ser.isOpen() and self.ser.inWaiting() > 0:
+                    serialout = self.ser.read()
+                    # Freezing on exit after that ?
+                    pub.sendMessage("new_rx_byte",rxbyte=serialout)
+            except:
+                break
 
         print("Serial thread stopped.")
         
