@@ -26,26 +26,27 @@ class Application(ttk.Frame):
 
         # COM Frame
         self.frame_com_ports = COM_Frame(self,self.model,relief=Tk.GROOVE)
-        self.frame_com_ports.grid(column=0,row=0,sticky='NSEW',pady=5,padx=5)
+        self.frame_com_ports.grid(column=0,row=0,sticky='NSEW',pady=2,padx=5)
 
         # Logger frame
         self.frame_logger = Logger_Frame(self,self.model,bd=2,relief=Tk.GROOVE)
-        self.frame_logger.grid(column=0,row=1,sticky='NSEW',pady=5,padx=5)
+        self.frame_logger.grid(column=0,row=1,sticky='NSEW',pady=2,padx=5)
 
         # Graph 1 frame
         self.frame_graph1 = Plot2D_Frame(self,self.model,self.parent,bd=2,relief=Tk.GROOVE)
-        self.frame_graph1.grid(column=1,row=0,sticky='EW',pady=5,padx=0,rowspan=2)
+        self.frame_graph1.grid(column=1,row=0,sticky='EW',pady=2,padx=0,rowspan=2)
 
         # Graph 2 frame
         self.frame_graph2 = Plot2D_Frame(self,self.model,self.parent,bd=2,relief=Tk.GROOVE)
-        self.frame_graph2.grid(column=2,row=0,sticky='EW',pady=5,padx=0,rowspan=2)
+        self.frame_graph2.grid(column=2,row=0,sticky='EW',pady=2,padx=0,rowspan=2)
 
         # Quit button
-        self.bouton_quitter = Tk.Button(self, text="x",command = self.stop)
-        self.bouton_quitter.grid(column=3,row=0,sticky='N')
+        self.bouton_quitter = Tk.Button(self, text="QUITTER",command = self.stop)
+        self.bouton_quitter.grid(column=0,row=2,sticky='EW',pady=2,padx=5)
 
     def stop(self):
         self.model.stop()
+        self.parent.destroy()
 
 """
 Test functions
@@ -117,8 +118,9 @@ Program startup
 """
 if __name__ == '__main__':
     # Create window
-    root = Tk.Tk()
-    root.geometry('+0+0')   
+    root = Tk.Tk()    
+    root.geometry('+0+0')
+    
     app = Application(root,width=640, height=480)
     app.pack()
     
@@ -126,4 +128,6 @@ if __name__ == '__main__':
     t = Timer(1.0,test_rx_table)
     #t.start()
     
+    root.protocol('WM_DELETE_WINDOW', app.stop)
     app.mainloop()
+    print("Done.")
