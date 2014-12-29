@@ -18,7 +18,7 @@ class Application(ttk.Frame):
         self.parent = parent
         ttk.Frame.__init__(self,parent,**kwargs)
         # Init configuration
-        ttk.Style().configure("BW.TLabel", foreground="white", background="black")
+        ttk.Style().configure("BW.TLabel")
         ttk.Style().configure("BW.TButton")
         
         # Create Model
