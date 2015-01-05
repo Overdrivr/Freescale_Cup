@@ -13,8 +13,7 @@ class Logger_Frame(Tk.Frame):
         Tk.Frame.__init__(self,parent,**kwargs)
         self.parent = parent
         self.model = model
-        
-        pub.subscribe(self.listener_table_received,'logtable_update')
+        self.displayed_var_id = None
 
         self.txt_log = Tk.Label(self,text="LOGGER")
         self.txt_log.grid(column=0,row=0,sticky='EW',pady=3,padx=3)
@@ -37,17 +36,33 @@ class Logger_Frame(Tk.Frame):
 
         self.var_dict = dict()
 
+        #Variable name
+        self.variable = Tk.StringVar()
+        self.variable.set("Variable : ")
+        
+        self.selected_var = ttk.Label(self,textvariable=self.variable)
+        self.selected_var.grid(column=0,row=4)
+
+        #Variable read value
+        self.read_val = Tk.DoubleVar()
+        
+        self.selected_value = ttk.Label(self,textvariable=self.read_val)
+        self.selected_value.grid(column=1,row=4)
+
+        #Variable write value
         self.value = Tk.DoubleVar()
         self.value.set(0.0)
 
         self.entry = Tk.Entry(self,width=6,textvariable=self.value)
-        self.entry.grid(column = 0, row = 4, sticky="EW",padx=3,pady=3)
+        self.entry.grid(column=0, row=5, sticky="EW",padx=3,pady=3)
         
         self.bouton_write = Tk.Button(self, text="WRITE", command = self.write_value)
-        self.bouton_write.grid(column=1,row=4,sticky='EW',pady=3,padx=3)
+        self.bouton_write.grid(column=1,row=5,sticky='EW',pady=3,padx=3)
 
         # Subscriptions
         pub.subscribe(self.listener_COM_connected,'com_port_connected')
+        pub.subscribe(self.listener_value_received,'var_value_update')
+        pub.subscribe(self.listener_table_received,'logtable_update')
 
     def activate_log(self):
         # Activate serial data interception
@@ -73,8 +88,17 @@ class Logger_Frame(Tk.Frame):
             self.var_list.set(i,'name',item[4])
             self.var_list.set(i,'type',item[1])
             self.var_list.set(i,'size',item[2])
-            #Put ID, name, type, size in dict
-            self.var_dict[i] = (item[0],item[4],item[1],item[2])
+            #Put ID, name, type, size, writeable in dict
+            self.var_dict[i] = (item[0],item[4],item[1],item[2],item[3])
+
+    def listener_value_received(self,varid,value_list):
+        if self.displayed_var_id is None:
+            return
+
+        if not self.displayed_var_id == varid:
+            return
+
+        self.read_val.set(round(value_list[0],6))        
             
     def change_state(self,state):
         if state == "inprocess":
@@ -102,6 +126,7 @@ class Logger_Frame(Tk.Frame):
         self.model.write_var(var_id,value)
 
     def variable_selected(self,event):
+        
         # Find selected variable
         item = self.var_list.selection()
         
@@ -111,6 +136,22 @@ class Logger_Frame(Tk.Frame):
         # Get associated var_id       
         var_id = self.var_dict[item[0]][0]
 
+        # If selected variable is writeable
+        if self.var_dict[item[0]][4] == 1:
+            self.variable.set(self.var_dict[item[0]][1])
+            self.displayed_var_id = var_id
+                      
+            # First, tell MCU to stop logging former variable ?
+            # !!! Warning, if variable was requested by a plot, this is going to shut it down for the plot as well
+            
+            # Tell MCU to start logging new variable
+
+            # Or other approach is to request the value a single time
+                      
+        else:
+            self.variable.set("** Variable not writeable **")
+            self.displayed_var_id = None
+                      
         pub.sendMessage("new_var_selected",varid=var_id)
 
         
