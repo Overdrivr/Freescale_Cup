@@ -86,16 +86,16 @@ class Model():
     
 # List of events that can be subscribed to
 """
---- Serial port (SerialPortHandler.py)
+--- Serial port (SerialPort.py)
     * When COM port is connected : 'com_port_connected',port
     * When COM port is disconnected : 'com_port_disconnected'
     * When a new byte is received from COM port : 'new_rx_byte',rxbyte
     
---- Serial protocol (SerialProtocol.py)
+--- Protocol (Protocol.py)
     * When a new payload has been decoded by the serial protocol : 'new_rx_payload',rxpayload
     * When a character is not part of a message on the serial port : 'new_ignored_rx_byte',rxbyte
 
---- Logger (Logger.py)
+--- DistanIO (DistantIO.py)
     * When variable table has been received : 'logtable_update',varlist
     * When variable value has been received : 'var_value_update',varid,value_list
 
