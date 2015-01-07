@@ -6,6 +6,8 @@
 #include "chrono.h"
 
 //TODO : Select servo offset with potard
+// WARNING : SysTick frequency is 50kHz. Will overflow after roughly 2.5 hours
+// CHeck : TFC_SetLineScanExposureTime, read process data
 
 int main(void)
 
@@ -21,13 +23,19 @@ int main(void)
 	float previous_error = 0.f;
 	float error_derivative = 0.f, new_derivative = 0.f, alpha_deriv = 0.85;
 	
-	float looptime = 0.f;
 	float command = 0.f,new_command = 0.f, alpha_command = 0.0;
 	float servo_offset = 0.05;
 	float command_engines = 0.5f;
 	
 	float commandD = 0.f;
 	float commandP = 0.f;
+	
+	/* NEW VALUES
+	 * 
+	 * V = 0.4
+	 * P = 
+	 * D = 0
+	 */
 	
 	//Parameters
 	
@@ -44,7 +52,11 @@ int main(void)
 	float D = 0.00015f;
 		
 	//To check loop times
-	chrono chr_camera,chr_main; 
+	chrono chr_cam_m, chr_loop_m;
+	//To ensure loop times
+	chrono chr_distantio,chr_cam;
+	float t_cam = 0, t_loop = 0;
+	float looptime_cam;
 	
 	//Camera processing parameters
 	data.threshold_coefficient = 0.65;
@@ -61,6 +73,10 @@ int main(void)
 	TFC_SetBatteryLED_Level(led_state);
 	
 	//Readonly variables
+	register_scalar(&t_cam,FLOAT,0,"cam time(ms)");
+	register_scalar(&t_loop,FLOAT,0,"main time(ms)");
+	register_scalar(&looptime_cam,FLOAT,0,"cam exe period(us)");
+
 	register_scalar(&position_error, FLOAT,0,"error");
 	register_scalar(&error_derivative, FLOAT,0,"derivative");
 	register_scalar(&command,FLOAT,0,"command");
@@ -91,39 +107,67 @@ int main(void)
 	2 : logger update
 	3 : led update
 	4 : line calibration
-	5 : PID loop time
+	
 	6 : chronometers
+	7 : test chrono
 	*/
-	uint32_t exposure_time_us = 10000;
-	uint32_t exposure_time_ms = 10;
-	uint32_t servo_update_ms = 20;
+	//Tickers are in 1/10 ms now
+	float exposure_time_us = 10000;
+	uint32_t exposure_time_ms = exposure_time_us / 1000;
+	uint32_t servo_update_ms = 200;
 	
 	TFC_SetLineScanExposureTime(exposure_time_us);
 	TFC_SetServo(0, servo_offset);
-
+	
+	Restart(&chr_distantio);
 	
 	for(;;)
 	{
-		Restart(&chr_main);
+		Restart(&chr_loop_m);	//**TIME MONITORING
+		
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
 		TFC_Task();
 		
-		//Compute line position
-		if(TFC_Ticker[0] > exposure_time_ms)
+		
+		Capture(&chr_distantio);
+		if(GetLastDelay_ms(&chr_distantio) > 4)
 		{
-			Restart(&chr_camera);
-			read_process_data(&data,exposure_time_ms);
+			TFC_Ticker[2] = 0;
+			Restart(&chr_distantio);
 			
-			//TODO : Check this loop runs at minimal time 
-			//Compute looptime
-			looptime = TFC_Ticker[5];
-			TFC_Ticker[5] = 0;
+			t_loop = GetLastDelay_ms(&chr_loop_m);
+			t_cam = GetLastDelay_ms(&chr_cam_m);
+			
+			update_distantio();
+		}
+		/*
+		TFC_Ticker[5] = 0;
+		while(TFC_Ticker[5]<100)
+		{
+			
+		}
+		*/
+			
+		
+			
+		
+		//Compute line position
+		Capture(&chr_cam);
+		looptime_cam = GetLastDelay_us(&chr_cam);
+		if(looptime_cam > exposure_time_us)
+		{
+			Restart(&chr_cam);
+			
+			
+			Restart(&chr_cam_m);	//TIME MONITORING
+			//TOCHECK
+			read_process_data(&data,exposure_time_ms);			
 			
 			//Compute errors for PD
 			previous_error = position_error;
 			position_error =  position_error * alpha_error + data.line_position * (1 - alpha_error);
 			
-			new_derivative = (position_error - previous_error) * 1000.f / looptime;
+			new_derivative = (position_error - previous_error) * 1000.f / looptime_cam;
 			error_derivative = error_derivative * alpha_deriv + (1 - alpha_deriv) * new_derivative;
 			
 			commandP = P * position_error;
@@ -138,15 +182,9 @@ int main(void)
 			if(command < -1.f)
 				command = -1.f;
 			
-			Stop(&chr_camera);
+			Capture(&chr_cam_m); //TIME MONITORING
 		}
-		//Logger debug
-		else if(TFC_Ticker[2] > 10)
-		{
-			TFC_Ticker[2] = 0;
-			
-			update_distantio();			
-		}
+		
 		
 		//Update servo command
 		if(TFC_Ticker[1] > servo_update_ms)
@@ -182,7 +220,8 @@ int main(void)
 		}
 	
 		TFC_SetBatteryLED_Level(led_state);
-		Stop(&chr_main);
+		
+		Capture(&chr_loop_m);	//**TIME MONITORING
 	}
 	return 0;
 }
