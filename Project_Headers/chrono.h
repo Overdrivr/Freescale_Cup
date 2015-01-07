@@ -20,8 +20,10 @@ typedef struct chrono chrono;
 
 void Restart(chrono* chr);
 
-void Stop(chrono* chr);
+void Capture(chrono* chr);
 
-uint32_t Get(chrono* chr);
+float GetLastDelay_us(chrono* chr);
+
+float GetLastDelay_ms(chrono* chr);
 
 #endif /* CHRONO_H_ */
