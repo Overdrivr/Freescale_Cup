@@ -100,8 +100,7 @@ class SerialPort(Thread):
                     # Freezing on exit after that ?
                     pub.sendMessage("new_rx_byte",rxbyte=serialout)
             except:
-                break
-
+                pass
         print("Serial thread stopped.")
         
         
