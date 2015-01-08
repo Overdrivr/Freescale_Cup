@@ -5,7 +5,7 @@ void TFC_InitSysTick();
 void TFC_Delay_mS(unsigned int TicksIn_mS);
 void TFC_SysTickIrq();
 
-#define SYSTICK_FREQUENCY 50000
+#define SYSTICK_FREQUENCY 100000
 
 extern volatile uint32_t TFC_Ticker[NUM_TFC_TICKERS];
 

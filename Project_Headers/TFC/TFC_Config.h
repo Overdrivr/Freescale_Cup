@@ -10,7 +10,7 @@
 //you can use it to for general purpose timing, scheduling events, etc.  The TFC_Ticker variable
 //is just an array of 32-bit integers, use the Macro below to set how many tickers you need
 
-#define NUM_TFC_TICKERS			9
+#define NUM_TFC_TICKERS			1
 
 //This is what the exposure time for the Linescan will be set to out of bootup
 #define TFC_DEFAULT_LINESCAN_EXPOSURE_TIME_uS	1000//50000
