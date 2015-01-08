@@ -59,6 +59,7 @@ int main(void)
 	float t_cam = 0, t_loop = 0;
 	float looptime_cam;
 	float temp_int16;
+	int queue_size = 0;
 	
 	//Camera processing parameters
 	data.threshold_coefficient = 0.65;
@@ -78,7 +79,9 @@ int main(void)
 	register_scalar(&t_cam,FLOAT,0,"cam time(ms)");
 	register_scalar(&t_loop,FLOAT,0,"main time(ms)");
 	register_scalar(&looptime_cam,FLOAT,0,"cam exe period(us)");
-
+	
+	register_scalar(&queue_size, INT32,0,"queue size");
+	
 	register_scalar(&position_error, FLOAT,0,"error");
 	register_scalar(&error_derivative, FLOAT,0,"derivative");
 	register_scalar(&command,FLOAT,0,"command");
@@ -133,8 +136,9 @@ int main(void)
 			TFC_Ticker[2] = 0;
 			Restart(&chr_distantio);
 			temp_int16 = (float)(data.offset);
-			
+
 			update_distantio();
+			queue_size = (int)(BytesInQueue(&SERIAL_OUTGOING_QUEUE));
 		}			
 		
 		//Compute line position
