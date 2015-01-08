@@ -14,13 +14,19 @@ class DistantIO():
         self.log_table = Queue(0)
         self.variables = list()
         self.type_lookup = {0 : '=f',
+                            1 : '=B',
                             2 : '=H',
                             3 : '=I',
+                            4 : '=b',
+                            5 : '=h',
                             6 : '=i'
                             }
         self.size_lookup = {0 : 4,
+                            1 : 1,
                             2 : 2,
                             3 : 4,
+                            4 : 1,
+                            5 : 2,
                             6 : 4}
         pub.subscribe(self.decode,'new_rx_payload')
 
@@ -40,124 +46,43 @@ class DistantIO():
         
         # Parse 'received_variable_value' payload
         if command == 0:
-            #int
-            if datatype == 6:
-                new_values = list()
-                index = 4
-                
-                if (len(frame) - 4) < 4:
-                    print("Unvalid frame size")
-                    return
-                
-                while len(frame) - index >= 4:
-                    # Stock raw bytes in byte array
-                    temp = bytearray()
-                    temp.insert(1,frame[index])
-                    temp.insert(1,frame[index+1])
-                    temp.insert(1,frame[index+2])
-                    temp.insert(1,frame[index+3])
-                    index += 4
-                   
-                    # Get format
-                    fmt = self.type_lookup[datatype]
-                    
-                    # Transform value to desired format
-                    val = struct.unpack(fmt,temp)[0]
-                    
-                    # Store to list
-                    new_values.append(val)
-                    
-                #Publish the value update
-                pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
 
+            # Check datatype exists
+            if not datatype in self.type_lookup:
+                print("Datatype ",datatype," unknown.")
+                return
+
+            if not datatype in self.size_lookup:
+                print("Datatype ",datatype," size unknown.")
+                return
+            
+            new_values = list()
+            index = 4
+
+            # Decode data
+            if (len(frame) - index) < self.size_lookup[datatype]:
+                print("Unvalid frame size.")
+                return
                 
-            #float
-            elif datatype == 0:
-                new_values = list()
-                index = 4
-                
-                if (len(frame) - 4) < 4:
-                    print("Unvalid frame size")
-                    return
-                
-                while len(frame) - index >= 4:
-                    # Stock raw bytes in byte array
-                    temp = bytearray()
+            while len(frame) - index >= self.size_lookup[datatype]:
+                # Stock raw bytes in byte array
+                temp = bytearray()
+                for i in range(self.size_lookup[datatype]):
                     temp.append(frame[index])
-                    temp.append(frame[index+1])
-                    temp.append(frame[index+2])
-                    temp.append(frame[index+3])
-                    index += 4
+                    index += 1
 
-                    # Get format
-                    fmt = self.type_lookup[datatype]
+                # Get format
+                fmt = self.type_lookup[datatype]
                     
-                    # Transform value to desired format
-                    val = struct.unpack(fmt,temp)[0]
+                # Transform value to desired format
+                val = struct.unpack(fmt,temp)[0]
                     
-                    # Store to list
-                    new_values.append(val)
+                # Store to list
+                new_values.append(val)
                 
-                #Publish the value update
-                pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
-            #############    
-            #uint32
-            elif datatype == 3:
-                new_values = list()
-                index = 4
-                
-                if (len(frame) - 4) < 4:
-                    print("Unvalid frame size")
-                    return
-                
-                while len(frame) - index >= 4:
-                    # Stock raw bytes in byte array
-                    temp = bytearray()
-                    temp.append(frame[index])
-                    temp.append(frame[index+1])
-                    temp.append(frame[index+2])
-                    temp.append(frame[index+3])
-                    index += 4
-
-                    # Get format
-                    fmt = self.type_lookup[datatype]
-                    
-                    # Transform value to desired format
-                    val = struct.unpack(fmt,temp)[0]
-                    
-                    # Store to list
-                    new_values.append(val)
-                
-                #Publish the value update
-                pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
-            #############    
-            #uint16
-            elif datatype == 2:
-                new_values = list()
-                index = 4
-                
-                if (len(frame) - 4) < 4:
-                    print("Unvalid frame size")
-                    return
-                
-                while len(frame) - index >= 4:
-                    # Stock raw bytes in byte array
-                    temp = bytearray()
-                    temp.append(frame[index])
-                    temp.append(frame[index+1])
-                    index += 2
-
-                    # Get format
-                    fmt = self.type_lookup[datatype]
-                    
-                    # Transform value to desired format
-                    val = struct.unpack(fmt,temp)[0]
-                    
-                    # Store to list
-                    new_values.append(val)
-                
-                #Publish the value update
-                pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)  
+            #Publish the value update
+            pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
+             
         # Parse 'received_table' payload
         elif command == 2:
             #Empty list
