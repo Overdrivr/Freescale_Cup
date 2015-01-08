@@ -10,12 +10,12 @@
 
 void Restart(chrono* chr)
 {
-	chr->start = TFC_Ticker[6];
+	chr->start = TFC_Ticker[0];
 }
 
 void Capture(chrono* chr)
 {
-	chr->stop = TFC_Ticker[6];
+	chr->stop = TFC_Ticker[0];
 	chr->duration = chr->stop - chr->start;
 }
 
