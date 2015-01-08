@@ -22,12 +22,12 @@ struct cameraData
 	int falling_edges_position[128];
 	int rising_edges_position[128];
 	uint16_t edges_count;
-	int16_t line_position;
+	float line_position;
 	int16_t valid_line_position;
 	
 	//Calibration data
 	float threshold;
-	int16_t offset;
+	float offset;
 	
 	//Parameters
 	float threshold_coefficient;

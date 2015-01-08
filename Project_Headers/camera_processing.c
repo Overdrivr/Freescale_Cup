@@ -45,7 +45,7 @@ int read_process_data(cameraData* data)
 	//Record current image & detect min max
 	min = 65535;
 	max = 0;
-		
+	
 	for(i=0;i<128;i++)
 	{
 		data->raw_image[i] = LineScanImage1[i];
@@ -168,11 +168,11 @@ void calibrate_data(cameraData* data)
 	
 	data->offset = 0.f;
 	
-	//Record raw camera image 20 times or stop at 5 seconds
-	while(counter < 20 && GetLastDelay_ms(&chr) < 5000)
+	//Record raw camera image 100 times or stop at 5 seconds
+	while(counter < 100 && GetLastDelay_ms(&chr) < 5000)
 	{
 		Capture(&chr);
-		if(read_process_data(data))
+		if(read_process_data(data) == 0)
 		{
 			center += data->line_position;
 			counter++;
@@ -186,9 +186,7 @@ void calibrate_data(cameraData* data)
 	
 	div = (float)(counter);
 	
-	//Compute average
-	center /= div;
-	
-	data->offset = -(int16_t)(center);
+	//Compute average	
+	data->offset = - center / div;
 }
 
