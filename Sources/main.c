@@ -7,7 +7,6 @@
 
 //TODO : Select servo offset with potard
 // WARNING : SysTick frequency is 50kHz. Will overflow after roughly 2.5 hours
-// CHeck : TFC_SetLineScanExposureTime, read process data
 
 int main(void)
 
@@ -54,7 +53,7 @@ int main(void)
 	//To check loop times
 	chrono chr_cam_m, chr_loop_m;
 	//To ensure loop times
-	chrono chr_distantio,chr_cam;
+	chrono chr_distantio,chr_cam,chr_led,chr_servo;
 	float t_cam = 0, t_loop = 0;
 	float looptime_cam;
 	
@@ -97,59 +96,42 @@ int main(void)
 	//add_to_log(&looptime,4,FLOAT,1,"looptime");
 	//add_to_log(&chr_main.duration,4,UINT32,1,"main loop");
 	
-	register_array(data.filtered_image,128,FLOAT,1,"filtered_line");
-	register_array(data.raw_image,128,UINT16,1,"raw_line");
+	register_array(data.filtered_image,128,FLOAT,0,"filtered_line");
+	register_array(data.raw_image,128,UINT16,0,"raw_line");
 	//add_to_log(data.calibration_data,4*128,FLOAT,1,"cal_data");
 	
 	/*TICKERS
-	0 : read line data
-	1 : servo update
-	2 : logger update
-	3 : led update
-	4 : line calibration
-	
-	6 : chronometers
-	7 : test chrono
+	0 : chronos	
 	*/
-	//Tickers are in 1/10 ms now
+	
 	float exposure_time_us = 10000;
-	uint32_t exposure_time_ms = exposure_time_us / 1000;
-	uint32_t servo_update_ms = 200;
+	uint32_t servo_update_ms = 20;
 	
 	TFC_SetLineScanExposureTime(exposure_time_us);
 	TFC_SetServo(0, servo_offset);
 	
 	Restart(&chr_distantio);
+	Restart(&chr_led);
+	Restart(&chr_servo);
 	
 	for(;;)
 	{
-		Restart(&chr_loop_m);	//**TIME MONITORING
+			
+			Restart(&chr_loop_m);	//**TIME MONITORING
+		t_loop = GetLastDelay_ms(&chr_loop_m);
 		
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
 		TFC_Task();
 		
 		
 		Capture(&chr_distantio);
-		if(GetLastDelay_ms(&chr_distantio) > 4)
+		if(GetLastDelay_us(&chr_distantio) > 2000)
 		{
 			TFC_Ticker[2] = 0;
 			Restart(&chr_distantio);
 			
-			t_loop = GetLastDelay_ms(&chr_loop_m);
-			t_cam = GetLastDelay_ms(&chr_cam_m);
-			
 			update_distantio();
-		}
-		/*
-		TFC_Ticker[5] = 0;
-		while(TFC_Ticker[5]<100)
-		{
-			
-		}
-		*/
-			
-		
-			
+		}			
 		
 		//Compute line position
 		Capture(&chr_cam);
@@ -158,10 +140,10 @@ int main(void)
 		{
 			Restart(&chr_cam);
 			
-			
-			Restart(&chr_cam_m);	//TIME MONITORING
-			//TOCHECK
-			read_process_data(&data,exposure_time_ms);			
+				Restart(&chr_cam_m);	//TIME MONITORING
+			read_process_data(&data);			
+				
+				
 			
 			//Compute errors for PD
 			previous_error = position_error;
@@ -182,29 +164,31 @@ int main(void)
 			if(command < -1.f)
 				command = -1.f;
 			
-			Capture(&chr_cam_m); //TIME MONITORING
+				Capture(&chr_cam_m); //TIME MONITORING
+				t_cam = GetLastDelay_ms(&chr_cam_m);
 		}
 		
 		
 		//Update servo command
-		if(TFC_Ticker[1] > servo_update_ms)
+		Capture(&chr_servo);
+		if(GetLastDelay_ms(&chr_servo) > servo_update_ms)
 		{
-			TFC_Ticker[1] = 0;
-			
+			Restart(&chr_servo);
 			TFC_SetServo(0, command);
 		}
 		
 		//Led state
-		if(TFC_Ticker[3] > 500)
+		Capture(&chr_led);
+		if(GetLastDelay_ms(&chr_led) > 500)
 		{
-			TFC_Ticker[3] = 0;
+			Restart(&chr_led);
 			led_state ^= 0x01; 			
 		}
 		
 		//Calibrate
-		 if(TFC_PUSH_BUTTON_0_PRESSED)
+		if(TFC_PUSH_BUTTON_0_PRESSED)
 		{
-			calibrate_data(&data,exposure_time_ms);
+			calibrate_data(&data);
 			led_state = 3;
 		}
 		
@@ -220,7 +204,6 @@ int main(void)
 		}
 	
 		TFC_SetBatteryLED_Level(led_state);
-		
 		Capture(&chr_loop_m);	//**TIME MONITORING
 	}
 	return 0;
