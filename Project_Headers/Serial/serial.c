@@ -15,6 +15,11 @@ int16_t serial_write(uint8_t* buf, uint16_t len)
 	return ByteArrayEnqueue(&SERIAL_OUTGOING_QUEUE,buf,len);
 }
 
+uint16_t serial_write_available()
+{
+	return (SERIAL_OUTGOING_QUEUE.QueueSize - BytesInQueue(&SERIAL_OUTGOING_QUEUE));
+}
+
 uint16_t serial_available()
 {
 	return BytesInQueue(&SERIAL_INCOMING_QUEUE);

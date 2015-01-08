@@ -28,6 +28,9 @@
 //Returns number of bytes written
 int16_t serial_write(uint8_t* buf, uint16_t len);
 
+//Returns the space in the tx queue
+uint16_t serial_write_available();
+
 #define serial_printf(...) Qprintf(&SERIAL_OUTGOING_QUEUE,__VA_ARGS__)
 
 //Returns number of received bytes in the reception queue (basically nb of bytes that can be read)
