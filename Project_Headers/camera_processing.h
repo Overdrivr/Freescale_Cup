@@ -14,8 +14,9 @@
 typedef struct cameraData cameraData;
 struct cameraData
 {
-	uint16_t raw_image[128];
 	float filtered_image[128];
+	uint16_t raw_image[128];
+	
 	int8_t threshold_image[128];
 	
 	int falling_edges_position[128];
@@ -47,7 +48,7 @@ void init_data(cameraData* data);
 
 
 //////////////////////////////////////////////
-int read_process_data(cameraData* data, uint32_t update_delay_ms);
+int read_process_data(cameraData* data);
 /*
  * Reads camera image through serial port, process image and computes line position 
  * data : data structure for holding all informations (for filtering, optimizations, etc.)
@@ -55,7 +56,7 @@ int read_process_data(cameraData* data, uint32_t update_delay_ms);
  */
 
 //////////////////////////////////////////////
-void calibrate_data(cameraData* data, uint32_t update_delay_ms);
+void calibrate_data(cameraData* data);
 /*
  * Camera will read 10 frames and compute a correct threshold value
  * 

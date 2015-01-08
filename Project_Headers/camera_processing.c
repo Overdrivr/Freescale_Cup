@@ -6,6 +6,7 @@
  */
 
 #include "camera_processing.h"
+#include "chrono.h"
 
 void init_data(cameraData* data)
 {
@@ -32,19 +33,15 @@ void init_data(cameraData* data)
 }
 
 
-int read_process_data(cameraData* data, uint32_t update_delay_ms)
+int read_process_data(cameraData* data)
 {	
 	uint16_t min, max;
 	float val;
 	float position;
 	uint8_t edge_signal;
 	int16_t i;
-	
-	if(TFC_Ticker[0] < update_delay_ms)
-		return 1;
-	
-	TFC_Ticker[0] = 0;
-	
+	int16_t loopright = 128 - data->edgeright;
+
 	//Record current image & detect min max
 	min = 65535;
 	max = 0;
@@ -58,28 +55,19 @@ int read_process_data(cameraData* data, uint32_t update_delay_ms)
 		if(data->raw_image[i] < min)
 			min =data->raw_image[i];
 	}
-					
-	//Remove edges
-	for(i = 0 ; i < data->edgeleft ; i++)
-	{
-		data->raw_image[i] = max;
-	}
-	
-	for(i = (128 - data->edgeright) ; i < 128 ; i++)
-	{
-		data->raw_image[i] = max;
-	}
 	
 	//Left-starting complementary filter
-	data->filtered_image[0] = data->raw_image[0];
-	for(i=0;i<127;i++)
+	data->filtered_image[data->edgeleft] = data->raw_image[data->edgeleft];
+	
+	for(i = data->edgeleft ; i < loopright ; i++)
 	{
 		val = data->raw_image[i+1];
 		data->filtered_image[i+1] = data->filtered_image[i] * (1 - data->alpha) + val * data->alpha;
-	}	
+	}
+	
 	
 	//Apply threshold
-	for(i=0;i<128;i++)
+	for(i = data->edgeleft ; i < loopright ; i++)
 	{
 		if(data->filtered_image[i] > data->threshold)
 		{
@@ -92,7 +80,7 @@ int read_process_data(cameraData* data, uint32_t update_delay_ms)
 	//Look for falling then rising edge, from pixel 0 to 128
 	data->edges_count = 0;
 	edge_signal = 0;
-	for(i=0;i<127;i++)
+	for(i = data->edgeleft ; i < loopright ; i++)
 	{
 		//Edge detected
 		if(data->threshold_image[i] * data->threshold_image[i+1] < 0)
@@ -158,33 +146,40 @@ uint8_t compute_valid_line_position(cameraData* data)
 	return 0;
 }
 
-void calibrate_data(cameraData* data, uint32_t update_delay_ms)
+void calibrate_data(cameraData* data)
 {
-	
-	int i = 0,  counter = 0;
+	int counter = 0;
 	float div = 1.f;
 	float center = 0.f;
 	
-	TFC_Ticker[4] = 0; 
+	chrono chr;
 	
-	while(TFC_Ticker[4] < 1000)
+	Restart(&chr);
+	
+	
+	while(GetLastDelay_ms(&chr) < 1000)
 	{
+		Capture(&chr);
 		//Wait 1 second
 	}
 	
-	TFC_Ticker[4] = 0; 
+	
+	Restart(&chr);
 	
 	data->offset = 0.f;
 	
-	//Record raw camera image 20 times or stop at 5000 seconds
-	while(counter < 20 && TFC_Ticker[4] < 5000)
+	//Record raw camera image 20 times or stop at 5 seconds
+	while(counter < 20 && GetLastDelay_ms(&chr) < 5000)
 	{
-		if(read_process_data(data,update_delay_ms))
+		Capture(&chr);
+		if(read_process_data(data))
 		{
 			center += data->line_position;
 			counter++;
 		}
 	}
+	
+	
 	
 	if(counter == 0)
 		return;
