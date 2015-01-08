@@ -6,6 +6,7 @@
 #include "chrono.h"
 
 //TODO : Select servo offset with potard
+
 // WARNING : SysTick frequency is 50kHz. Will overflow after roughly 2.5 hours
 
 int main(void)
@@ -23,39 +24,41 @@ int main(void)
 	float error_derivative = 0.f, new_derivative = 0.f, alpha_deriv = 0.85;
 	
 	float command = 0.f,new_command = 0.f, alpha_command = 0.0;
-	float servo_offset = 0.05;
-	float command_engines = 0.5f;
+	float servo_offset = 0.2;
 	
 	float commandD = 0.f;
 	float commandP = 0.f;
 	
-	/* NEW VALUES
-	 * 
-	 * V = 0.4
-	 * P = 
-	 * D = 0
-	 */
+	/*********************/
+	/**      PID        **/
+	/*********************/
+	//STABLE
+	float P = 0.012;
+	float D = 0.f;
+	float command_engines = 0.4f;
 	
-	//Parameters
+	//Stable
+	P = 0.018;
+	D = 0.f;
+	command_engines = 0.4f;
 	
-	//Stable a 0.40
-	//float P = 0.013;
-	//float D = 0.0005f;
+	//Start oscillating
+	P = 0.019;
+	D = 0.f;
+	command_engines = 0.4f;
 	
-	//Stable a 0.45
-	//float P = 0.011;
-	//float D = 0.00035f;
+	//NUL
+	P = 0.018f;
+	D = 0.001f;
+	command_engines = 0.4f;
 	
-	//a 0.45
-	float P = 0.01;
-	float D = 0.00015f;
-		
 	//To check loop times
 	chrono chr_cam_m, chr_loop_m;
 	//To ensure loop times
 	chrono chr_distantio,chr_cam,chr_led,chr_servo;
 	float t_cam = 0, t_loop = 0;
 	float looptime_cam;
+	float temp_int16;
 	
 	//Camera processing parameters
 	data.threshold_coefficient = 0.65;
@@ -91,7 +94,7 @@ int main(void)
 	register_scalar(&command_engines,FLOAT,1,"engines");
 	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
 	
-	register_scalar(&data.offset,INT16,0,"offset");
+	register_scalar(&temp_int16,FLOAT,0,"offset");
 	
 	//add_to_log(&looptime,4,FLOAT,1,"looptime");
 	//add_to_log(&chr_main.duration,4,UINT32,1,"main loop");
@@ -105,7 +108,7 @@ int main(void)
 	*/
 	
 	float exposure_time_us = 10000;
-	uint32_t servo_update_ms = 20;
+	uint32_t servo_update_ms = 10;
 	
 	TFC_SetLineScanExposureTime(exposure_time_us);
 	TFC_SetServo(0, servo_offset);
@@ -129,6 +132,7 @@ int main(void)
 		{
 			TFC_Ticker[2] = 0;
 			Restart(&chr_distantio);
+			temp_int16 = (float)(data.offset);
 			
 			update_distantio();
 		}			
@@ -147,9 +151,10 @@ int main(void)
 			
 			//Compute errors for PD
 			previous_error = position_error;
-			position_error =  position_error * alpha_error + data.line_position * (1 - alpha_error);
-			
-			new_derivative = (position_error - previous_error) * 1000.f / looptime_cam;
+			//position_error =  position_error * alpha_error + data.line_position * (1 - alpha_error);
+			position_error = data.line_position;
+					
+			new_derivative = (position_error - previous_error) * 1000000.f / looptime_cam;
 			error_derivative = error_derivative * alpha_deriv + (1 - alpha_deriv) * new_derivative;
 			
 			commandP = P * position_error;
@@ -157,7 +162,8 @@ int main(void)
 			
 			//Compute servo command between -1.0 & 1.0
 			new_command = commandD + commandP + servo_offset;
-			command = command * alpha_command + (1 - alpha_command) * new_command;
+			//command = command * alpha_command + (1 - alpha_command) * new_command;
+			command = new_command;
 			
 			if(command > 1.f)
 				command = 1.f;
@@ -200,7 +206,7 @@ int main(void)
 		else
 		{
 			TFC_HBRIDGE_ENABLE;
-			TFC_SetMotorPWM(-command_engines , -command_engines);
+			TFC_SetMotorPWM(command_engines , command_engines);
 		}
 	
 		TFC_SetBatteryLED_Level(led_state);
