@@ -13,7 +13,6 @@ class ESC_STATE(Enum):
     NEXT = 1
 
 #Robust serial protocol with bit stuffing
-# ON RX ERROR, RESET PROTOCOL ?
 class Protocol():
 
     def __init__(self):
@@ -48,7 +47,6 @@ class Protocol():
                 self.escape_state = ESC_STATE.IDLE
                 self.framesize += 1;
                 
-                
             #Next char can be data or flag (EOF, SOF,..)    
             elif self.escape_state == ESC_STATE.IDLE:
                 #End of frame, the payload is immediatly send to callback function
@@ -57,9 +55,16 @@ class Protocol():
                     self.payload = bytearray()
                     self.rx_state = RX_STATE.IDLE
                     
+                #Receive a SOF while a frame is running, error
+                elif newbyte == self.SOF:
+                    self.payload = bytearray()
+                    self.rx_state = RX_STATE.IDLE
+                    print("Protocol : Received frame unvalid, discarding.")
+                    
                 #Escaping
                 elif newbyte == self.ESC:
                     self.escape_state = ESC_STATE.NEXT
+                
                 #Storing data
                 else:
                     self.payload.append(newbyte)
