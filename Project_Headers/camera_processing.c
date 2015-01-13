@@ -56,32 +56,28 @@ int read_process_data(cameraData* data)
 			min =data->raw_image[i];
 	}
 	
-	//Left-starting complementary filter
+	data->edges_count = 0;
+		edge_signal = 0;
+	
+	
 	data->filtered_image[data->edgeleft] = data->raw_image[data->edgeleft];
 	
 	for(i = data->edgeleft ; i < loopright ; i++)
 	{
+		//Left-starting complementary filter
 		val = data->raw_image[i+1];
 		data->filtered_image[i+1] = data->filtered_image[i] * (1 - data->alpha) + val * data->alpha;
-	}
-	
-	
-	//Apply threshold
-	for(i = data->edgeleft ; i < loopright ; i++)
-	{
+		
+		
+		//Apply threshold
 		if(data->filtered_image[i] > data->threshold)
 		{
 			data->threshold_image[i] = 1;
 		}
 		else
 			data->threshold_image[i] = -1;
-	}
 		
-	//Look for falling then rising edge, from pixel 0 to 128
-	data->edges_count = 0;
-	edge_signal = 0;
-	for(i = data->edgeleft ; i < loopright ; i++)
-	{
+		//Look for falling then rising edge, from pixel 0 to 128
 		//Edge detected
 		if(data->threshold_image[i] * data->threshold_image[i+1] < 0)
 		{
@@ -100,7 +96,6 @@ int read_process_data(cameraData* data)
 				data->edges_count++;
 			}
 		}
-			
 	}
 				
 	
