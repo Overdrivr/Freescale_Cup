@@ -204,9 +204,9 @@ void update_distantio()
 		//Write data
 		for(k = 0 ; k < Log.variables[i].size ; k++)
 		{
-			buffer[0] = *(Log.variables[i].ptr + k);
+			temp_ptr = Log.variables[i].ptr + k;
 			
-			append_serial_frame(buffer,1);
+			append_serial_frame(temp_ptr,1);
 		}
 		end_serial_frame();
 	}
