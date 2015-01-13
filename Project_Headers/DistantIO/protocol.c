@@ -18,8 +18,10 @@ state protocol_state;
 //In case ESC character is received
 ESC_state escape_state;
 
-uint16_t TEST_WTF = 4096;
-uint16_t AMOUNT = 0;
+uint8_t SOF_;
+uint8_t EOF_;
+uint8_t ESC_;
+
 
 
 void init_serial_protocol()
@@ -74,9 +76,9 @@ void append_serial_frame(uint8_t* framedata,uint16_t framesize)
 	for(i = 0 ; i < framesize ; i++)
 	{
 		//See serial_protocols_definition.xlsx
-		if(*(framedata + i) == SOF_ ||
-		   *(framedata + i) == EOF_ ||
-		   *(framedata + i) == ESC_)
+		if(framedata[i] == SOF_ ||
+		   framedata[i] == EOF_ ||
+		   framedata[i] == ESC_)
 		{
 			//If data contains one of the flags, we escape it before
 			serial_write(&ESC_,1);
