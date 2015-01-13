@@ -49,11 +49,11 @@ class DistantIO():
 
             # Check datatype exists
             if not datatype in self.type_lookup:
-                print("Datatype ",datatype," unknown.")
+                print("DistantIO error : Datatype ",datatype," unknown.")
                 return
 
             if not datatype in self.size_lookup:
-                print("Datatype ",datatype," size unknown.")
+                print("DistantIO error : Datatype ",datatype," size unknown.")
                 return
             
             new_values = list()
@@ -61,7 +61,7 @@ class DistantIO():
 
             # Decode data
             if (len(frame) - index) < self.size_lookup[datatype]:
-                print("Unvalid frame size.")
+                print("DistantIO error : Unvalid frame size.")
                 return
                 
             while len(frame) - index >= self.size_lookup[datatype]:
@@ -133,7 +133,7 @@ class DistantIO():
             #If successful, publish new table
             pub.sendMessage('logtable_update',varlist=self.variables)
         else:
-            print("Logger : unknown MCU answer : ",command)
+            print("DistantIO error : unknown MCU answer : ",frame)
 
         pass
 
