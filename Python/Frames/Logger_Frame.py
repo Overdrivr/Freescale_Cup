@@ -136,11 +136,12 @@ class Logger_Frame(Tk.Frame):
         # Get associated var_id       
         var_id = self.var_dict[item[0]][0]
 
+        self.displayed_var_id = var_id
+
         # If selected variable is writeable
         if self.var_dict[item[0]][4] == 1:
             self.variable.set(self.var_dict[item[0]][1])
-            self.displayed_var_id = var_id
-                      
+            
             # First, tell MCU to stop logging former variable ?
             # !!! Warning, if variable was requested by a plot, this is going to shut it down for the plot as well
             
@@ -150,7 +151,6 @@ class Logger_Frame(Tk.Frame):
                       
         else:
             self.variable.set("** Variable not writeable **")
-            self.displayed_var_id = None
                       
         pub.sendMessage("new_var_selected",varid=var_id)
 
