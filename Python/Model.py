@@ -17,8 +17,8 @@ class Model():
         self.controller = DistantIO()
         # Serial protocol
         self.protocol = Protocol()
+
         
-                
     def get_ports(self):
         return self.serialthread.get_ports()
         
