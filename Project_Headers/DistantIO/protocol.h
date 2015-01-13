@@ -15,9 +15,7 @@ uint8_t SOF_;
 uint8_t EOF_;
 uint8_t ESC_;
 
-
 #define INCOMING_FRAME_QUEUE_SIZE 2048
-
 
 enum state
 {

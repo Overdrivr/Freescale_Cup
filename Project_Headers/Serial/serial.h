@@ -21,8 +21,10 @@
 #define SERIAL_INCOMING_QUEUE SDA_SERIAL_INCOMING_QUEUE
 #define SERIAL_OUTGOING_QUEUE SDA_SERIAL_OUTGOING_QUEUE
 
-//Write val on serial port
-//Returns 1 if ok
+//Returns stats about serial
+uint16_t getPeakLoad();
+
+void init_serial();
 
 //Write 'len' bytes of data in 'buf'
 //Returns number of bytes written

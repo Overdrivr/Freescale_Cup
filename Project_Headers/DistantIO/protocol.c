@@ -7,6 +7,7 @@
 
 #include "protocol.h"
 #include "distantio.h"
+#include "Serial/serial.h"
 
 ByteQueue rx_frame;
 uint8_t rx_frame_storage[INCOMING_FRAME_QUEUE_SIZE];
@@ -17,7 +18,9 @@ state protocol_state;
 //In case ESC character is received
 ESC_state escape_state;
 
-void serial_write_flowctrl(uint8_t* ptr, uint16_t c);
+uint16_t TEST_WTF = 4096;
+uint16_t AMOUNT = 0;
+
 
 void init_serial_protocol()
 {
@@ -46,22 +49,22 @@ void send_serial_frame(uint8_t* framedata, uint16_t framesize)
 		   *(framedata + i) == ESC_)
 		{
 			//If data contains one of the flags, we escape it before
-			serial_write_flowctrl(&ESC_,1);
+			serial_write(&ESC_,1);
 			
 		}
-		serial_write_flowctrl(framedata + i,1);
+		serial_write(framedata + i,1);
 	}
 	
 	//Set EOFrame
-	serial_write_flowctrl(&EOF_,1);	
+	serial_write(&EOF_,1);	
 }
 
 
 
 void start_serial_frame()
-{
+{	
 	//Write start of frame byte
-	serial_write_flowctrl(&SOF_,1);
+	serial_write(&SOF_,1);
 }
 
 void append_serial_frame(uint8_t* framedata,uint16_t framesize)
@@ -76,16 +79,16 @@ void append_serial_frame(uint8_t* framedata,uint16_t framesize)
 		   *(framedata + i) == ESC_)
 		{
 			//If data contains one of the flags, we escape it before
-			serial_write_flowctrl(&ESC_,1);
+			serial_write(&ESC_,1);
 		}
-		serial_write_flowctrl(framedata + i,1);
+		serial_write(framedata + i,1);
 	}
 }
 
 void end_serial_frame()
 {	
 	//Set EOFrame
-	serial_write_flowctrl(&EOF_,1);	
+	serial_write(&EOF_,1);	
 }
 
 
@@ -139,17 +142,6 @@ void update_serial_protocol()
 		}
 		
 	}
-}
-
-void serial_write_flowctrl(uint8_t* ptr, uint16_t c)
-{
-	uint16_t avail = serial_write_available();
-	
-	while(avail < (c + 512))
-	{
-		avail = serial_write_available();
-	}
-	serial_write(ptr,c);
 }
 
 
