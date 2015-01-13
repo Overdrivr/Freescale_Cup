@@ -43,14 +43,14 @@ int main(void)
 	command_engines = 0.4f;
 	
 	//Start oscillating
-	P = 0.019;
-	D = 0.f;
-	command_engines = 0.4f;
+	//P = 0.019;
+	//D = 0.f;
+	//command_engines = 0.4f;
 	
 	//NUL
-	P = 0.018f;
-	D = 0.001f;
-	command_engines = 0.4f;
+	//P = 0.018f;
+	//D = 0.001f;
+	//command_engines = 0.4f;
 	
 	//To check loop times
 	chrono chr_cam_m, chr_loop_m;
@@ -58,8 +58,9 @@ int main(void)
 	chrono chr_distantio,chr_cam,chr_led,chr_servo;
 	float t_cam = 0, t_loop = 0;
 	float looptime_cam;
-	float temp_int16;
-	int queue_size = 0;
+	float queue_size = 0;
+	
+	uint32_t  testESC = 0x007F7DF7;
 	
 	//Camera processing parameters
 	data.threshold_coefficient = 0.65;
@@ -67,20 +68,26 @@ int main(void)
 	data.edgeright = 15;
 	data.alpha = 0.25;
 	
+	init_serial();
 	init_serial_protocol();
 	init_log();
 	
 	//TFC_HBRIDGE_ENABLE;
 	
+	uint16_t pload;
+	
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
 	
 	//Readonly variables
+	register_scalar(&testESC,UINT32,0,"TestESC");
+	register_scalar(&pload,UINT16,0,"Serial load");
+	
 	register_scalar(&t_cam,FLOAT,0,"cam time(ms)");
 	register_scalar(&t_loop,FLOAT,0,"main time(ms)");
 	register_scalar(&looptime_cam,FLOAT,0,"cam exe period(us)");
 	
-	register_scalar(&queue_size, INT32,0,"queue size");
+	register_scalar(&queue_size, FLOAT,0,"queue size");
 	
 	register_scalar(&position_error, FLOAT,0,"error");
 	register_scalar(&error_derivative, FLOAT,0,"derivative");
@@ -97,14 +104,10 @@ int main(void)
 	register_scalar(&command_engines,FLOAT,1,"engines");
 	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
 	
-	register_scalar(&temp_int16,FLOAT,0,"offset");
-	
-	//add_to_log(&looptime,4,FLOAT,1,"looptime");
-	//add_to_log(&chr_main.duration,4,UINT32,1,"main loop");
+	register_scalar(&data.offset,FLOAT,0,"cmd offset");
 	
 	register_array(data.filtered_image,128,FLOAT,0,"filtered_line");
 	register_array(data.raw_image,128,UINT16,0,"raw_line");
-	//add_to_log(data.calibration_data,4*128,FLOAT,1,"cal_data");
 	
 	/*TICKERS
 	0 : chronos	
@@ -123,22 +126,19 @@ int main(void)
 	for(;;)
 	{
 			
-			Restart(&chr_loop_m);	//**TIME MONITORING
-		t_loop = GetLastDelay_ms(&chr_loop_m);
+		Restart(&chr_loop_m);					//**TIME MONITORING
+		t_loop = GetLastDelay_ms(&chr_loop_m);	//**TIME MONITORING
 		
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
 		TFC_Task();
 		
-		
 		Capture(&chr_distantio);
-		if(GetLastDelay_us(&chr_distantio) > 2000)
+		if(GetLastDelay_us(&chr_distantio) > 500)
 		{
-			TFC_Ticker[2] = 0;
 			Restart(&chr_distantio);
-			temp_int16 = (float)(data.offset);
-
+				
 			update_distantio();
-			queue_size = (int)(BytesInQueue(&SERIAL_OUTGOING_QUEUE));
+			pload = getPeakLoad();
 		}			
 		
 		//Compute line position
@@ -148,7 +148,8 @@ int main(void)
 		{
 			Restart(&chr_cam);
 			
-				Restart(&chr_cam_m);	//TIME MONITORING
+			Restart(&chr_cam_m);				//**TIME MONITORING
+			
 			read_process_data(&data);			
 				
 				
@@ -174,8 +175,8 @@ int main(void)
 			if(command < -1.f)
 				command = -1.f;
 			
-				Capture(&chr_cam_m); //TIME MONITORING
-				t_cam = GetLastDelay_ms(&chr_cam_m);
+			Capture(&chr_cam_m); 				//**TIME MONITORING
+			t_cam = GetLastDelay_ms(&chr_cam_m);//**TIME MONITORING
 		}
 		
 		
