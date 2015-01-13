@@ -36,7 +36,7 @@ int16_t serial_write(uint8_t* buf, uint16_t len)
 	}
 	
 	#if defined(SERIAL_NO_OVERWRITE)
-		wile(load + len > SERIAL_OUTGOING_QUEUE.QueueSize)
+		while(load + len > SERIAL_OUTGOING_QUEUE.QueueSize)
 		{
 			load = BytesInQueue(&SERIAL_OUTGOING_QUEUE);
 		}
