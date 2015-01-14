@@ -44,8 +44,20 @@ class Application(ttk.Frame):
         self.bouton_quitter = Tk.Button(self, text="QUITTER",command = self.stop)
         self.bouton_quitter.grid(column=0,row=2,sticky='EW',pady=2,padx=5)
 
+        self.model.start()
+
     def stop(self):
         self.model.stop()
+        
+        if self.model.isAlive():
+            self.model.join(0.1)
+            
+        if self.model.isAlive():
+            self.model.join(1)
+
+        if self.model.isAlive():
+            print("--- Model thread not properly joined.")
+            
         self.parent.destroy()
 
 """
@@ -61,55 +73,6 @@ def test_new_log_value():
         x += 0.05
         pub.sendMessage('var_value_update',varid=0,value=test)
 
-def test_rx_table():
-    print("logger table test started.")
-    c = bytearray()
-    #SOF
-    c.append(int('f7',16))
-    #CMD
-    c.append(int('02',16))
-    #DATATYPE
-    c.append(int('07',16))
-    #DATAID
-    c.append(int('00',16))
-    c.append(int('00',16))
-    #Table
-        #DATATYPE
-    c.append(int('01',16))
-        #DATAID
-    c.append(int('00',16))
-    c.append(int('00',16))
-        #DATASIZE
-    c.append(int('01',16))
-    c.append(int('00',16))
-        #NAME
-    s = 'test_var                        '
-    h = bytearray(s,'ascii')
-    c.extend(h)
-
-        #DATATYPE
-    c.append(int('03',16))
-        #DATAID
-    c.append(int('01',16))
-    c.append(int('00',16))
-        #DATASIZE
-    c.append(int('F3',16))
-    c.append(int('0F',16))
-        #NAME
-    s = 'test_array                      '
-    h = bytearray(s,'ascii')
-    c.extend(h)
-    
-    #EOF
-    c.append(int('7f',16))
-
-    print("Test frame :",c)
-    
-    for x in c:
-        t = x,
-        a = bytes(t)
-        pub.sendMessage('new_rx_byte',rxbyte=a)
-
 def printout_char(rxbyte):
     print("ignored char : ",rxbyte)
 
@@ -123,10 +86,6 @@ if __name__ == '__main__':
     
     app = Application(root,width=640, height=480)
     app.pack()
-    
-    #pub.subscribe(printout_char,'new_ignored_rx_byte')
-    #t = Timer(1.0,test_rx_table)
-    #t.start()
     
     root.protocol('WM_DELETE_WINDOW', app.stop)
     app.mainloop()
