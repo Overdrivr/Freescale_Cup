@@ -48,7 +48,7 @@ int read_process_data(cameraData* data)
 	
 	for(i=0;i<128;i++)
 	{
-		data->raw_image[i] = LineScanImage1[i];
+		data->raw_image[i] = LineScanImage0[i];
 		
 		if(data->raw_image[i] > max)
 			max = data->raw_image[i];
