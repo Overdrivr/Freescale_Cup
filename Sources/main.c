@@ -4,6 +4,7 @@
 #include "Serial\serial.h"
 #include "DistantIO\distantio.h"
 #include "chrono.h"
+#include "TFC/TFC_UART.h"
 
 //TODO : Select servo offset with potard
 
@@ -13,14 +14,17 @@ void cam_program();
 void test_serial1();
 void test_protocol1();
 void test_distantio_minimal();
+void configure_bluetooth();
 
 int main(void)
 
 {
 	//test_serial1();
-	//cam_program();
+	cam_program();
 	//test_protocol1();
-	test_distantio_minimal();
+	//test_distantio_minimal();
+	//configure_bluetooth();
+	
 	return 0;
 }
 
@@ -142,7 +146,7 @@ void cam_program()
 		TFC_Task();
 		
 		Capture(&chr_distantio);
-		if(GetLastDelay_us(&chr_distantio) > 500)
+		if(GetLastDelay_us(&chr_distantio) > 10000)
 		{
 			Restart(&chr_distantio);
 				
@@ -232,6 +236,7 @@ void cam_program()
 void test_serial1()
 {
 	TFC_Init();
+
 	
 	chrono chr;
 	
@@ -327,8 +332,7 @@ void test_protocol1()
 
 void test_distantio_minimal()
 {
-	TFC_Init();
-	
+	TFC_Init();	
 	
 	init_serial();
 	init_serial_protocol();
@@ -358,4 +362,29 @@ void test_distantio_minimal()
 			update_distantio();
 		}			
 	}
+}
+
+void configure_bluetooth()
+{
+	TFC_Init();
+		
+		uart0_init (CORE_CLOCK/2/1000, 38400);
+		 for(;;) //Try AT Command
+		 {   
+			 TFC_Task();
+			
+			 
+			 if(TFC_Ticker[0]>1000)
+			 {                   
+				 
+				 
+				 serial_printf("AT+UART=115200,0,0\r\n");
+				 TFC_Ticker[0] = 0;
+				
+				 TFC_Task();
+				 
+				 //Reset uart 
+				 //uart0_init (CORE_CLOCK/2/1000, 115200);
+			 }
+		 }
 }
