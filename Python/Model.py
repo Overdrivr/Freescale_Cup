@@ -5,19 +5,22 @@ from pubsub import pub
 from SerialPort import SerialPort
 from DistantIO import DistantIO
 from Protocol import Protocol
+from threading import Thread
 
 # Top-level API
 #TODO : Log var API
 
-class Model():
-    def __init__(self, **kwargs):        
+class Model(Thread):
+    def __init__(self, **kwargs):
+        Thread.__init__(self)
         # Serial thread
         self.serialthread = SerialPort()
         # Controller Read/Write variables over serial
         self.controller = DistantIO()
         # Serial protocol
         self.protocol = Protocol()
-
+        
+        self.running = True;
         
     def get_ports(self):
         return self.serialthread.get_ports()
@@ -29,11 +32,29 @@ class Model():
             
         self.serialthread.connect(COM_port,115200)
 
+    #Model update running in a thread
+    def run(self):
+        print("Model thread started")
+        while self.running:
+            for i in range(0,15):
+                if self.serialthread.char_available():
+                     c = self.serialthread.get_char()
+                     if not c is None:
+                         self.protocol.process_rx(c)
+
+            if self.protocol.available():
+                p =  self.protocol.get()
+                pub.sendMessage('new_rx_payload',rxpayload=p)
+                if not p is None:
+                    self.controller.decode(p)
+                    
+        print("Model thread stopped.")
+
     def disconnect_com(self):
         self.serialthread.disconnect()
          
     def stop(self):
-        #self.serialthread.disconnect()
+        self.running = False
         self.serialthread.stop()
 
         if self.serialthread.isAlive():
@@ -43,9 +64,7 @@ class Model():
             self.serialthread.join(1)
 
         if self.serialthread.isAlive():
-            print("--- Thread not properly joined.")
-        else:
-            print("--- Thread stopped.")
+            print("--- Serial thread not properly joined.")
             
         self.stop_controller()
         
@@ -60,6 +79,7 @@ class Model():
     def stop_controller(self):
         #TODO : Tell MCU to stop sending all data
         pass
+    
     def read_var(self, varid):        
         # Get command
         cmd = self.controller.encode(cmd='read',var_id=varid)
@@ -67,6 +87,7 @@ class Model():
         frame = self.protocol.process_tx(cmd)
         # Send command
         self.serialthread.write(frame)
+        print("RX Frame :",frame)
 
     def write_var(self,varid,value):
         # Get command

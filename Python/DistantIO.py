@@ -28,7 +28,6 @@ class DistantIO():
                             4 : 1,
                             5 : 2,
                             6 : 4}
-        pub.subscribe(self.decode,'new_rx_payload')
 
     #Process RX bytes queue
     def decode(self,rxpayload):

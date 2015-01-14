@@ -3,6 +3,7 @@
 
 from enum import Enum
 from pubsub import pub
+from queue import Queue
 
 class RX_STATE(Enum):
     IDLE = 0
@@ -21,12 +22,15 @@ class Protocol():
         self.SOF = int('f7',16)
         self.EOF = int('7f',16)
         self.ESC = int('7d',16)
-        self.payload = bytearray() 
-        pub.subscribe(self.process_rx,"new_rx_byte")
+        self.payload = bytearray()
+        self.payloads = Queue(0)
         self.framesize = 0;
+        self.processed_octets = 0
 
     def process_rx(self, rxbyte):
         newbyte = int.from_bytes(rxbyte,byteorder='big')
+        self.processed_octets += 1
+        
         #No frame in process
         if self.rx_state == RX_STATE.IDLE:
             if newbyte == self.SOF:
@@ -51,16 +55,17 @@ class Protocol():
             elif self.escape_state == ESC_STATE.IDLE:
                 #End of frame, the payload is immediatly send to callback function
                 if newbyte == self.EOF:
-                    pub.sendMessage("new_rx_payload",rxpayload=self.payload)
+                    #pub.sendMessage("new_rx_payload",rxpayload=self.payload)
+                    self.payloads.put(self.payload)
                     self.payload = bytearray()
                     self.rx_state = RX_STATE.IDLE
                     
                 #Receive a SOF while a frame is running, error
                 elif newbyte == self.SOF:
+                    print("Protocol : Received frame unvalid, discarding.", self.payload)
                     self.payload = bytearray()
                     self.rx_state = RX_STATE.IDLE
-                    print("Protocol : Received frame unvalid, discarding.")
-                    
+                                        
                 #Escaping
                 elif newbyte == self.ESC:
                     self.escape_state = ESC_STATE.NEXT
@@ -70,6 +75,15 @@ class Protocol():
                     self.payload.append(newbyte)
                     self.framesize += 1;
 
+    def available(self):
+        return not self.payloads.empty()
+
+    def get(self):
+        if self.payloads.empty():
+            return None
+        else:
+            return self.payloads.get()
+        
     def process_tx(self, rxpayload):
         frame = bytearray()
         frame.append(self.SOF)
@@ -82,5 +96,8 @@ class Protocol():
         frame.append(self.EOF)
         
         return frame
+
+    def get_processed_octets(self):
+        return self.processed_octets
         
 
