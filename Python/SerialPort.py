@@ -114,15 +114,17 @@ class SerialPort(Thread):
         #Main serial loop      
         while self.running:
             if self.ser.isOpen():
-                inwaiting = self.ser.inWaiting()
-                self.maxinwaiting = max(self.maxinwaiting,inwaiting)
-                if inwaiting > 0:
-                    serialout = self.ser.read(inwaiting)
-                    mv = memoryview(serialout).cast('c')
-                    for item in mv:
-                        self.rxqueue.put(item,True)
-                        self.processed_octets += 1
-                    
+                try:
+                    inwaiting = self.ser.inWaiting()
+                    self.maxinwaiting = max(self.maxinwaiting,inwaiting)
+                    if inwaiting > 0:
+                        serialout = self.ser.read(inwaiting)
+                        mv = memoryview(serialout).cast('c')
+                        for item in mv:
+                            self.rxqueue.put(item,True)
+                            self.processed_octets += 1
+                except:
+                    pass
         print("Serial thread stopped.")
         
         
