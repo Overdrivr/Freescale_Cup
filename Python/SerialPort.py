@@ -18,6 +18,8 @@ class SerialPort(Thread):
         self.default_to = False
         self.rxqueue = Queue(0)
         self.running = True;
+        self.processed_octets = 0
+        self.maxinwaiting = 0
 
     def connect(self,port,baudrate,force=False,default_to=False):
         self.ser.baudrate = baudrate
@@ -91,16 +93,36 @@ class SerialPort(Thread):
             self.ser.close()
             pub.sendMessage('com_port_disconnected')
 
+    def char_available(self):
+        return not self.rxqueue.empty()
+
+    def get_char(self):
+        if not self.rxqueue.empty():
+            return self.rxqueue.get()
+        else:
+            return None
+        
+    def get_processed_octets(self):
+        return self.processed_octets
+
+    def get_rxloadmax(self):
+        tmp = self.maxinwaiting
+        self.maxinwaiting = 0
+        return tmp
+
     def run(self):
         #Main serial loop      
         while self.running:
-            try:
-                if self.ser.isOpen() and self.ser.inWaiting() > 0:
-                    serialout = self.ser.read()
-                    # Freezing on exit after that ?
-                    pub.sendMessage("new_rx_byte",rxbyte=serialout)
-            except:
-                pass
+            if self.ser.isOpen():
+                inwaiting = self.ser.inWaiting()
+                self.maxinwaiting = max(self.maxinwaiting,inwaiting)
+                if inwaiting > 0:
+                    serialout = self.ser.read(inwaiting)
+                    mv = memoryview(serialout).cast('c')
+                    for item in mv:
+                        self.rxqueue.put(item,True)
+                        self.processed_octets += 1
+                    
         print("Serial thread stopped.")
         
         
