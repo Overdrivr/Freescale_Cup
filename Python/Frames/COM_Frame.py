@@ -56,7 +56,10 @@ class COM_Frame(ttk.Frame):
     def refresh_COM_ports(self):
         ports_list = self.model.get_ports()
         self.liste.delete(0,Tk.END)
+            
+        print('COM ports list :') 
         for p, desc, hwid in sorted(ports_list):
+            print('--- %s %s\n' % (p, desc))
             self.liste.insert(Tk.END,p)
         pass
 

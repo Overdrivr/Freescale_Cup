@@ -32,10 +32,8 @@ class SerialPort(Thread):
         port_amount = 0
         terminate = False
 
-        #List all COM ports
-        print('COM ports list :')        
+        #List all COM ports      
         for p, desc, hwid in sorted(portlist):
-            print('--- %-20s %s\n' % (p, desc))
             port_amount+=1
             if p == self.ser.port:
                 port_found = 1
