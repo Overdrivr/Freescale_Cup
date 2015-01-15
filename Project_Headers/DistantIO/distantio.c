@@ -9,10 +9,12 @@
 #include "..\Serial\serial.h"
 
 uint8_t register_(uint8_t* adress, uint16_t octets, datatype type, uint8_t writeable, char* name);
+void distantio_decode_rx_frame(ByteQueue* rx_queue);
+void distantio_send_table();
 
 log Log;
 
-void init_log()
+void init_distantio()
 {
 	uint16_t i;
 	char default_name[] = {"undefined"};
@@ -197,8 +199,8 @@ void update_distantio()
 		
 		
 		//Start frame. send CMD,DATATYPE,DATAID to protocol
-		start_serial_frame();
-		append_serial_frame(buffer,j);
+		protocol_frame_begin();
+		protocol_frame_append(buffer,j);
 		j = 0;
 		
 		//Write data
@@ -206,9 +208,9 @@ void update_distantio()
 		{
 			temp_ptr = Log.variables[i].ptr + k;
 			
-			append_serial_frame(temp_ptr,1);
+			protocol_frame_append(temp_ptr,1);
 		}
-		end_serial_frame();
+		protocol_frame_end();
 	}
 	
 	
@@ -218,11 +220,12 @@ void update_distantio()
 		Log.previous_index = 0;
 	}
 	
-	update_serial_protocol();
+	//Finally, let protocol process rx queue
+	protocol_process_rx();
 }
 
 
-void log_process_serial(ByteQueue* rx_queue)
+void distantio_decode_rx_frame(ByteQueue* rx_queue)
 {
 	//Get payload byte by byte
 	
@@ -244,7 +247,7 @@ void log_process_serial(ByteQueue* rx_queue)
 	//If command is return table to master
 	if(byte == 0x02)
 	{
-		send_table();
+		distantio_send_table();
 	}
 	//If command is write variable value
 	else if(byte == 0x01)
@@ -318,7 +321,7 @@ void log_process_serial(ByteQueue* rx_queue)
 }
 
 
-void send_table()
+void distantio_send_table()
 {
 	uint32_t i,j;
 	uint8_t *temp_ptr;
@@ -335,8 +338,8 @@ void send_table()
 	buffer[j] = 0x00;			j++;
 	
 	//Start frame
-	start_serial_frame();
-	append_serial_frame(buffer,j);
+	protocol_frame_begin();
+	protocol_frame_append(buffer,j);
 	j = 0;
 	
 	//variables info
@@ -400,9 +403,9 @@ void send_table()
 				buffer[j] = 0;
 			j++;
 		}
-		append_serial_frame(buffer,j);
+		protocol_frame_append(buffer,j);
 		j = 0;
 	
 	}
-	end_serial_frame();
+	protocol_frame_end();
 }

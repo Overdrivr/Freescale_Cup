@@ -9,7 +9,7 @@
 #define SERIAL_PROTOCOL_H_
 
 #include "TFC/TFC.h"
-#include "..\Serial\serial.h"
+#include "Serial/serial.h"
 
 #define INCOMING_FRAME_QUEUE_SIZE 2048
 
@@ -28,23 +28,22 @@ enum ESC_state
 };
 typedef enum ESC_state ESC_state;
 
-void init_serial_protocol();
+void init_protocol();
 
 /*
  * Serial protocol (see serial_protocols_definition.xlsx for more information)
  */
-void send_serial_frame(uint8_t* framedata, uint16_t framesize);
+void protocol_frame(uint8_t* framedata, uint16_t framesize);
 
 /*
  * Alternative send_serial_frame to send data in chunks
  */
-void start_serial_frame();
-void append_serial_frame(uint8_t* framedata,uint16_t framesize);
-void end_serial_frame();
+void protocol_frame_begin();
+void protocol_frame_append(uint8_t* framedata,uint16_t framesize);
+void protocol_frame_end();
 /*
- * Processes raw serial reception queue
- * Call as often as possible
+ * Called by DistantIO
  */
-void update_serial_protocol();
+void protocol_process_rx();
 
 #endif /* SERIAL_PROTOCOL_H_ */

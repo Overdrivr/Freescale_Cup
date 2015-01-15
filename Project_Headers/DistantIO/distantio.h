@@ -45,7 +45,7 @@ struct log
 	uint16_t previous_index;
 };
 
-void init_log();
+void init_distantio();
 
 uint8_t register_scalar(void* adress, 
 					    datatype type, 
@@ -61,8 +61,7 @@ uint8_t register_array(void* adress,
 // To call as often as possible
 void update_distantio();
 
-void log_process_serial(ByteQueue* rx_queue);
-
-void send_table();
+// Feed a new RX frame to DistantIO
+void distantio_decode_rx_frame(ByteQueue* rx_queue);
 
 #endif /* DISTANTIO_H_ */

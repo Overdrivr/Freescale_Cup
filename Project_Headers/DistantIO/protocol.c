@@ -6,8 +6,6 @@
  */
 
 #include "protocol.h"
-#include "distantio.h"
-#include "Serial/serial.h"
 
 ByteQueue rx_frame;
 uint8_t rx_frame_storage[INCOMING_FRAME_QUEUE_SIZE];
@@ -23,8 +21,7 @@ uint8_t EOF_;
 uint8_t ESC_;
 
 
-
-void init_serial_protocol()
+void init_protocol()
 {
 	InitByteQueue(&rx_frame,INCOMING_FRAME_QUEUE_SIZE,rx_frame_storage);
 	protocol_state = IDLE;
@@ -35,12 +32,12 @@ void init_serial_protocol()
 	ESC_ = 0x7D;
 }
 
-void send_serial_frame(uint8_t* framedata, uint16_t framesize)
+void protocol_frame(uint8_t* framedata, uint16_t framesize)
 {
 	uint16_t i;
 	
 	//Write start of frame byte
-	serial_write_flowctrl(&SOF_,1);
+	serial_write(&SOF_,1);
 	
 	//Write data
 	for(i = 0 ; i < framesize ; i++)
@@ -63,13 +60,13 @@ void send_serial_frame(uint8_t* framedata, uint16_t framesize)
 
 
 
-void start_serial_frame()
+void protocol_frame_begin()
 {	
 	//Write start of frame byte
 	serial_write(&SOF_,1);
 }
 
-void append_serial_frame(uint8_t* framedata,uint16_t framesize)
+void protocol_frame_append(uint8_t* framedata,uint16_t framesize)
 {
 	uint16_t i;
 	//Write data
@@ -87,14 +84,14 @@ void append_serial_frame(uint8_t* framedata,uint16_t framesize)
 	}
 }
 
-void end_serial_frame()
+void protocol_frame_end()
 {	
 	//Set EOFrame
 	serial_write(&EOF_,1);	
 }
 
 
-void update_serial_protocol()
+void protocol_process_rx()
 {
 	uint8_t received_byte;
 	
@@ -117,7 +114,7 @@ void update_serial_protocol()
 				if(received_byte == EOF_)
 				{
 					protocol_state = IDLE;
-					log_process_serial(&rx_frame);
+					distantio_decode_rx_frame(&rx_frame);
 					
 				}
 				else if(received_byte == ESC_)
