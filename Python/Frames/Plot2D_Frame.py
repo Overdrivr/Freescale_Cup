@@ -27,6 +27,8 @@ class Plot2D_Frame(Tk.Frame):
         self.tkmaster = tkmaster
         self.plotted_varid = None
         self.selected_varid = None
+        self.selected_varname = ""
+        self.s_value = 0.0
 
         pub.subscribe(self.listener_new_value_received,'var_value_update')
         pub.subscribe(self.listener_var_selected,'new_var_selected')
@@ -66,11 +68,20 @@ class Plot2D_Frame(Tk.Frame):
         self.dataPlot.get_tk_widget().grid(column=0,row=0,sticky='EW',pady=3,padx=3,columnspan=5)
 
         #
-        self.selected_var = Tk.Label(self,text="no variable",bd=2,relief=Tk.GROOVE)
-        self.selected_var.grid(column=1,row=1,sticky='EW',pady=3,padx=3)
+        self.selected_var_name = Tk.StringVar()
+        self.selected_var_name.set("No variable")
+        self.selected_var = Tk.Label(self,textvariable=self.selected_var_name,bd=2,relief=Tk.GROOVE)
+        self.selected_var.grid(column=2,row=1,sticky='EW',pady=3,padx=3)
+        #
+        self.selected_value = Tk.DoubleVar()
+        self.selected_value.set(0.0)
+        self.selected_var_val = Tk.Label(self,textvariable=self.selected_value,bd=2,relief=Tk.GROOVE)
+        self.selected_var_val.grid(column=3,row=1,sticky='EW',pady=3,padx=3)
 
-    def listener_var_selected(self,varid):
+    def listener_var_selected(self,varid,varname):
         self.selected_varid = varid
+        self.selected_varname = varname
+        
 
     def listener_new_value_received(self,varid,value_list):
         if not varid == self.plotted_varid:
@@ -93,6 +104,8 @@ class Plot2D_Frame(Tk.Frame):
             self.y.appendleft(value_list[0])
             self.line1.set_data(np.arange(len(self.y))[::-1],self.y)
             self.dataPlot.draw()
+
+            self.selected_value.set(value_list[0])
         else:
 
             if self.first:
@@ -113,12 +126,15 @@ class Plot2D_Frame(Tk.Frame):
                 
             self.line1.set_data(np.arange(len(value_list))[::-1],value_list)
             self.dataPlot.draw()
+
+            self.selected_value.set(value_list[0])
     
     def add_var_to_plot(self):
         if self.selected_varid == None:
             return
         
         self.plotted_varid = self.selected_varid
+        self.selected_var_name.set(self.selected_varname)
         self.model.read_var(self.plotted_varid)
         self.first = True
 
