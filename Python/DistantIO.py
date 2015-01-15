@@ -46,6 +46,8 @@ class DistantIO():
         # Parse 'received_variable_value' payload
         if command == 0:
 
+            #TODO : CHECK DATAID IS VALID
+
             # Check datatype exists
             if not datatype in self.type_lookup:
                 print("DistantIO error : Datatype ",datatype," unknown.")
