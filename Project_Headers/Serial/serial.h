@@ -24,6 +24,7 @@
 //Returns stats about serial
 uint16_t getPeakLoad();
 
+//Init serial (reset stats)
 void init_serial();
 
 //Write 'len' bytes of data in 'buf'
