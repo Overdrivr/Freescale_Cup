@@ -26,8 +26,8 @@ void init_data(cameraData* data)
 	
 	data->threshold = 1000.f;
 	data->threshold_coefficient = 0.65;
-	data->edgeleft = 20;
-	data->edgeright = 15;
+	data->edgeleft = 10;
+	data->edgeright = 10;
 	data->alpha = 0.25;
 	data->offset = 0;
 }
@@ -66,8 +66,8 @@ int read_process_data(cameraData* data)
 	{
 		//Left-starting complementary filter
 		val = data->raw_image[i+1];
-		data->filtered_image[i+1] = data->filtered_image[i] * (1 - data->alpha) + val * data->alpha;
-		
+		//data->filtered_image[i+1] = data->filtered_image[i] * (1 - data->alpha) + val * data->alpha;
+		data->filtered_image[i] = val;
 		
 		//Apply threshold
 		if(data->filtered_image[i] > data->threshold)
