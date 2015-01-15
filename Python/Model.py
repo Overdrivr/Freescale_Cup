@@ -34,7 +34,6 @@ class Model(Thread):
 
     #Model update running in a thread
     def run(self):
-        print("Model thread started")
         while self.running:
             for i in range(0,15):
                 if self.serialthread.char_available():
@@ -47,8 +46,6 @@ class Model(Thread):
                 pub.sendMessage('new_rx_payload',rxpayload=p)
                 if not p is None:
                     self.controller.decode(p)
-                    
-        print("Model thread stopped.")
 
     def disconnect_com(self):
         self.serialthread.disconnect()
@@ -110,10 +107,9 @@ class Model(Thread):
 --- Serial port (SerialPort.py)
     * When COM port is connected : 'com_port_connected',port
     * When COM port is disconnected : 'com_port_disconnected'
-    * When a new byte is received from COM port : 'new_rx_byte',rxbyte
     
 --- Protocol (Protocol.py)
-    * When a new payload has been decoded by the serial protocol : 'new_rx_payload',rxpayload
+    * deprecated ?* When a new payload has been decoded by the serial protocol : 'new_rx_payload',rxpayload
     * When a character is not part of a message on the serial port : 'new_ignored_rx_byte',rxbyte
 
 --- DistanIO (DistantIO.py)
@@ -122,5 +118,5 @@ class Model(Thread):
 
 --- GUI
     * When the selection of a variable to do something with (read, write) changes:
-    'new_var_selected',varid
+    'new_var_selected',varid,varname
 """
