@@ -23,7 +23,8 @@ class Protocol():
         self.EOF = int('7f',16)
         self.ESC = int('7d',16)
         self.payload = bytearray()
-        self.payloads = Queue(0)
+        # Max amount of payloads
+        self.payloads = Queue(10000)#TODO : CHECK BEHAVIOR
         self.framesize = 0;
         self.processed_octets = 0
 
