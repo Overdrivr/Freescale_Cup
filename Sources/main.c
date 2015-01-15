@@ -1,28 +1,28 @@
 #include "derivative.h" /* include peripheral declarations */
 #include "TFC\TFC.h"
 #include "camera_processing.h"
-#include "Serial\serial.h"
 #include "DistantIO\distantio.h"
 #include "chrono.h"
+#include "UnitTests/UnitTests.h"
 #include "TFC/TFC_UART.h"
 
 //TODO : Select servo offset with potard
 
 // WARNING : SysTick frequency is 50kHz. Will overflow after roughly 2.5 hours
+// Derivative not clean
 
 void cam_program();
-void test_serial1();
-void test_protocol1();
-void test_distantio_minimal();
 void configure_bluetooth();
 
 int main(void)
 
 {
 	//test_serial1();
-	cam_program();
 	//test_protocol1();
 	//test_distantio_minimal();
+	
+	cam_program();
+	
 	//configure_bluetooth();
 	
 	return 0;
@@ -31,6 +31,10 @@ int main(void)
 void cam_program()
 {
 	TFC_Init();
+	//Init all 3 communication layers
+	init_serial();
+	init_protocol();
+	init_distantio();
 	
 	cameraData data;
 	
@@ -40,6 +44,7 @@ void cam_program()
 	float position_error = 0.f, alpha_error = 0.8;
 	float previous_error = 0.f;
 	float error_derivative = 0.f, new_derivative = 0.f, alpha_deriv = 0.85;
+	float filtered_error = 0.f, previous_filtered_error = 0.f;
 	
 	float command = 0.f,new_command = 0.f, alpha_command = 0.0;
 	float servo_offset = 0.2;
@@ -84,10 +89,6 @@ void cam_program()
 	data.edgeleft = 20;
 	data.edgeright = 15;
 	data.alpha = 0.25;
-	
-	init_serial();
-	init_serial_protocol();
-	init_log();
 	
 	//TFC_HBRIDGE_ENABLE;
 	
@@ -171,9 +172,12 @@ void cam_program()
 			previous_error = position_error;
 			//position_error =  position_error * alpha_error + data.line_position * (1 - alpha_error);
 			position_error = data.line_position;
-					
-			new_derivative = (position_error - previous_error) * 1000000.f / looptime_cam;
-			error_derivative = error_derivative * alpha_deriv + (1 - alpha_deriv) * new_derivative;
+			
+			
+			previous_filtered_error = filtered_error;
+			filtered_error = filtered_error * alpha_deriv + (1 - alpha_deriv) * position_error;
+			
+			error_derivative = (filtered_error - previous_filtered_error) * 1000000.f / looptime_cam;
 			
 			commandP = P * position_error;
 			commandD = D * error_derivative;
@@ -229,138 +233,6 @@ void cam_program()
 	
 		TFC_SetBatteryLED_Level(led_state);
 		Capture(&chr_loop_m);	//**TIME MONITORING
-	}
-}
-
-
-void test_serial1()
-{
-	TFC_Init();
-
-	
-	chrono chr;
-	
-	uint8_t  testESC[10];
-	testESC[0] = 0x00;
-	testESC[1] = 0x01;
-	testESC[2] = 0x02;
-	testESC[3] = 0x03;
-	testESC[4] = 0x04;
-	testESC[5] = 0x05;
-	testESC[6] = 0x06;
-	testESC[7] = 0x07;
-	testESC[8] = 0x08;
-	testESC[9] = 0x09;
-		
-	init_serial();
-	Restart(&chr);
-	
-	for(;;)
-	{
-		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
-		TFC_Task();
-		
-		Capture(&chr);
-		if(GetLastDelay_us(&chr) > 1500)
-		{
-			Restart(&chr);
-			serial_write(testESC,10);
-		}			
-		
-	}
-	return 0;
-}
-
-void test_protocol1()
-
-{
-	TFC_Init();
-	
-	
-	chrono chr;
-	
-	
-	// data sent : 0x007F7DF7;
-	//For testing all ESC characters
-	
-	uint8_t  testESC[13];
-	testESC[0] = 0xf7;
-	testESC[1] = 0x00;
-	testESC[2] = 0x03;
-	testESC[3] = 0x00;
-	testESC[4] = 0x00;
-		testESC[5] = 0x7D;
-	testESC[6] = 0xf7;
-		testESC[7] = 0x7D;
-	testESC[8] = 0x7D;
-		testESC[9] = 0x7D;
-	testESC[10] = 0x7f;
-	testESC[11] = 0x00;
-	testESC[12] = 0x7f;
-	/*
-	uint8_t  testESC[10];
-	testESC[0] = 0xf7;
-	testESC[1] = 0x00;
-	testESC[2] = 0x03;
-	testESC[3] = 0x00;
-	testESC[4] = 0x00;
-	testESC[5] = 0x00;
-	testESC[6] = 0x00;
-	testESC[7] = 0x00;
-	testESC[8] = 0x00;
-	testESC[9] = 0x7f;
-	*/
-		
-	init_serial();
-	Restart(&chr);
-	
-	for(;;)
-	{
-		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
-		TFC_Task();
-		
-		Capture(&chr);
-		if(GetLastDelay_us(&chr) > 1500)
-		{
-			Restart(&chr);
-			serial_write(testESC,13);
-		}			
-		
-	}
-	return 0;
-}
-
-void test_distantio_minimal()
-{
-	TFC_Init();	
-	
-	init_serial();
-	init_serial_protocol();
-	init_log();
-	
-	//TFC_HBRIDGE_ENABLE;
-	
-	uint32_t testESC =  0x007F7DF7;
-	
-	//Readonly variables
-	register_scalar(&testESC,UINT32,0,"TestESC");
-	
-	chrono chr_distantio;
-	Restart(&chr_distantio);
-	
-	for(;;)
-	{
-			
-		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
-		TFC_Task();
-		
-		Capture(&chr_distantio);
-		if(GetLastDelay_us(&chr_distantio) > 500)
-		{
-			Restart(&chr_distantio);
-				
-			update_distantio();
-		}			
 	}
 }
 
