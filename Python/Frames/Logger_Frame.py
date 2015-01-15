@@ -8,6 +8,9 @@ from pubsub import pub
 """
 Logger GUI Frame
 """
+
+#TODO : Graph should ask logger for selected var
+
 class Logger_Frame(Tk.Frame):
     def __init__(self,parent,model,**kwargs):
         Tk.Frame.__init__(self,parent,**kwargs)
@@ -75,7 +78,7 @@ class Logger_Frame(Tk.Frame):
         self.activate_log()
         
     def listener_table_received(self,varlist):
-        pub.sendMessage("new_var_selected",varid=None)#TO CHECK IF WORKS
+        #pub.sendMessage("new_var_selected",varid=None)#TO CHECK IF WORKS
         # Signal new state
         self.change_state(state="active")
         # Empty table
@@ -152,7 +155,7 @@ class Logger_Frame(Tk.Frame):
         else:
             self.variable.set("** Variable not writeable **")
                       
-        pub.sendMessage("new_var_selected",varid=var_id)
+        pub.sendMessage("new_var_selected",varid=var_id,varname=self.var_dict[item[0]][1])
 
         
         
