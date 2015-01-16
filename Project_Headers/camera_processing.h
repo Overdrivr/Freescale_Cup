@@ -14,9 +14,8 @@
 typedef struct cameraData cameraData;
 struct cameraData
 {
-	float filtered_image[128];
 	uint16_t raw_image[128];
-	
+	int32_t derivative_image[128];
 	int8_t threshold_image[128];
 	
 	int falling_edges_position[128];
@@ -26,15 +25,12 @@ struct cameraData
 	int16_t valid_line_position;
 	
 	//Calibration data
-	float threshold;
+	int32_t threshold;
 	float offset;
 	
 	//Parameters
-	float threshold_coefficient;
 	int16_t edgeleft;
-	int16_t edgeright;
-	float alpha;
-	
+	int16_t edgeright;	
 };
 
 
