@@ -11,8 +11,18 @@ from pubsub import pub
 class DistantIO():
 
     def __init__(self):
-        self.log_table = Queue(0)
-        self.variables = list()
+        """
+        Dictionnary holding the variable table
+        """
+        # [variable_id]['datatype']   : data type (float, int32, uint8, etc.)
+        # [variable_id]['octets']     : data size in octets
+        # [variable_id]['is_array']   : True or False
+        # [variable_id']['amount']    : 1 if scalar, array size if array
+        # [variable_id]['writeable']  : if the variable can be written
+        # [variable_id]['name']       : variable name
+        self.variables = dict()
+
+        # For converting dataid to a type
         self.type_lookup = {0 : '=f',
                             1 : '=B',
                             2 : '=H',
@@ -33,20 +43,29 @@ class DistantIO():
     def decode(self,rxpayload):
         frame = rxpayload
         index = 0
+
+        if len(frame) < 4:
+            print("DistantIO error : frame size not valid")
+            return
+            
         command = frame[0]
         datatype = frame[1] & 0x0F
 
-        temp2 = bytearray()
-        temp2.insert(1,frame[2])
-        temp2.insert(1,frame[3])
-        temp2.insert(1,0)
-        temp2.insert(1,0)
+        temp2 = bytearray(0)
+        temp2.append(frame[2])
+        temp2.append(frame[3])
+        temp2.append(0)
+        temp2.append(0)
+        
         dataid = struct.unpack("=i",temp2)[0]
         
         # Parse 'received_variable_value' payload
         if command == 0:
 
-            #TODO : CHECK DATAID IS VALID
+            # Check data ID exists
+            if not dataid in self.variables:
+                #print("DistantIO error : Data ID ",dataid," not found.")
+                return
 
             # Check datatype exists
             if not datatype in self.type_lookup:
@@ -55,6 +74,11 @@ class DistantIO():
 
             if not datatype in self.size_lookup:
                 print("DistantIO error : Datatype ",datatype," size unknown.")
+                return
+
+            # Check variable datatype matches
+            if not datatype == self.variables[dataid]['datatype']:
+                print("DistantIO error : Matching error between table and RX.")
                 return
             
             new_values = list()
@@ -87,7 +111,7 @@ class DistantIO():
         # Parse 'received_table' payload
         elif command == 2:
             #Empty list
-            self.variables = list()
+            self.variables = dict()
             index = 4
             while len(frame) - index >= 37:
                 # Read datatype
@@ -96,7 +120,7 @@ class DistantIO():
                 index+=1
                 
                 # Read rights
-                write_rights = (databyte >> 4) == 0x0F
+                writeable = (databyte >> 4) == 0x0F
                 
                 # Read variable ID
                 temp = bytearray()
@@ -114,7 +138,16 @@ class DistantIO():
                 
                 octets = struct.unpack('H',temp)[0]
 
-                # TODO : Compute array size if array
+                # Compute array size if array
+                if octets == self.size_lookup[datatype]:
+                    is_array = True
+                    array_size = 1
+                else:
+                    is_array = False
+                    array_size = octets / self.size_lookup[datatype]
+                    if not (octets % self.size_lookup[datatype]) == 0:
+                        print("DistantIO error : Stride not correct, computed array size is wrong.")
+                    
                 
                 # Read name
                 name = ""
@@ -125,11 +158,15 @@ class DistantIO():
                     name += c
                     index += 1
 
-                #Put everything in tuple
-                t = varid, datatype, octets, write_rights, name
-
-                #Stock the tuple in the variable list
-                self.variables.append(t)
+                # Stock everything in dictionnary
+                self.variables[varid] = dict()
+                
+                self.variables[varid]['datatype'] = datatype
+                self.variables[varid]['octets'] = octets
+                self.variables[varid]['is_array'] = is_array
+                self.variables[varid]['amount'] = array_size
+                self.variables[varid]['writeable'] = writeable
+                self.variables[varid]['name'] = name
                 
             #If successful, publish new table
             pub.sendMessage('logtable_update',varlist=self.variables)
@@ -155,21 +192,18 @@ class DistantIO():
             frame.extend(packed)
             
         elif cmd == 'write':
-            # Check var is in list
-            # TODO : Actually check against id values directly
-            if var_id >= len(self.variables):
-                return
-            
-            if not self.variables[var_id][0] == var_id:
+            # Check data ID exists 
+            if not var_id in self.variables:
+                print("DistantIO error : Data ID ",dataid," not found.")
                 return
 
             # Check rights
-            if not self.variables[var_id][3] == 1:
-                print("Not rights to write variable.")
+            if not self.variables[var_id]['writeable']:
+                print("DistantIO error :  Variable not writeable.")
                 return
 
             # Find type
-            fmt = self.variables[var_id][1]
+            fmt = self.variables[var_id]['datatype']
         
             frame.append(int('01'))
             frame.append(int(fmt))
@@ -195,9 +229,6 @@ class DistantIO():
         
         return frame
 
-    def get_var_list(self):
+    def get_variable_table(self):
         return self.variables
-
-    def get_var_info(self,varid):
-        return self.variables[var_id]
 

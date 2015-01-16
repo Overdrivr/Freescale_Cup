@@ -27,7 +27,7 @@ class Logger_Frame(Tk.Frame):
         self.bouton_activate = Tk.Button(self, text="RETRIEVE TABLE", command = self.activate_log)
         self.bouton_activate.grid(column=0,row=2,sticky='EW',pady=3,padx=3)
 
-        self.var_list = ttk.Treeview(self, show="headings",columns=("name","type","size"),selectmode="browse")
+        self.var_list = ttk.Treeview(self, show="headings",columns=("name","type","size","ID"),selectmode="browse")
         self.var_list.grid(column=0,row=3,sticky='EW',columnspan=2,pady=3,padx=3)
         self.var_list.column('name',anchor='center',minwidth=0,width=100)
         self.var_list.heading('name', text='name')
@@ -35,9 +35,11 @@ class Logger_Frame(Tk.Frame):
         self.var_list.heading('type', text='type')
         self.var_list.column('size',anchor='center',minwidth=0,width=100, stretch=Tk.NO)
         self.var_list.heading('size', text='size')
+        self.var_list.column('ID',anchor='center',minwidth=0,width=3, stretch=Tk.NO)
+        self.var_list.heading('ID', text='ID')
         self.var_list.bind("<<TreeviewSelect>>", self.variable_selected)
 
-        self.var_dict = dict()
+        self.variables = dict()
 
         #Variable name
         self.variable = Tk.StringVar()
@@ -79,20 +81,23 @@ class Logger_Frame(Tk.Frame):
         
     def listener_table_received(self,varlist):
         #pub.sendMessage("new_var_selected",varid=None)#TO CHECK IF WORKS
+        self.variables = varlist
+        
         # Signal new state
         self.change_state(state="active")
+        
         # Empty table
         x = self.var_list.get_children()
         for item in x:
             self.var_list.delete(item)
+        
         # Fill table with new values
-        for item in varlist:
+        for key in self.variables:
             i = self.var_list.insert('','end')
-            self.var_list.set(i,'name',item[4])
-            self.var_list.set(i,'type',item[1])
-            self.var_list.set(i,'size',item[2])
-            #Put ID, name, type, size, writeable in dict
-            self.var_dict[i] = (item[0],item[4],item[1],item[2],item[3])
+            self.var_list.set(i,'name',self.variables[key]['name'])
+            self.var_list.set(i,'type',self.variables[key]['datatype'])
+            self.var_list.set(i,'size',self.variables[key]['octets'])
+            self.var_list.set(i,'ID',key)
 
     def listener_value_received(self,varid,value_list):
         if self.displayed_var_id is None:
@@ -114,13 +119,14 @@ class Logger_Frame(Tk.Frame):
 
     def write_value(self):
         # Find selected variable
-        item = self.var_list.selection()
-
-        if len(item) == 0:
+        it = self.var_list.selection()
+        
+        # Get associated var_id   
+        var_id = self.var_list.set(it,column='ID')
+        
+        if not var_id in self.variables:
+            print("Logger_Frame error : ID not found :",self.var_list.set(it,column='ID'))
             return
-       
-        # Get associated var_id       
-        var_id = self.var_dict[item[0]][0]
         
         # Get entry value
         value = self.value.get()
@@ -131,19 +137,20 @@ class Logger_Frame(Tk.Frame):
     def variable_selected(self,event):
         
         # Find selected variable
-        item = self.var_list.selection()
+        it = self.var_list.selection()
         
-        if len(item) == 0:
+        # Get associated var_id   
+        var_id = self.var_list.set(it,column='ID')
+        
+        if not var_id in self.variables:
+            print("Logger_Frame error : ID not found :",self.var_list.set(it,column='ID'))
             return
-
-        # Get associated var_id       
-        var_id = self.var_dict[item[0]][0]
 
         self.displayed_var_id = var_id
 
         # If selected variable is writeable
-        if self.var_dict[item[0]][4] == 1:
-            self.variable.set(self.var_dict[item[0]][1])
+        if self.variables[var_id]['writeable']:
+            self.variable.set(self.variables[var_id]['name'])
             
             # First, tell MCU to stop logging former variable ?
             # !!! Warning, if variable was requested by a plot, this is going to shut it down for the plot as well
@@ -155,7 +162,7 @@ class Logger_Frame(Tk.Frame):
         else:
             self.variable.set("** Variable not writeable **")
                       
-        pub.sendMessage("new_var_selected",varid=var_id,varname=self.var_dict[item[0]][1])
+        pub.sendMessage("new_var_selected",varid=var_id,varname=self.variables[var_id]['name'])
 
         
         
