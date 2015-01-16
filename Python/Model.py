@@ -35,14 +35,14 @@ class Model(Thread):
     #Model update running in a thread
     def run(self):
         while self.running:
-            for i in range(0,15):
-                if self.serialthread.char_available():
-                     c = self.serialthread.get_char()
-                     if not c is None:
-                         self.protocol.process_rx(c)
+            if self.serialthread.char_available():
+                c = self.serialthread.get_char()
+                if not c is None:
+                    self.protocol.process_rx(c)
 
             if self.protocol.available():
                 p =  self.protocol.get()
+                # Dump payload if controller is in heavy load ?
                 pub.sendMessage('new_rx_payload',rxpayload=p)
                 if not p is None:
                     self.controller.decode(p)
