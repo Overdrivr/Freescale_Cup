@@ -14,6 +14,14 @@
 void cam_program();
 void configure_bluetooth();
 
+float max(float a, float b)
+{
+	if(a>b)
+		return a;
+	return b;
+}
+
+
 int main(void)
 
 {
@@ -28,6 +36,8 @@ int main(void)
 	return 0;
 }
 
+//TODO : Calibrer offset
+
 void cam_program()
 {
 	TFC_Init();
@@ -41,12 +51,13 @@ void cam_program()
 	init_data(&data);
 	
 	//Computation variables
-	float position_error = 0.f, alpha_error = 0.8;
+	float position_error = 0.f;
 	float previous_error = 0.f;
-	float error_derivative = 0.f, new_derivative = 0.f, alpha_deriv = 0.85;
-	float filtered_error = 0.f, previous_filtered_error = 0.f;
+	float error_derivative = 0.f;
+	float alpha_error = 0.8;
+	float filtered_error = 0.f;
 	
-	float command = 0.f,new_command = 0.f, alpha_command = 0.0;
+	float command = 0.f,alpha_command = 0.0;
 	float servo_offset = 0.2;
 	
 	float commandD = 0.f;
@@ -60,35 +71,17 @@ void cam_program()
 	float command_engines = 0.4f;
 	
 	//Stable
-	P = 0.018;
+	P = 0.014;
 	D = 0.f;
-	command_engines = 0.4f;
-	
-	//Start oscillating
-	//P = 0.019;
-	//D = 0.f;
-	//command_engines = 0.4f;
-	
-	//NUL
-	//P = 0.018f;
-	//D = 0.001f;
-	//command_engines = 0.4f;
+	command_engines = 0.48f;
 	
 	//To check loop times
-	chrono chr_cam_m, chr_loop_m;
+	chrono chr_cam_m, chr_loop_m,chr_io,chr_rest, chr_Task;
 	//To ensure loop times
 	chrono chr_distantio,chr_cam,chr_led,chr_servo;
-	float t_cam = 0, t_loop = 0;
+	float t_cam = 0, t_loop = 0, t_io = 0, t_rest = 0, t_Task = 0;
 	float looptime_cam;
 	float queue_size = 0;
-	
-	uint32_t  testESC = 0x007F7DF7;
-	
-	//Camera processing parameters
-	data.threshold_coefficient = 0.65;
-	data.edgeleft = 20;
-	data.edgeright = 15;
-	data.alpha = 0.25;
 	
 	//TFC_HBRIDGE_ENABLE;
 	
@@ -96,13 +89,17 @@ void cam_program()
 	
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
+	float exposure_time_us = 10000;
 	
 	//Readonly variables
-	register_scalar(&testESC,UINT32,0,"TestESC");
-	register_scalar(&pload,UINT16,0,"Serial load");
 	
-	register_scalar(&t_cam,FLOAT,0,"cam time(ms)");
-	register_scalar(&t_loop,FLOAT,0,"main time(ms)");
+	register_scalar(&pload,UINT16,0,"Serial load");
+	register_scalar(&exposure_time_us,FLOAT,1,"Exposure time");
+	register_scalar(&t_cam,FLOAT,0,"max cam time(ms)");
+	register_scalar(&t_loop,FLOAT,0,"max main time(ms)");
+	register_scalar(&t_rest,FLOAT,0,"max rest time(ms)");
+	register_scalar(&t_io,FLOAT,0,"distant io time(ms)");
+	register_scalar(&t_Task,FLOAT,0,"max TFC task time(ms)");
 	register_scalar(&looptime_cam,FLOAT,0,"cam exe period(us)");
 	
 	register_scalar(&queue_size, FLOAT,0,"queue size");
@@ -116,19 +113,19 @@ void cam_program()
 	//Read/write variables
 	register_scalar(&P,FLOAT,1,"P");
 	register_scalar(&D,FLOAT,1,"D");
-	register_scalar(&alpha_error,FLOAT,1,"alpha P");
-	register_scalar(&alpha_deriv,FLOAT,1,"alpha_D");
+	register_scalar(&filtered_error,FLOAT,1,"Filtered error");
+	register_scalar(&alpha_error,FLOAT,1,"alpha_D");
 	register_scalar(&alpha_command,FLOAT,1,"alpha cmd");
-	register_scalar(&command_engines,FLOAT,1,"engines");
+	register_scalar(&command_engines,FLOAT,1,"command engines");
 	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
-	
-	register_scalar(&data.offset,FLOAT,0,"cmd offset");
-	
-	register_array(data.filtered_image,128,FLOAT,0,"filtered_line");
+	register_scalar(&data.offset,FLOAT,1,"cmd offset");
+	register_scalar(&data.threshold,INT32,1,"threshold");
+	register_scalar(&data.edges_count,UINT16,0,"edge count");
+	register_array(data.threshold_image,128,INT8,0,"threshold_line");
+	register_array(data.derivative_image,128,INT32,0,"line derivative");
 	register_array(data.raw_image,128,UINT16,0,"raw_line");
 	
-	float exposure_time_us = 10000;
-	uint32_t servo_update_ms = 10;
+	uint32_t servo_update_ms = 20;
 	
 	TFC_SetLineScanExposureTime(exposure_time_us);
 	TFC_SetServo(0, servo_offset);
@@ -136,24 +133,33 @@ void cam_program()
 	Restart(&chr_distantio);
 	Restart(&chr_led);
 	Restart(&chr_servo);
+	Restart(&chr_cam_m);
+	Restart(&chr_io);
+	Restart(&chr_rest);
+	Restart(&chr_Task);
 	
 	for(;;)
 	{
 			
-		Restart(&chr_loop_m);					//**TIME MONITORING
-		t_loop = GetLastDelay_ms(&chr_loop_m);	//**TIME MONITORING
+		/**TIME MONITORING**/				Restart(&chr_loop_m);					
 		
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
+		/**TIME MONITORING**/				Restart(&chr_Task);
 		TFC_Task();
+		/**TIME MONITORING**/				Capture(&chr_Task);
+		/**TIME MONITORING**/				t_Task = max(t_Task,GetLastDelay_ms(&chr_Task));
 		
 		Capture(&chr_distantio);
-		if(GetLastDelay_us(&chr_distantio) > 10000)
+		if(GetLastDelay_us(&chr_distantio) > 3000)
 		{
 			Restart(&chr_distantio);
-				
+			/**TIME MONITORING**/			Restart(&chr_io);
 			update_distantio();
+			/**TIME MONITORING**/			Capture(&chr_io);
+			/**TIME MONITORING**/			t_io = GetLastDelay_ms(&chr_io);
 			pload = getPeakLoad();
-		}			
+			/**TIME MONITORING**/			t_rest = 0;
+		}
 		
 		//Compute line position
 		Capture(&chr_cam);
@@ -162,40 +168,36 @@ void cam_program()
 		{
 			Restart(&chr_cam);
 			
-			Restart(&chr_cam_m);				//**TIME MONITORING
+			/**TIME MONITORING**/			Restart(&chr_cam_m);
 			
 			read_process_data(&data);			
-				
+			TFC_SetLineScanExposureTime(exposure_time_us);
 				
 			
 			//Compute errors for PD
 			previous_error = position_error;
-			//position_error =  position_error * alpha_error + data.line_position * (1 - alpha_error);
 			position_error = data.line_position;
 			
+			filtered_error = filtered_error * alpha_error +  position_error * (1 - alpha_error);
 			
-			previous_filtered_error = filtered_error;
-			filtered_error = filtered_error * alpha_deriv + (1 - alpha_deriv) * position_error;
-			
-			error_derivative = (filtered_error - previous_filtered_error) * 1000000.f / looptime_cam;
+			error_derivative = (position_error - previous_error) * 1000000.f / looptime_cam;
 			
 			commandP = P * position_error;
 			commandD = D * error_derivative;
 			
-			//Compute servo command between -1.0 & 1.0
-			new_command = commandD + commandP + servo_offset;
-			//command = command * alpha_command + (1 - alpha_command) * new_command;
-			command = new_command;
+			//Compute servo command between -1.0 & 1.0 
+			command = commandD + commandP + servo_offset;
 			
 			if(command > 1.f)
 				command = 1.f;
 			if(command < -1.f)
 				command = -1.f;
 			
-			Capture(&chr_cam_m); 				//**TIME MONITORING
-			t_cam = GetLastDelay_ms(&chr_cam_m);//**TIME MONITORING
+			/**TIME MONITORING**/			Capture(&chr_cam_m); 				
+			/**TIME MONITORING**/			t_cam = max(t_cam,GetLastDelay_ms(&chr_cam_m));
 		}
 		
+		/**TIME MONITORING**/				Restart(&chr_rest);
 		
 		//Update servo command
 		Capture(&chr_servo);
@@ -232,7 +234,11 @@ void cam_program()
 		}
 	
 		TFC_SetBatteryLED_Level(led_state);
-		Capture(&chr_loop_m);	//**TIME MONITORING
+		
+		/**TIME MONITORING**/				Capture(&chr_loop_m);
+		/**TIME MONITORING**/				Capture(&chr_rest);
+		t_loop = max(t_loop,GetLastDelay_ms(&chr_loop_m));
+		/**TIME MONITORING**/				t_rest = max(t_rest,GetLastDelay_ms(&chr_rest));
 	}
 }
 
@@ -260,3 +266,4 @@ void configure_bluetooth()
 			 }
 		 }
 }
+
