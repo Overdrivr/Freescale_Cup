@@ -102,12 +102,13 @@ class Plot2D_Frame(Tk.Frame):
             self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
             
             self.y.appendleft(value_list[0])
+            # TODO : Check ::-1
             self.line1.set_data(np.arange(len(self.y))[::-1],self.y)
             self.dataPlot.draw()
 
             self.selected_value.set(value_list[0])
         else:
-
+            # TODO : Bound max refresh rate
             if self.first:
                 self.ymin = value_list[0]
                 self.ymax = value_list[0]
