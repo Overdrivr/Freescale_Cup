@@ -10,5 +10,7 @@ void TFC_UART_Process();
 extern ByteQueue SDA_SERIAL_OUTGOING_QUEUE;
 extern ByteQueue SDA_SERIAL_INCOMING_QUEUE;
 
+void uart0_init (int sysclk, int baud);
+
 
 #endif /* TFC_UART_H_ */
