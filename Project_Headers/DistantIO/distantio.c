@@ -184,10 +184,19 @@ void distantio_decode_rx_frame(ByteQueue* rx_queue)
 	uint8_t bytes[4]; 
 	uint8_t type;
 	
-	//If command is return table to master
-	if(byte == 0x02)
+	//If command is return variable
+	if(byte == 0x00 && BytesInQueue(rx_queue) >= 3)
 	{
-		distantio_send_table();
+		type = ForcedByteDequeue(rx_queue);
+		byte = ForcedByteDequeue(rx_queue);
+		byte2 = ForcedByteDequeue(rx_queue);
+		
+		id = byte + (byte2<<8);
+		
+		if(id < Log.current_index)
+		{
+			Log.variables[id].send = 1;
+		}
 	}
 	//If command is write variable value
 	else if(byte == 0x01)
@@ -234,24 +243,33 @@ void distantio_decode_rx_frame(ByteQueue* rx_queue)
 			{
 				
 			}
-				
 		}
 	}
-	//If command is return variable
-	else if(byte == 0x00 && BytesInQueue(rx_queue) >= 3)
+	//If command is return table to master
+	else if(byte == 0x02)
+	{
+		distantio_send_table();
+	}
+	//If command is stop sending variable
+	else if(byte == 0x03 && BytesInQueue(rx_queue) >= 3)
 	{
 		type = ForcedByteDequeue(rx_queue);
-		
 		byte = ForcedByteDequeue(rx_queue);
 		byte2 = ForcedByteDequeue(rx_queue);
 		
-		id = byte;
-		//TOCHECK : 4 or 8 shift ?
 		id = byte + (byte2<<8);
 		
 		if(id < Log.current_index)
 		{
-			Log.variables[id].send = 1;
+			Log.variables[id].send = 0;
+		}
+	}
+	//If command is stop sending all variables
+	else if(byte == 0x04)
+	{
+		for(id = 0 ; id < Log.current_index ; id++)
+		{
+			Log.variables[id].send = 0;
 		}
 	}
 	
