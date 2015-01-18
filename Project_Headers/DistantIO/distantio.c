@@ -11,6 +11,9 @@
 uint8_t register_(uint8_t* adress, uint16_t octets, datatype type, uint8_t writeable, char* name);
 void distantio_decode_rx_frame(ByteQueue* rx_queue);
 void distantio_send_table();
+//Returns 0xFF00 if done, or 0x00XX if transmitted only up to index XX
+//TODO : IMPLEMENT DISTRIBUTED TRANSMIT
+uint32_t distantio_send_variable(uint16_t variable_id);
 
 log Log;
 
@@ -138,13 +141,7 @@ uint8_t register_array(void* adress, uint16_t size, datatype type, uint8_t write
 
 void update_distantio()
 {
-	
-	uint16_t i,j,k;
-	uint8_t *temp_ptr;
-	uint8_t type;
-	
-	uint8_t buffer[512];
-	
+	uint16_t i;	
 	uint16_t interval = 1;
 	
 	//Transmit data to serial - Only one variable per mainloop
@@ -153,64 +150,7 @@ void update_distantio()
 		if(Log.variables[i].send == 0)
 			continue;
 		
-		j = 0;
-		
-		//Write command
-		buffer[j] = 0x00;			j++;
-				
-		//Write data type
-		switch(Log.variables[i].type)
-		{
-			case FLOAT:
-				type = 0x00;
-				break;
-			case UINT8:
-				type = 0x01;
-				break;
-			
-			case UINT16:
-				type = 0x02;
-				break;
-			
-			case UINT32:
-				type = 0x03;
-				break;
-				
-			case INT8:
-				type = 0x04;
-				break;
-			
-			case INT16:
-				type = 0x05;
-				break;
-				
-			case INT32:
-			default:
-				type = 0x06;
-				break;
-		}
-		buffer[j] = type;			j++;
-		
-		//Write variable ID
-		temp_ptr = (uint8_t*)(&i);
-		
-		buffer[j] = *temp_ptr;		j++;
-		buffer[j] = *(temp_ptr+1);	j++;
-		
-		
-		//Start frame. send CMD,DATATYPE,DATAID to protocol
-		protocol_frame_begin();
-		protocol_frame_append(buffer,j);
-		j = 0;
-		
-		//Write data
-		for(k = 0 ; k < Log.variables[i].size ; k++)
-		{
-			temp_ptr = Log.variables[i].ptr + k;
-			
-			protocol_frame_append(temp_ptr,1);
-		}
-		protocol_frame_end();
+		distantio_send_variable(i);
 	}
 	
 	
@@ -406,6 +346,71 @@ void distantio_send_table()
 		protocol_frame_append(buffer,j);
 		j = 0;
 	
+	}
+	protocol_frame_end();
+}
+
+uint32_t distantio_send_variable(uint16_t i)
+{
+	uint16_t j,k;
+	uint8_t *temp_ptr;
+	uint8_t type;
+	uint8_t buffer[512];
+	
+	//Write command
+	buffer[j] = 0x00;			j++;
+			
+	//Write data type
+	switch(Log.variables[i].type)
+	{
+		case FLOAT:
+			type = 0x00;
+			break;
+		case UINT8:
+			type = 0x01;
+			break;
+		
+		case UINT16:
+			type = 0x02;
+			break;
+		
+		case UINT32:
+			type = 0x03;
+			break;
+			
+		case INT8:
+			type = 0x04;
+			break;
+		
+		case INT16:
+			type = 0x05;
+			break;
+			
+		case INT32:
+		default:
+			type = 0x06;
+			break;
+	}
+	buffer[j] = type;			j++;
+	
+	//Write variable ID
+	temp_ptr = (uint8_t*)(&i);
+	
+	buffer[j] = *temp_ptr;		j++;
+	buffer[j] = *(temp_ptr+1);	j++;
+	
+	
+	//Start frame. send CMD,DATATYPE,DATAID to protocol
+	protocol_frame_begin();
+	protocol_frame_append(buffer,j);
+	j = 0;
+	
+	//Write data
+	for(k = 0 ; k < Log.variables[i].size ; k++)
+	{
+		temp_ptr = Log.variables[i].ptr + k;
+		
+		protocol_frame_append(temp_ptr,1);
 	}
 	protocol_frame_end();
 }
