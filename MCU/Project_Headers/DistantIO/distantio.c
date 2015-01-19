@@ -374,6 +374,7 @@ uint32_t distantio_send_variable(uint16_t i)
 	uint8_t *temp_ptr;
 	uint8_t type;
 	uint8_t buffer[512];
+	j = 0;
 	
 	//Write command
 	buffer[j] = 0x00;			j++;
