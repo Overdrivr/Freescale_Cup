@@ -83,52 +83,52 @@ class Plot2D_Frame(Tk.Frame):
         self.selected_varname = varname
         
 
-    def listener_new_value_received(self,varid,value_list):
+    def listener_new_value_received(self,varid,data):
         if not varid == self.plotted_varid:
             return
         
         #Update plot with new value if name is found
-        if len(value_list) == 1:
+        if len(data['values']) == 1:
 
             if self.first:
-                self.ymin = value_list[0]
-                self.ymax = value_list[0]
+                self.ymin = data['values'][0]
+                self.ymax = data['values'][0]
                 self.first = False
             else:
-                self.ymin = np.minimum(self.ymin,value_list[0])
-                self.ymax = np.maximum(self.ymax,value_list[0])
+                self.ymin = np.minimum(self.ymin,data['values'][0])
+                self.ymax = np.maximum(self.ymax,data['values'][0])
             
 
             self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
-            
-            self.y.appendleft(value_list[0])
-            # TODO : Check ::-1
-            self.line1.set_data(np.arange(len(self.y))[::-1],self.y)
+
+            self.x.appendleft(data['time'])
+            self.y.appendleft(data['values'][0])
+            self.line1.set_data(self.x,self.y)
             self.dataPlot.draw()
 
-            self.selected_value.set(value_list[0])
+            self.selected_value.set(data['values'][0])
         else:
             # TODO : Bound max refresh rate
             if self.first:
-                self.ymin = value_list[0]
-                self.ymax = value_list[0]
+                self.ymin = data['values'][0]
+                self.ymax = data['values'][0]
                 self.first = False
 
-            value_list.append(self.ymin)
-            value_list.append(self.ymax)
+            data['values'].append(self.ymin)
+            data['values'].append(self.ymax)
             
-            self.ymin = np.amin(value_list)
-            self.ymax = np.amax(value_list)
+            self.ymin = np.amin(data['values'])
+            self.ymax = np.amax(data['values'])
 
-            value_list.pop()
-            value_list.pop()
+            data['values'].pop()
+            data['values'].pop()
             
             self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
                 
-            self.line1.set_data(np.arange(len(value_list))[::-1],value_list)
+            self.line1.set_data(np.arange(len(value_list))[::-1],data['values'])
             self.dataPlot.draw()
 
-            self.selected_value.set(value_list[0])
+            self.selected_value.set(data['values'][0])
     
     def add_var_to_plot(self):
         if self.selected_varid == None:

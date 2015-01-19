@@ -99,14 +99,14 @@ class Logger_Frame(Tk.Frame):
             self.var_list.set(i,'size',self.variables[key]['octets'])
             self.var_list.set(i,'ID',key)
 
-    def listener_value_received(self,varid,value_list):
+    def listener_value_received(self,varid,data):
         if self.displayed_var_id is None:
             return
 
         if not self.displayed_var_id == varid:
             return
 
-        self.read_val.set(round(value_list[0],6))        
+        self.read_val.set(round(data['values'][0],6))        
             
     def change_state(self,state):
         if state == "inprocess":

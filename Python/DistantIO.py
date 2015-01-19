@@ -6,7 +6,6 @@ import struct
 from pubsub import pub
 
 # DistantIO class : to read and write variables on the MCU from distant computer
-# TODO : parse all datatype
 
 class DistantIO():
 
@@ -44,45 +43,43 @@ class DistantIO():
         frame = rxpayload
         index = 0
 
-        if len(frame) < 4:
+        if len(frame) < 1:
             print("DistantIO error : frame size not valid")
-            return
+            return None
             
         command = frame[0]
-        datatype = frame[1] & 0x0F
-
-        temp2 = bytearray(0)
-        temp2.append(frame[2])
-        temp2.append(frame[3])
-        temp2.append(0)
-        temp2.append(0)
-        
-        dataid = struct.unpack("=i",temp2)[0]
         
         # Parse 'received_variable_value' payload
         if command == 0:
 
+            if len(frame) < 7:
+                print("DistantIO error : frame size not valid")
+                return None
+            
+            # Get dataid 
+            temp = bytearray(0)
+            temp.append(frame[1])
+            temp.append(frame[2])
+            temp.append(0)
+            temp.append(0)
+        
+            dataid = struct.unpack("=i",temp)[0]
+
+            # Get timepoint
+            temp = bytearray(0)
+            temp.append(frame[3])
+            temp.append(frame[4])
+            temp.append(frame[5])
+            temp.append(frame[6])
+        
+            time = struct.unpack("=I",temp)[0]
+
             # Check data ID exists
             if not dataid in self.variables:
-                #print("DistantIO error : Data ID ",dataid," not found.")
-                return
-
-            # Check datatype exists
-            if not datatype in self.type_lookup:
-                print("DistantIO error : Datatype ",datatype," unknown.")
-                return
-
-            if not datatype in self.size_lookup:
-                print("DistantIO error : Datatype ",datatype," size unknown.")
-                return
-
-            # Check variable datatype matches
-            if not datatype == self.variables[dataid]['datatype']:
-                print("DistantIO error : Matching error between table and RX.")
-                return
+                return None
             
             new_values = list()
-            index = 4
+            index = 7
 
             # Decode data
             if (len(frame) - index) < self.size_lookup[datatype]:
@@ -104,15 +101,22 @@ class DistantIO():
                     
                 # Store to list
                 new_values.append(val)
+
+                # Combine with timepoint
+                data_dict = dict()
+                data_dict['time'] = time
+                data_dict['values'] = new_values
                 
             #Publish the value update
-            pub.sendMessage('var_value_update',varid=dataid,value_list=new_values)
+            pub.sendMessage('var_value_update',varid=dataid,data=data_dict)
              
         # Parse 'received_table' payload
-        elif command == 2:
+        elif command == 2:            
             #Empty list
             self.variables = dict()
-            index = 4
+            
+            index = 1
+            
             while len(frame) - index >= 37:
                 # Read datatype
                 databyte = frame[index]
@@ -181,32 +185,28 @@ class DistantIO():
     
         if cmd == 'table':
             frame.append(int('02',16))
-            frame.append(int('07',16))
-            frame.append(int('00',16))
             
         elif cmd == 'read':        
             frame = bytearray()
             frame.append(int('00',16))
-            frame.append(int('00',16))#IGNORED ?
             packed = bytes(struct.pack('=H',var_id))
             frame.extend(packed)
             
         elif cmd == 'write':
             # Check data ID exists 
             if not var_id in self.variables:
-                print("DistantIO error : Data ID ",dataid," not found.")
-                return
+                print("DistantIO error : Data ID ",var_id," not found.")
+                return None
 
             # Check rights
             if not self.variables[var_id]['writeable']:
                 print("DistantIO error :  Variable not writeable.")
-                return
+                return None
 
             # Find type
             fmt = self.variables[var_id]['datatype']
         
-            frame.append(int('01'))
-            frame.append(int(fmt))
+            frame.append(int('01'),16)
 
             packed = bytes(struct.pack('=H',var_id))
             frame.extend(packed)
@@ -221,11 +221,24 @@ class DistantIO():
                 packed = bytes(struct.pack('=i',val))
             else:
                 print("Write format not supported.")
-                return
+                return None
             
-            frame.extend(packed)       
+            frame.extend(packed)
+        elif cmd == 'stop':
+            # Check data ID exists 
+            if not var_id in self.variables:
+                print("DistantIO error : Data ID ",var_id," not found.")
+                return None
+       
+            frame.append(int('03'),16)
+
+            packed = bytes(struct.pack('=H',var_id))
+            frame.extend(packed)
+            
+        elif cmd == 'stopall':       
+            frame.append(int('04'),16)
         else:
-            return
+            return None
         
         return frame
 
