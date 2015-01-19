@@ -32,6 +32,8 @@ MCU/FLASH/
 MCU/Project_Settings
 ReferencedRSESystems.xml
 .cwGeneratedFileSetLog
+*.apconfig
+*.traceConfig
 
 #################
 ## Visual Studio
