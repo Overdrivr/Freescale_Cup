@@ -557,7 +557,7 @@ void ADC0_IRQHandler()
 							CurrentLineScanPixel++;
 							
 							TAOS_CLK_LOW;
-								for(Junk = 0;Junk<50;Junk++)
+								for(Junk = 0;Junk<20;Junk++)
 									{
 									}
 							TAOS_CLK_HIGH;
@@ -571,7 +571,7 @@ void ADC0_IRQHandler()
 					
 						TAOS_CLK_HIGH;
 											
-						for(Junk = 0;Junk<50;Junk++)
+						for(Junk = 0;Junk<20;Junk++)
 							{
 							}
 						
