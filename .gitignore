@@ -29,6 +29,9 @@ local.properties
 .buildpath
 
 MCU/FLASH/
+MCU/Project_Settings
+ReferencedRSESystems.xml
+.cwGeneratedFileSetLog
 
 #################
 ## Visual Studio
