@@ -1,5 +1,5 @@
 #include "derivative.h" /* include peripheral declarations */
-#include "TFC\TFC.h"
+#include "TFC/TFC.h"
 #include "camera_processing.h"
 #include "DistantIO\distantio.h"
 #include "chrono.h"
@@ -92,7 +92,7 @@ void cam_program()
 	float exposure_time_us = 10000;
 	
 	//Readonly variables
-	
+	register_scalar(&command_engines,FLOAT,1,"command engines");
 	register_scalar(&pload,UINT16,0,"Serial load");
 	register_scalar(&exposure_time_us,FLOAT,1,"Exposure time");
 	register_scalar(&t_cam,FLOAT,0,"max cam time(ms)");
@@ -116,7 +116,6 @@ void cam_program()
 	register_scalar(&filtered_error,FLOAT,1,"Filtered error");
 	register_scalar(&alpha_error,FLOAT,1,"alpha_D");
 	register_scalar(&alpha_command,FLOAT,1,"alpha cmd");
-	register_scalar(&command_engines,FLOAT,1,"command engines");
 	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
 	register_scalar(&data.offset,FLOAT,1,"cmd offset");
 	register_scalar(&data.threshold,INT32,1,"threshold");
