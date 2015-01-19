@@ -10,6 +10,7 @@ from array import array
 from Frames.COM_Frame import *
 from Frames.Logger_Frame import *
 from Frames.Plot2D_Frame import *
+from Frames.Control_Frame import *
 
 class Application(ttk.Frame):
         
@@ -32,6 +33,10 @@ class Application(ttk.Frame):
         self.frame_logger = Logger_Frame(self,self.model,bd=2,relief=Tk.GROOVE)
         self.frame_logger.grid(column=0,row=1,sticky='NSEW',pady=2,padx=5)
 
+        # Control frame
+        self.frame_ctrl = Control_Frame(self,self.model,relief=Tk.GROOVE)
+        self.frame_ctrl.grid(column=0,row=2,sticky='NSEW',pady=2,padx=5)
+
         # Graph 1 frame
         self.frame_graph1 = Plot2D_Frame(self,self.model,self.parent,bd=2,relief=Tk.GROOVE)
         self.frame_graph1.grid(column=1,row=0,sticky='EW',pady=2,padx=0,rowspan=2)
@@ -42,7 +47,7 @@ class Application(ttk.Frame):
 
         # Quit button
         self.bouton_quitter = Tk.Button(self, text="QUITTER",command = self.stop)
-        self.bouton_quitter.grid(column=0,row=2,sticky='EW',pady=2,padx=5)
+        self.bouton_quitter.grid(column=0,row=3,sticky='EW',pady=2,padx=5)
 
         self.model.start()
 
