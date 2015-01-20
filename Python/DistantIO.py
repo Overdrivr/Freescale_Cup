@@ -51,7 +51,6 @@ class DistantIO():
         
         # Parse 'received_variable_value' payload
         if command == 0:
-
             if len(frame) < 7:
                 print("DistantIO error : frame size not valid")
                 return None
@@ -82,19 +81,19 @@ class DistantIO():
             index = 7
 
             # Decode data
-            if (len(frame) - index) < self.size_lookup[datatype]:
+            if (len(frame) - index) < self.size_lookup[self.variables[dataid]['datatype']]:
                 print("DistantIO error : Unvalid frame size.")
                 return
                 
-            while len(frame) - index >= self.size_lookup[datatype]:
+            while len(frame) - index >= self.size_lookup[self.variables[dataid]['datatype']]:
                 # Stock raw bytes in byte array
                 temp = bytearray()
-                for i in range(self.size_lookup[datatype]):
+                for i in range(self.size_lookup[self.variables[dataid]['datatype']]):
                     temp.append(frame[index])
                     index += 1
 
                 # Get format
-                fmt = self.type_lookup[datatype]
+                fmt = self.type_lookup[self.variables[dataid]['datatype']]
                     
                 # Transform value to desired format
                 val = struct.unpack(fmt,temp)[0]
@@ -187,7 +186,6 @@ class DistantIO():
             frame.append(int('02',16))
             
         elif cmd == 'read':        
-            frame = bytearray()
             frame.append(int('00',16))
             packed = bytes(struct.pack('=H',var_id))
             frame.extend(packed)
@@ -206,7 +204,7 @@ class DistantIO():
             # Find type
             fmt = self.variables[var_id]['datatype']
         
-            frame.append(int('01'),16)
+            frame.append(int('01'))
 
             packed = bytes(struct.pack('=H',var_id))
             frame.extend(packed)
@@ -230,13 +228,13 @@ class DistantIO():
                 print("DistantIO error : Data ID ",var_id," not found.")
                 return None
        
-            frame.append(int('03'),16)
+            frame.append(int('03'))
 
             packed = bytes(struct.pack('=H',var_id))
             frame.extend(packed)
             
         elif cmd == 'stopall':       
-            frame.append(int('04'),16)
+            frame.append(int('04'))
         else:
             return None
         
