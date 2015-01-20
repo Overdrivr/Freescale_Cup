@@ -6,7 +6,7 @@
  */
 
 #include "distantio.h"
-#include "..\Serial\serial.h"
+#include "../Serial/serial.h"
 
 uint8_t register_(uint8_t* adress, uint16_t octets, datatype type, uint8_t writeable, char* name);
 void distantio_decode_rx_frame(ByteQueue* rx_queue);
@@ -432,4 +432,6 @@ uint32_t distantio_send_variable(uint16_t i)
 		protocol_frame_append(temp_ptr,1);
 	}
 	protocol_frame_end();
+	
+	return 0;
 }
