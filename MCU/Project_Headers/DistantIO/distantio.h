@@ -15,14 +15,13 @@
 typedef enum datatype datatype;
 enum datatype
 {
-	FLOAT,
-	INT32,
-	INT16,
-	INT8,
-	UINT32,
-	UINT16,
-	UINT8
-	
+	FLOAT = 0x00,
+	UINT8 = 0x01,
+	UINT16 = 0x02,
+	UINT32 = 0x03,
+	INT8 = 0x04,
+	INT16 = 0x05,
+	INT32 = 0x06,
 };
 
 typedef struct variable variable;

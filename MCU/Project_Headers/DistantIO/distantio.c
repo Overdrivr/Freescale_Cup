@@ -7,6 +7,7 @@
 
 #include "distantio.h"
 #include "../Serial/serial.h"
+#include "chrono.h"
 
 uint8_t register_(uint8_t* adress, uint16_t octets, datatype type, uint8_t writeable, char* name);
 void distantio_decode_rx_frame(ByteQueue* rx_queue);
@@ -16,6 +17,8 @@ void distantio_send_table();
 uint32_t distantio_send_variable(uint16_t variable_id);
 
 log Log;
+uint32_t tmp;
+chrono chr;
 
 void init_distantio()
 {
@@ -32,7 +35,8 @@ void init_distantio()
 		strcpy(Log.variables[i].name,default_name);
 		Log.variables[i].send = 0;
 	}
-		
+	tmp=0;
+	Restart(&chr);
 }
 
 //TODO : Replace octets by array_size ?
@@ -185,9 +189,8 @@ void distantio_decode_rx_frame(ByteQueue* rx_queue)
 	uint8_t type;
 	
 	//If command is return variable
-	if(byte == 0x00 && BytesInQueue(rx_queue) >= 3)
+	if(byte == 0x00 && BytesInQueue(rx_queue) >= 2)
 	{
-		type = ForcedByteDequeue(rx_queue);
 		byte = ForcedByteDequeue(rx_queue);
 		byte2 = ForcedByteDequeue(rx_queue);
 		
@@ -201,8 +204,6 @@ void distantio_decode_rx_frame(ByteQueue* rx_queue)
 	//If command is write variable value
 	else if(byte == 0x01)
 	{
-		type = ForcedByteDequeue(rx_queue);
-		
 		byte = ForcedByteDequeue(rx_queue);
 		byte2 = ForcedByteDequeue(rx_queue);
 		
@@ -219,7 +220,7 @@ void distantio_decode_rx_frame(ByteQueue* rx_queue)
 				bytes[2] = ForcedByteDequeue(rx_queue);
 				bytes[3] = ForcedByteDequeue(rx_queue);
 									
-				if(type == 0x00)
+				if(Log.variables[id].type == 0x00)
 				{					
 					to_float = (float *)(&bytes[0]);
 										
@@ -228,7 +229,7 @@ void distantio_decode_rx_frame(ByteQueue* rx_queue)
 					
 					*tmp_float = *to_float;
 				}
-				else if(type == 0x06)
+				else if(Log.variables[id].type == 0x06)
 				{
 					//TODO : Use void ptr
 					to_int = (int32_t*)(&bytes[0]);
@@ -251,9 +252,8 @@ void distantio_decode_rx_frame(ByteQueue* rx_queue)
 		distantio_send_table();
 	}
 	//If command is stop sending variable
-	else if(byte == 0x03 && BytesInQueue(rx_queue) >= 3)
+	else if(byte == 0x03 && BytesInQueue(rx_queue) >= 2)
 	{
-		type = ForcedByteDequeue(rx_queue);
 		byte = ForcedByteDequeue(rx_queue);
 		byte2 = ForcedByteDequeue(rx_queue);
 		
@@ -290,10 +290,6 @@ void distantio_send_table()
 	
 	//Return table command
 	buffer[j] = 0x02;			j++;
-	buffer[j] = 0x07;			j++;
-	//Ignored
-	buffer[j] = 0x00;			j++;
-	buffer[j] = 0x00;			j++;
 	
 	//Start frame
 	protocol_frame_begin();
@@ -372,45 +368,11 @@ uint32_t distantio_send_variable(uint16_t i)
 {
 	uint16_t j,k;
 	uint8_t *temp_ptr;
-	uint8_t type;
 	uint8_t buffer[512];
 	j = 0;
 	
 	//Write command
 	buffer[j] = 0x00;			j++;
-			
-	//Write data type
-	switch(Log.variables[i].type)
-	{
-		case FLOAT:
-			type = 0x00;
-			break;
-		case UINT8:
-			type = 0x01;
-			break;
-		
-		case UINT16:
-			type = 0x02;
-			break;
-		
-		case UINT32:
-			type = 0x03;
-			break;
-			
-		case INT8:
-			type = 0x04;
-			break;
-		
-		case INT16:
-			type = 0x05;
-			break;
-			
-		case INT32:
-		default:
-			type = 0x06;
-			break;
-	}
-	buffer[j] = type;			j++;
 	
 	//Write variable ID
 	temp_ptr = (uint8_t*)(&i);
@@ -418,8 +380,17 @@ uint32_t distantio_send_variable(uint16_t i)
 	buffer[j] = *temp_ptr;		j++;
 	buffer[j] = *(temp_ptr+1);	j++;
 	
+	//Write time
+	Capture(&chr);
+	tmp = GetLastDelay_us(&chr);
+	temp_ptr = (uint8_t*)(&tmp);
+		
+	buffer[j] = *temp_ptr;		j++;
+	buffer[j] = *(temp_ptr+1);	j++;
+	buffer[j] = *(temp_ptr+2);	j++;
+	buffer[j] = *(temp_ptr+3);	j++;
 	
-	//Start frame. send CMD,DATATYPE,DATAID to protocol
+	//Start frame. send CMD,DATAID,time to protocol
 	protocol_frame_begin();
 	protocol_frame_append(buffer,j);
 	j = 0;
