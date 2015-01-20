@@ -97,12 +97,33 @@ class Plot2D_Frame(Tk.Frame):
             else:
                 self.ymin = np.minimum(self.ymin,data['values'][0])
                 self.ymax = np.maximum(self.ymax,data['values'][0])
-            
 
+            # Check min != max 
+            if self.ymin == self.ymax :
+                if self.ymin == 0:
+                    self.ymin -= 0.0001
+                    self.ymax += 0.0001
+                else:
+                    self.ymax *= 1.0001
+                    
             self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
-
+            
             self.x.appendleft(data['time'])
             self.y.appendleft(data['values'][0])
+            
+            xmin = np.amin(self.x)
+            xmax = np.amax(self.x)
+
+             # Check min != max 
+            if xmin == xmax :
+                if xmin == 0:
+                    xmin -= 0.0001
+                    xmax += 0.0001
+                else:
+                    xmax *= 1.0001
+                    
+            self.a.set_xlim(xmin,xmax)
+            
             self.line1.set_data(self.x,self.y)
             self.dataPlot.draw()
 
@@ -120,12 +141,20 @@ class Plot2D_Frame(Tk.Frame):
             self.ymin = np.amin(data['values'])
             self.ymax = np.amax(data['values'])
 
+            # Check min != max 
+            if self.ymin == self.ymax :
+                if self.ymin == 0:
+                    self.ymin -= 0.0001
+                    self.ymax += 0.0001
+                else:
+                    self.ymax *= 1.0001
+                    
             data['values'].pop()
             data['values'].pop()
             
             self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
-                
-            self.line1.set_data(np.arange(len(value_list))[::-1],data['values'])
+            self.a.set_xlim(0,len(data['values']))
+            self.line1.set_data(np.arange(len(data['values']))[::-1],data['values'])
             self.dataPlot.draw()
 
             self.selected_value.set(data['values'][0])
