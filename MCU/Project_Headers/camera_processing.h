@@ -17,6 +17,8 @@ struct cameraData
 	uint16_t raw_image[128];
 	int32_t derivative_image[128];
 	int8_t threshold_image[128];
+	uint16_t min, max;
+	uint32_t image_integral;
 	
 	int falling_edges_position[128];
 	int rising_edges_position[128];
@@ -27,10 +29,17 @@ struct cameraData
 	//Calibration data
 	int32_t threshold;
 	float offset;
+	float linewidth;
 	
 	//Parameters
 	int16_t edgeleft;
 	int16_t edgeright;	
+};
+
+enum
+{
+	LINE_OK = 0,
+	LINE_LOST = -1
 };
 
 

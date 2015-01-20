@@ -7,6 +7,7 @@
 
 #include "camera_processing.h"
 #include "chrono.h"
+#include "Serial/serial.h"
 
 void init_data(cameraData* data)
 {
@@ -23,42 +24,46 @@ void init_data(cameraData* data)
 	data->edges_count = 0;
 	data->line_position = 0;
 	data->valid_line_position = 0;
+	data->image_integral = 0;//Compute reference integral at calibration
 	
 	data->threshold = 200;
 	data->offset = 0.f;
-	data->edgeleft = 5;//MIN VALUE : 1
-	data->edgeright = 5;//MIN VALUE : 1
+	data->linewidth = 0.f;
+	
+	data->edgeleft = 1;//MIN VALUE : 1
+	data->edgeright = 1;//MIN VALUE : 1
+	
 }
 
 
 int read_process_data(cameraData* data)
 {	
-	uint16_t min, max;
 	float position;
 	uint8_t edge_signal;
 	int16_t i;
 	int16_t loopright = 128 - data->edgeright;
-	
-	//Record current image & detect min max
-	min = 65535;
-	max = 0;
+		
+	data->image_integral = 0;
 	
 	for(i=0;i<128;i++)
 	{
 		data->raw_image[i] = LineScanImage0[i];
 		
-		if(data->raw_image[i] > max)
-			max = data->raw_image[i];
-		if(data->raw_image[i] < min)
-			min =data->raw_image[i];
+		data->image_integral += data->raw_image[i];
+		
+		if(data->raw_image[i] > data->max)
+			data->max = data->raw_image[i];
+		if(data->raw_image[i] < data->min)
+			data->min =data->raw_image[i];
 	}
 	
+	//If signal integral is too small, the line is very likely lost
+	if(data->image_integral < data->linewidth * data->threshold * 0.5)
+		return LINE_LOST;
+	
 	data->edges_count = 0;
-	
 	edge_signal = 0;
-	
 	data->derivative_image[data->edgeleft] = data->raw_image[data->edgeleft];
-	
 	data->threshold_image[data->edgeleft-1] = -1;
 	data->threshold_image[loopright] = -1;
 	
@@ -68,7 +73,6 @@ int read_process_data(cameraData* data)
 			data->derivative_image[i] =  data->raw_image[i+1] -  data->raw_image[i];
 		
 		//Apply threshold
-		//PROBLEME !
 		if(data->derivative_image[i] >  data->threshold || 
 		   data->derivative_image[i] < -data->threshold)
 		{
@@ -97,25 +101,24 @@ int read_process_data(cameraData* data)
 			}
 		}
 	}
-				
 	
 	//Process detected edges
 	if(data->edges_count == 0)
 	{
 		//No edge detected, keep line position
-		//TODO : Monitor when loop goes there
+		return LINE_LOST;
 	}
 	else if(data->edges_count == 1)
 	{
 		//Line is in very border of camera, half of it is visible
 		//1 edge - compute center & record
 		position = (float)(data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f;
-		float off = 0.f;
-		if(data->rising_edges_position[0] > 0)
-			off = 10;
+		
+		if(position > 64)
+			position -= (64 - data->linewidth / 2.f);
 		else
-			off = -10;
-		position -= (64 + off);
+			position -= (64 + data->linewidth / 2.f);
+		
 		data->line_position = position + data->offset;
 	}
 	else if(data->edges_count == 2)
@@ -126,18 +129,51 @@ int read_process_data(cameraData* data)
 		data->line_position = position + data->offset;
 	}
 	else if(data->edges_count == 6)
-	{			
-		position = (data->rising_edges_position[2] + data->falling_edges_position[2] + data->rising_edges_position[3] + data->falling_edges_position[3]) / 2;
+	{
+		//TODO : CHECK INTERVALS ARE CORRECT 
+		position = (data->rising_edges_position[2] + data->falling_edges_position[2] + data->rising_edges_position[3] + data->falling_edges_position[3]) / 4.f;
 		position -= 64;
 		data->line_position = position + data->offset;
 		//TODO : CALL FUNCTION TO SIGNAL START LINE
 	}
-	//Any other value is error
 	else
 	{
-		//FOR NOW : DO NOT CHANGE THE VALUE
+		float linewidth = 0.f;
+		float error = 0.f, lowest_error = 1000.f;
+		uint16_t valid_index = 0;
+		
+		//Select most probable line
+		for(i = 0 ; i < data->edges_count - 1 ; i++)
+		{
+			linewidth = (data->rising_edges_position[i] + data->falling_edges_position[i]) / 2.f -
+						(data->rising_edges_position[i + 1] + data->falling_edges_position[i + 1]) / 2.f;
+			
+			error = (linewidth - data->linewidth) / data->linewidth;
+			
+			if(error < 0.f)
+				error *= -1;
+			
+			if(error < lowest_error)
+			{
+				lowest_error = error;
+				valid_index = i;
+			}
+		}
+		
+		if(lowest_error < 0.10)
+		{
+			//Valid line found, compute position
+			position = (data->rising_edges_position[valid_index] + data->falling_edges_position[valid_index] + 
+					    data->rising_edges_position[valid_index + 1] + data->falling_edges_position[valid_index + 1]) / 4.f;
+			position -= 64;
+			data->line_position = position + data->offset;
+		}
+		else
+		{
+			return LINE_LOST;
+		}
 	}
-	return 0;
+	return LINE_OK;
 }
 
 
@@ -159,6 +195,7 @@ void calibrate_data(cameraData* data)
 	int counter = 0;
 	float div = 1.f;
 	float center = 0.f;
+	int32_t min,max;
 	
 	chrono chr;
 	
@@ -175,20 +212,55 @@ void calibrate_data(cameraData* data)
 	Restart(&chr);
 	
 	data->offset = 0.f;
+	data->linewidth = 0.f;
 	
 	//Record raw camera image 100 times or stop at 5 seconds
 	while(counter < 100 && GetLastDelay_ms(&chr) < 5000)
 	{
 		Capture(&chr);
-		if(read_process_data(data) == 0)
+		if(read_process_data(data) == LINE_OK)
 		{
+			//Sum for average
 			center += data->line_position;
 			counter++;
+			
+			// Sum for line width
+			if(data->edges_count == 2)
+			{
+				//1 edge - compute center & record
+				data->linewidth += (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2.f -
+								   (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f ;
+			}
+			else
+			{
+				serial_printf("CALIBRATION_ISSUE");
+			}
+			
+			//Compute thresholds
+			if(counter == 0)
+			{
+				min = data->derivative_image[data->edgeleft];
+				max = data->derivative_image[data->edgeleft];
+			}
+			int16_t i;
+			for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
+			{
+				if(data->derivative_image[i] < min)
+					min = data->derivative_image[i];
+				if(data->derivative_image[i] > max)
+					max = data->derivative_image[i];
+				
+				//Compute threshold
+				//TO FIX : ISSUES WITH CALIBRATION !!
+				data->threshold = (int32_t)(max / 2.f);
+			}			
 		}
-	}
-	
-	//TODO : Compute line width
-	//TODO : Adjust threshold
+		else
+		{
+			serial_printf("CALIBRATION_ISSUE 2");
+		}
+					
+	}	
 	
 	if(counter == 0)
 		return;
@@ -197,5 +269,8 @@ void calibrate_data(cameraData* data)
 	
 	//Compute average	
 	data->offset = - center / div;
+	
+	//Compute linewidth
+	data->linewidth /= div; 
 }
 
