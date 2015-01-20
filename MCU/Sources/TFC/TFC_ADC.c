@@ -512,6 +512,7 @@ void ADC0_IRQHandler()
 				ADC0_CFG2  |= ADC_CFG2_MUXSEL_MASK; //Select the B side of the mux
 				ADC0_SC1A  =  TFC_BAT_SENSE_CHANNEL| ADC_SC1_AIEN_MASK;
 				CurrentADC_State = ADC_STATE_CAPTURE_BATTERY_LEVEL;
+				//CurrentADC_State = ADC_STATE_CAPTURE_LINE_SCAN;
 				
 			break;
 		
@@ -557,9 +558,9 @@ void ADC0_IRQHandler()
 							CurrentLineScanPixel++;
 							
 							TAOS_CLK_LOW;
-								for(Junk = 0;Junk<20;Junk++)
-									{
-									}
+							for(Junk = 0;Junk<20;Junk++)
+							{
+							}
 							TAOS_CLK_HIGH;
 							
 						}
