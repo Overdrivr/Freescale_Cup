@@ -1,12 +1,12 @@
 #include "derivative.h" /* include peripheral declarations */
 #include "TFC/TFC.h"
 #include "camera_processing.h"
-#include "DistantIO\distantio.h"
+#include "DistantIO/distantio.h"
 #include "chrono.h"
 #include "UnitTests/UnitTests.h"
 #include "TFC/TFC_UART.h"
 
-//TODO : Select servo offset with potard
+//TODO : Investiger erreurs avec virage+discontinuites
 
 // WARNING : SysTick frequency is 50kHz. Will overflow after roughly 2.5 hours
 // Derivative not clean
@@ -54,10 +54,10 @@ void cam_program()
 	float position_error = 0.f;
 	float previous_error = 0.f;
 	float error_derivative = 0.f;
-	float alpha_error = 0.8;
+	float alpha_error = 0.85;
 	float filtered_error = 0.f;
 	
-	float command = 0.f,alpha_command = 0.0;
+	float command = 0.f;
 	float servo_offset = 0.2;
 	
 	float commandD = 0.f;
@@ -66,14 +66,20 @@ void cam_program()
 	//      PID        
 	
 	//STABLE
-	float P = 0.012;
-	float D = 0.f;
+	float P = 0.011;
+	float D = 0.008f;
 	float command_engines = 0.4f;
 	
 	//Stable
-	P = 0.014;
-	D = 0.f;
-	command_engines = 0.48f;
+	P = 0.0011;
+	D = 0.0001f;
+	command_engines = 0.53f;
+	
+	//Stable, mais erreur atteint saturation a vitesse 0.55
+	P = 0.011;
+	D = 0.0007f;
+	command_engines = 0.54f;
+	
 	
 	//To check loop times
 	chrono chr_cam_m, chr_loop_m,chr_io,chr_rest, chr_Task;
@@ -89,36 +95,43 @@ void cam_program()
 	
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
-	float exposure_time_us = 10000;
+	float exposure_time_us = 8000;
 	
 	//Readonly variables
 	register_scalar(&command_engines,FLOAT,1,"command engines");
-	register_scalar(&pload,UINT16,0,"Serial load");
+		
+	register_scalar(&position_error, FLOAT,0,"Error");
+	register_scalar(&error_derivative, FLOAT,0,"Derivative");
+	register_scalar(&command,FLOAT,0,"command");
+	register_scalar(&commandP,FLOAT,0,"cmdP");
+	register_scalar(&commandD,FLOAT,0,"cmdD");
+	
 	register_scalar(&exposure_time_us,FLOAT,1,"Exposure time");
+	
+	//Read/write variables
+	register_scalar(&P,FLOAT,1,"P");
+	register_scalar(&D,FLOAT,1,"D");	
+	
+	//Calibration data
+	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
+	register_scalar(&data.linewidth,FLOAT,1,"linewidth");
+	register_scalar(&data.offset,FLOAT,1,"offset");
+	register_scalar(&data.threshold,INT32,1,"threshold");
+	
+	register_scalar(&filtered_error,FLOAT,1,"Filtered error");
+	register_scalar(&alpha_error,FLOAT,1,"Filtered error Alpha");
+	
+	//Secondary values
+	register_scalar(&pload,UINT16,0,"Serial load");
+	
 	register_scalar(&t_cam,FLOAT,0,"max cam time(ms)");
 	register_scalar(&t_loop,FLOAT,0,"max main time(ms)");
 	register_scalar(&t_rest,FLOAT,0,"max rest time(ms)");
 	register_scalar(&t_io,FLOAT,0,"distant io time(ms)");
 	register_scalar(&t_Task,FLOAT,0,"max TFC task time(ms)");
 	register_scalar(&looptime_cam,FLOAT,0,"cam exe period(us)");
-	
 	register_scalar(&queue_size, FLOAT,0,"queue size");
 	
-	register_scalar(&position_error, FLOAT,0,"error");
-	register_scalar(&error_derivative, FLOAT,0,"derivative");
-	register_scalar(&command,FLOAT,0,"command");
-	register_scalar(&commandP,FLOAT,0,"cmdP");
-	register_scalar(&commandD,FLOAT,0,"cmdD");
-	
-	//Read/write variables
-	register_scalar(&P,FLOAT,1,"P");
-	register_scalar(&D,FLOAT,1,"D");
-	register_scalar(&filtered_error,FLOAT,1,"Filtered error");
-	register_scalar(&alpha_error,FLOAT,1,"alpha_D");
-	register_scalar(&alpha_command,FLOAT,1,"alpha cmd");
-	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
-	register_scalar(&data.offset,FLOAT,1,"cmd offset");
-	register_scalar(&data.threshold,INT32,1,"threshold");
 	register_scalar(&data.edges_count,UINT16,0,"edge count");
 	register_array(data.threshold_image,128,INT8,0,"threshold_line");
 	register_array(data.derivative_image,128,INT32,0,"line derivative");
@@ -169,20 +182,23 @@ void cam_program()
 			
 			/**TIME MONITORING**/			Restart(&chr_cam_m);
 			
-			read_process_data(&data);			
-			TFC_SetLineScanExposureTime(exposure_time_us);
+			if(read_process_data(&data) == LINE_OK)
+			{
+				//Compute errors for PD
+				previous_error = position_error;
+				position_error = data.line_position;
 				
-			
-			//Compute errors for PD
-			previous_error = position_error;
-			position_error = data.line_position;
-			
-			filtered_error = filtered_error * alpha_error +  position_error * (1 - alpha_error);
-			
-			error_derivative = (position_error - previous_error) * 1000000.f / looptime_cam;
-			
-			commandP = P * position_error;
-			commandD = D * error_derivative;
+				filtered_error = filtered_error * alpha_error +  position_error * (1 - alpha_error);
+				
+				error_derivative = (position_error - previous_error) * 1000000.f / looptime_cam;
+				
+				commandP = P * filtered_error;
+				commandD = D * error_derivative;							
+			}
+			else
+			{
+				
+			}
 			
 			//Compute servo command between -1.0 & 1.0 
 			command = commandD + commandP + servo_offset;
@@ -192,17 +208,20 @@ void cam_program()
 			if(command < -1.f)
 				command = -1.f;
 			
+			TFC_SetLineScanExposureTime(exposure_time_us);
+			
 			/**TIME MONITORING**/			Capture(&chr_cam_m); 				
 			/**TIME MONITORING**/			t_cam = max(t_cam,GetLastDelay_ms(&chr_cam_m));
 		}
 		
 		/**TIME MONITORING**/				Restart(&chr_rest);
 		
-		//Update servo command
+		//Update board
 		Capture(&chr_servo);
 		if(GetLastDelay_ms(&chr_servo) > servo_update_ms)
 		{
 			Restart(&chr_servo);
+			servo_offset = TFC_ReadPot(0);
 			TFC_SetServo(0, command);
 		}
 		
