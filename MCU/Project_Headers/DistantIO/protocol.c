@@ -6,6 +6,7 @@
  */
 
 #include "protocol.h"
+#include "distantio.h"
 
 ByteQueue rx_frame;
 uint8_t rx_frame_storage[INCOMING_FRAME_QUEUE_SIZE];
