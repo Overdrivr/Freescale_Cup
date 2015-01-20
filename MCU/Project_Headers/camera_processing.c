@@ -195,7 +195,7 @@ void calibrate_data(cameraData* data)
 	int counter = 0;
 	float div = 1.f;
 	float center = 0.f;
-	int32_t min,max;
+	int32_t min = 0,max = 0;
 	
 	chrono chr;
 	
@@ -222,7 +222,6 @@ void calibrate_data(cameraData* data)
 		{
 			//Sum for average
 			center += data->line_position;
-			counter++;
 			
 			// Sum for line width
 			if(data->edges_count == 2)
@@ -253,13 +252,13 @@ void calibrate_data(cameraData* data)
 				//Compute threshold
 				//TO FIX : ISSUES WITH CALIBRATION !!
 				data->threshold = (int32_t)(max / 2.f);
-			}			
+			}
+			counter++;
 		}
 		else
 		{
 			serial_printf("CALIBRATION_ISSUE 2");
-		}
-					
+		}	
 	}	
 	
 	if(counter == 0)
