@@ -11,6 +11,7 @@ from Frames.COM_Frame import *
 from Frames.Logger_Frame import *
 from Frames.Plot2D_Frame import *
 from Frames.Control_Frame import *
+from DataLogger import *
 
 class Application(ttk.Frame):
         
@@ -49,10 +50,13 @@ class Application(ttk.Frame):
         self.bouton_quitter = Tk.Button(self, text="QUITTER",command = self.stop)
         self.bouton_quitter.grid(column=0,row=3,sticky='EW',pady=2,padx=5)
 
+        self.logger = DataLogger()
+        
         self.model.start()
 
     def stop(self):
         self.model.stop()
+        self.logger.record_all()
         
         if self.model.isAlive():
             self.model.join(0.1)
