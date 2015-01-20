@@ -17,7 +17,7 @@ def fake_value_decoded(varid,t,value):
 logger = DataLogger()
 time = 0
 
-while time < 10:
+while time < 1:
     fake_value_decoded(0,time,list([math.cos(time),]))
     fake_value_decoded(1,time,list([math.sin(time),]))
     l = list()
