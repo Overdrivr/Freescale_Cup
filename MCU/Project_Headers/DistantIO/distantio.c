@@ -186,7 +186,6 @@ void distantio_decode_rx_frame(ByteQueue* rx_queue)
 	int32_t* to_int;
 	
 	uint8_t bytes[4]; 
-	uint8_t type;
 	
 	//If command is return variable
 	if(byte == 0x00 && BytesInQueue(rx_queue) >= 2)
