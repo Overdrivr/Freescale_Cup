@@ -28,6 +28,7 @@ struct cameraData
 	float previous_line_position;
 	float valid_line_position;
 	float distance;
+	float error;
 	
 	//Calibration data
 	int32_t threshold;

@@ -26,6 +26,7 @@ void init_data(cameraData* data)
 	data->valid_line_position = 0;
 	data->previous_line_position = 0;
 	data->image_integral = 0;
+	data->error = 0;
 	data->reference_integral = 0;//Compute reference integral at calibration
 	
 	data->threshold = 200;
@@ -120,27 +121,25 @@ int read_process_data(cameraData* data)
 		
 		//Zone d'incertitude droite
 		// Impossible de dire si on a affaire au bord de piste ou a la moitie de la ligne
-		if(position > 64 - linewidth)
+		if(position > 60 - data->linewidth)
 		{
 			return LINE_LOST;
-			//position = position + data->linewidth / 2.f + data->offset;
 		}
 		//Zone d'incertitude gauche
 		// Impossible de dire si on a affaire au bord de piste ou a la moitie de la ligne
-		else if(position < - 64 + linewidth) 
+		else if(position < - 60 + data->linewidth) 
 		{
 			return LINE_LOST;
-			//position = position - data->linewidth / 2.f + data->offset;
 		}
 		//Identifie le bord de piste droit
-		else if(data->threshold_image[data->falling_edges_position[0]] == 1)
-		{
-			position = position - data->halftrack_width + data->offset;
-			return LINE_OK;
-		}
 		else if(data->threshold_image[data->falling_edges_position[0]] == 2)
 		{
-			position = position + data->halftrack_width + data_offset;
+			data->line_position = -position + data->halftrack_width + data->offset;
+			return LINE_OK;
+		}
+		else if(data->threshold_image[data->falling_edges_position[0]] == 1)
+		{
+			data->line_position = -position - data->halftrack_width + data->offset;
 			return LINE_OK;
 		}
 		else
@@ -148,6 +147,25 @@ int read_process_data(cameraData* data)
 	}
 	else if(data->edges_count == 2)
 	{
+		//If calibrated
+		/*
+		if(data->linewidth > 0.f)
+		{
+			
+			float linewidth = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f -
+							  (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2.f;
+			
+			float error = (linewidth - data->linewidth) / data->linewidth;
+			data->error = linewidth;
+								
+			if(error < 0.f)
+				error *= -1;
+			
+			if(error > 3)
+				return LINE_LOST;
+			
+		}*/
+			
 		//1 edge - compute center & record
 		position = (data->rising_edges_position[0] + data->falling_edges_position[0] + data->rising_edges_position[1] + data->falling_edges_position[1]) / 4.f;
 		position -= 64;

@@ -106,7 +106,9 @@ void cam_program()
 	//Readonly variables
 	register_scalar(&command_engines,FLOAT,1,"command engines");
 	register_scalar(&r, INT32,0,"LineState");
-	register_scalar(&data.line_position, FLOAT,0,"Error");
+	register_scalar(&position_error, FLOAT,0,"Error");
+	register_scalar(&data.error, FLOAT,0,"Linewidth error");
+	register_scalar(&data.linewidth, FLOAT,0,"Linewidth");
 	//register_scalar(&data.valid_line_position,FLOAT,0,"Shielded Error");
 	//register_scalar(&data.previous_line_position,FLOAT,0,"Correction on/off");
 	//register_scalar(&data.hysteresis_threshold,FLOAT,1,"Protection distance");
