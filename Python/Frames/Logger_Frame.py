@@ -80,7 +80,6 @@ class Logger_Frame(Tk.Frame):
         
         self.bouton_write = Tk.Button(self, text="WRITE", command = self.write_value)
         self.bouton_write.grid(column=1,row=4,sticky='WENS',pady=3,padx=3)
-
                 
         # redimensionnement fenetres
         self.parent.grid_columnconfigure(0,weight=1)
