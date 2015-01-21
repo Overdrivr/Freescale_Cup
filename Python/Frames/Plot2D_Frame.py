@@ -6,9 +6,9 @@ matplotlib.use('TkAgg')
 from numpy import arange, sin, pi
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
-
+ 
 import tkinter as Tk
-import ttk as ttk
+import tkinter.ttk as ttk
 from pubsub import pub
 import numpy as np
 from collections import deque
@@ -34,8 +34,10 @@ class Plot2D_Frame(Tk.Frame):
         pub.subscribe(self.listener_var_selected,'new_var_selected')
 
         # Widgets
+        self.grid(row=0,column=0,sticky="WENS")
+        
         self.liste = Tk.Listbox(self,height=1)
-        self.liste.grid(column=1,row=1,sticky='EW',pady=3,padx=3,rowspan=2)
+        self.liste.grid(column=1,row=2,sticky='EW',pady=3,padx=3,rowspan=2)
         
         self.scrollbar_liste = Tk.Scrollbar(self.liste)
         self.scrollbar_liste.config(command = self.liste.yview)
@@ -44,12 +46,16 @@ class Plot2D_Frame(Tk.Frame):
 
         #
         self.bouton_add_var = Tk.Button(self, text="PLOT SELECTION", command = self.add_var_to_plot)
-        self.bouton_add_var.grid(column=0,row=1,rowspan=2,pady=3,padx=3,sticky='NSEW')
+        self.bouton_add_var.grid(column=0,row=2,rowspan=2,pady=3,padx=3,sticky='NSEW')
 
         #
         self.bouton_switch_mode = Tk.Button(self, text="REMOVE VAR", command = self.remove_var_from_plot)
-        self.bouton_switch_mode.grid(column=2,row=2,pady=3,padx=3)
+        self.bouton_switch_mode.grid(column=2,row=3,pady=3,padx=3)
 
+        #
+        self.bouton_Clear = Tk.Button(self, text="Clear", command = self.clear_plot)
+        self.bouton_Clear.grid(column=3,row=3,pady=3,padx=3)
+        
         #
         self.f = Figure(figsize=(5,4), dpi=100)
         self.a = self.f.add_subplot(111)
@@ -63,21 +69,35 @@ class Plot2D_Frame(Tk.Frame):
         self.first = False
 
         #
+        self.plotFrame = Tk.Frame(self)
         self.dataPlot = FigureCanvasTkAgg(self.f, master=self)
         self.dataPlot.show()
-        self.dataPlot.get_tk_widget().grid(column=0,row=0,sticky='EW',pady=3,padx=3,columnspan=5)
-
+        self.dataPlot.get_tk_widget().grid(column=0,row=0,sticky='WENS',columnspan=5)
+      
+        #
+        self.toolbar = NavigationToolbar2TkAgg(self.dataPlot, self.plotFrame)
+        self.plotFrame.grid(row=1,column=0,columnspan=5,sticky="WENS")
+     
         #
         self.selected_var_name = Tk.StringVar()
         self.selected_var_name.set("No variable")
         self.selected_var = Tk.Label(self,textvariable=self.selected_var_name,bd=2,relief=Tk.GROOVE)
-        self.selected_var.grid(column=2,row=1,sticky='EW',pady=3,padx=3)
+        self.selected_var.grid(column=2,row=2,sticky='EW',pady=3,padx=3)
         #
         self.selected_value = Tk.DoubleVar()
         self.selected_value.set(0.0)
         self.selected_var_val = Tk.Label(self,textvariable=self.selected_value,bd=2,relief=Tk.GROOVE)
-        self.selected_var_val.grid(column=3,row=1,sticky='EW',pady=3,padx=3)
+        self.selected_var_val.grid(column=3,row=2,sticky='EW',pady=3,padx=3)
 
+        #redimensionnement:
+        self.parent.grid_columnconfigure(0,weight=1)
+        self.parent.grid_rowconfigure(0,weight=1)
+        
+        self.grid_columnconfigure(1, weight=1)
+        #self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        
+        
     def listener_var_selected(self,varid,varname):
         self.selected_varid = varid
         self.selected_varname = varname
@@ -94,9 +114,9 @@ class Plot2D_Frame(Tk.Frame):
                 self.ymin = value_list[0]
                 self.ymax = value_list[0]
                 self.first = False
-            else:
-                self.ymin = np.minimum(self.ymin,value_list[0])
-                self.ymax = np.maximum(self.ymax,value_list[0])
+            #else:
+            #    self.ymin = np.minimum(self.ymin,value_list[0])
+            #    self.ymax = np.maximum(self.ymax,value_list[0])
             
 
             self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
@@ -143,3 +163,15 @@ class Plot2D_Frame(Tk.Frame):
         #Remove selected var
         #Add var to available variables
         pass
+        
+           
+    def clear_plot(self):
+        print("hello")#Clearplot
+        pass
+        
+if __name__=="__main__":
+    root = Tk.Tk() 
+    Plot_frm = Plot2D_Frame(root,None, root)
+    root.minsize(width=300, height=200)
+    root.mainloop()
+    root.destroy()
