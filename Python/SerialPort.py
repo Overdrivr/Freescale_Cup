@@ -65,7 +65,8 @@ class SerialPort(Thread):
         try:
             self.ser.open()
         except:
-            print("Error while opening serial port")
+            print("Serial port : Port ",port," found but impossible to open. Try to physically disconnect.")
+            pub.sendMessage('com_port_disconnected')
             self.ser.close()
             return False
 
