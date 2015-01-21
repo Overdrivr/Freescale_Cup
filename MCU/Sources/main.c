@@ -100,7 +100,9 @@ void cam_program()
 	//Readonly variables
 	register_scalar(&command_engines,FLOAT,1,"command engines");
 		
-	register_scalar(&position_error, FLOAT,0,"Error");
+	register_scalar(&data.line_position, FLOAT,0,"Error");
+	register_scalar(&data.valid_line_position,FLOAT,0,"Shielded Error");
+	register_scalar(&data.hysteresis_threshold,FLOAT,1,"Protection distance");
 	register_scalar(&error_derivative, FLOAT,0,"Derivative");
 	register_scalar(&command,FLOAT,0,"command");
 	register_scalar(&commandP,FLOAT,0,"cmdP");
@@ -186,7 +188,7 @@ void cam_program()
 			{
 				//Compute errors for PD
 				previous_error = position_error;
-				position_error = data.line_position;
+				position_error = data.valid_line_position;
 				
 				filtered_error = filtered_error * alpha_error +  position_error * (1 - alpha_error);
 				

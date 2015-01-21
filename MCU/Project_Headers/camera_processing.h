@@ -24,7 +24,8 @@ struct cameraData
 	int rising_edges_position[128];
 	uint16_t edges_count;
 	float line_position;
-	int16_t valid_line_position;
+	float previous_line_position;
+	float valid_line_position;
 	
 	//Calibration data
 	int32_t threshold;
@@ -34,6 +35,7 @@ struct cameraData
 	//Parameters
 	int16_t edgeleft;
 	int16_t edgeright;	
+	float hysteresis_threshold;
 };
 
 enum

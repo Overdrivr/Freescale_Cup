@@ -9,6 +9,8 @@
 #include "chrono.h"
 #include "Serial/serial.h"
 
+void compute_valid_line_position(cameraData* data);
+
 void init_data(cameraData* data)
 {
 	int i;
@@ -24,6 +26,7 @@ void init_data(cameraData* data)
 	data->edges_count = 0;
 	data->line_position = 0;
 	data->valid_line_position = 0;
+	data->previous_line_position = 0;
 	data->image_integral = 0;//Compute reference integral at calibration
 	
 	data->threshold = 200;
@@ -32,6 +35,7 @@ void init_data(cameraData* data)
 	
 	data->edgeleft = 1;//MIN VALUE : 1
 	data->edgeright = 1;//MIN VALUE : 1
+	data->hysteresis_threshold = 45;
 	
 }
 
@@ -173,21 +177,27 @@ int read_process_data(cameraData* data)
 			return LINE_LOST;
 		}
 	}
+	compute_valid_line_position(data);
 	return LINE_OK;
 }
 
 
 //Detects erratic behavior of line position, and puts a corrected value in valid_line_position
 //Locks line value if changes from left to right are too big
-uint8_t compute_valid_line_position(cameraData* data)
+void compute_valid_line_position(cameraData* data)
 {
 	//If the distance between previous and new valid line is > 50
-	int16_t distance = data->valid_line_position - data->line_position;
-	if(distance > 50 || distance < -50)
-		return 1;
-	
-	data->valid_line_position = data->line_position;
-	return 0;
+	float distance = data->previous_line_position - data->line_position;
+	if(distance > data->hysteresis_threshold || distance < -data->hysteresis_threshold)
+	{
+		//Wrong line detected...Max out the error ?
+		//Keep valid_line_position stable
+	}
+	else
+	{
+		data->valid_line_position = data->line_position;
+		data->previous_line_position = data->line_position;
+	}
 }
 
 void calibrate_data(cameraData* data)
