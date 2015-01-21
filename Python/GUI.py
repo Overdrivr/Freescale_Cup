@@ -63,6 +63,9 @@ class Application(ttk.Frame):
         # Subsciptions
         pub.subscribe(self.listener_valPlot,"plot_var")
         
+        #binds: 
+        self.parent.bind('<Return>', self.frame_ctrl.stop_car)
+        
     def stop(self):
         self.model.stop()
         
@@ -86,7 +89,8 @@ class Application(ttk.Frame):
             self.Plot_frm.add_var_to_plot()
         except:
             print("err1")
-            
+
+        
             
 """
 Test functions

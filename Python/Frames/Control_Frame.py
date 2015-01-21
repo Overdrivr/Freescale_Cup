@@ -31,10 +31,12 @@ class Control_Frame(ttk.Frame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=0)
         
-        self.bouton_emergency_shutdown.bind("<Return>", stop_car)
         
-    def stop_car(self):
-        self.model.write_var(0,0)
+    def stop_car(self,*args):
+        try:
+            self.model.write_var(0,0)
+        except: 
+            pass
 
     def stop_record(self):
         pass
