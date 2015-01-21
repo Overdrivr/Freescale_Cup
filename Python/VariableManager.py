@@ -20,14 +20,13 @@ class VariableManager(Thread):
         self.running = True
         self.event = Event()
         self.event.clear()
-        self.last_update_time = 0
-        self.timer = None
         self.l = Lock()
 
         # Subscription
         pub.subscribe(self.add_follower,'using_var')
         pub.subscribe(self.remove_follower,'stop_using_var')
         pub.subscribe(self.variable_state_check,'var_value_update')
+        pub.subscribe(self.table_received_listener,'logtable_update')
         
     def add_follower(self,varid):
         self.l.acquire()
@@ -38,26 +37,26 @@ class VariableManager(Thread):
         else:
             self.variables[varid]['amount'] += 1        
         self.l.release()
-        # Update 500 ms later
-        #self.timer = Timer(0.5, self.event.set)
-        #self.timer.start()
         
     def remove_follower(self,varid):
         self.l.acquire()
         if not varid in self.variables:
-            print("VariableManager error : Trying to remove unregistered ID")
+            self.l.release()
             return
         
         if self.variables[varid]['amount'] == 0:
             print("VariableManager error : Trying to reduced null follower amount")
+            self.l.release()
             return
         
         self.variables[varid]['amount'] -= 1
         self.l.release()
 
-        # Update 500 ms later
-        #self.timer = Timer(0.5, self.event.set)
-        #self.timer.start()
+    def table_received_listener(self,varlist):
+        self.reset()
+        
+    def reset(self):
+        self.variables = dict()
         
     def variable_state_check(self,varid,data):
         self.l.acquire()
