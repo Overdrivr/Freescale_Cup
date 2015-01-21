@@ -1,7 +1,7 @@
 # Copyright (C) 2014 Rémi Bèges
 # For conditions of distribution and use, see copyright notice in the LICENSE file
 
-from queue import Queue
+from collections import deque
 import struct
 from pubsub import pub
 import os as os
@@ -22,9 +22,9 @@ class DataLogger():
 
     def new_data(self,varid,data):
         if not varid in self.records:
-            self.records[varid] = Queue(self.limit)
+            self.records[varid] = deque(maxlen=self.limit)
 
-        self.records[varid].put(data)
+        self.records[varid].append(data)
 
     def record_all(self):
         folderpath = os.path.dirname(os.path.realpath(__file__)) + os.path.normpath("/Datalogging/")
@@ -37,8 +37,8 @@ class DataLogger():
         for key, queue in self.records.items():
             print("Recording variable ",key,"------")
             f = io.open(os.path.normpath(folderpath + '/' + str(key) + '.txt'),'w')
-            while not queue.empty():
-                 data = queue.get()
-                 f.write(str(data['time']) + "," + str(data['values'][0])+ '\n')
+            while queue:
+                 data = queue.popleft()
+                 f.write(str(data['time']) + "\t" + str(data['values'][0])+ '\n')
             f.close()
             
