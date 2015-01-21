@@ -62,6 +62,7 @@ void cam_program()
 	
 	float commandD = 0.f;
 	float commandP = 0.f;
+	int r = 0;
 	
 	//      PID        
 	
@@ -80,6 +81,10 @@ void cam_program()
 	D = 0.0007f;
 	command_engines = 0.54f;
 	
+	//Le plus performant pour l'instant
+	P = 0.013;
+	D = 0.0007f;
+	command_engines = 0.54f;
 	
 	//To check loop times
 	chrono chr_cam_m, chr_loop_m,chr_io,chr_rest, chr_Task;
@@ -96,13 +101,16 @@ void cam_program()
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
 	float exposure_time_us = 8000;
+	uint32_t servo_update_ms = 20;
 	
 	//Readonly variables
 	register_scalar(&command_engines,FLOAT,1,"command engines");
-		
+	register_scalar(&r, INT32,0,"LineState");
 	register_scalar(&data.line_position, FLOAT,0,"Error");
-	register_scalar(&data.valid_line_position,FLOAT,0,"Shielded Error");
-	register_scalar(&data.hysteresis_threshold,FLOAT,1,"Protection distance");
+	//register_scalar(&data.valid_line_position,FLOAT,0,"Shielded Error");
+	//register_scalar(&data.previous_line_position,FLOAT,0,"Correction on/off");
+	//register_scalar(&data.hysteresis_threshold,FLOAT,1,"Protection distance");
+	//register_scalar(&data.distance,FLOAT,1,"distance variation");
 	register_scalar(&error_derivative, FLOAT,0,"Derivative");
 	register_scalar(&command,FLOAT,0,"command");
 	register_scalar(&commandP,FLOAT,0,"cmdP");
@@ -139,8 +147,6 @@ void cam_program()
 	register_array(data.derivative_image,128,INT32,0,"line derivative");
 	register_array(data.raw_image,128,UINT16,0,"raw_line");
 	
-	uint32_t servo_update_ms = 20;
-	
 	TFC_SetLineScanExposureTime(exposure_time_us);
 	TFC_SetServo(0, servo_offset);
 	
@@ -163,6 +169,9 @@ void cam_program()
 		/**TIME MONITORING**/				Capture(&chr_Task);
 		/**TIME MONITORING**/				t_Task = max(t_Task,GetLastDelay_ms(&chr_Task));
 		
+		/* -------------------------- */
+		/* ---- UPDATE DISTANTIO ---- */
+		/* -------------------------- */
 		Capture(&chr_distantio);
 		if(GetLastDelay_us(&chr_distantio) > 3000)
 		{
@@ -174,8 +183,10 @@ void cam_program()
 			pload = getPeakLoad();
 			/**TIME MONITORING**/			t_rest = 0;
 		}
-		
-		//Compute line position
+				
+		/* -------------------------- */
+		/* - UPDATE LINE PROCESSING - */
+		/* -------------------------- */
 		Capture(&chr_cam);
 		looptime_cam = GetLastDelay_us(&chr_cam);
 		if(looptime_cam > exposure_time_us)
@@ -184,11 +195,14 @@ void cam_program()
 			
 			/**TIME MONITORING**/			Restart(&chr_cam_m);
 			
-			if(read_process_data(&data) == LINE_OK)
+			r = read_process_data(&data);
+			if(r == LINE_OK)
 			{
+				//compute_valid_line_position(&data,r);
+				
 				//Compute errors for PD
 				previous_error = position_error;
-				position_error = data.valid_line_position;
+				position_error = data.line_position;
 				
 				filtered_error = filtered_error * alpha_error +  position_error * (1 - alpha_error);
 				
@@ -196,11 +210,23 @@ void cam_program()
 				
 				commandP = P * filtered_error;
 				commandD = D * error_derivative;							
-			}
-			else
-			{
-				
-			}
+			}			
+			TFC_SetLineScanExposureTime(exposure_time_us);
+			
+			/**TIME MONITORING**/			Capture(&chr_cam_m); 				
+			/**TIME MONITORING**/			t_cam = max(t_cam,GetLastDelay_ms(&chr_cam_m));
+		}	
+		
+		/* -------------------------- */
+		/* ---- UPDATE DIRECTION ---- */
+		/* -------------------------- */
+		Capture(&chr_servo);
+		if(GetLastDelay_ms(&chr_servo) > servo_update_ms)
+		{
+			Restart(&chr_servo);
+			
+			//Get offset
+			servo_offset = TFC_ReadPot(0);
 			
 			//Compute servo command between -1.0 & 1.0 
 			command = commandD + commandP + servo_offset;
@@ -209,39 +235,13 @@ void cam_program()
 				command = 1.f;
 			if(command < -1.f)
 				command = -1.f;
-			
-			TFC_SetLineScanExposureTime(exposure_time_us);
-			
-			/**TIME MONITORING**/			Capture(&chr_cam_m); 				
-			/**TIME MONITORING**/			t_cam = max(t_cam,GetLastDelay_ms(&chr_cam_m));
-		}
-		
-		/**TIME MONITORING**/				Restart(&chr_rest);
-		
-		//Update board
-		Capture(&chr_servo);
-		if(GetLastDelay_ms(&chr_servo) > servo_update_ms)
-		{
-			Restart(&chr_servo);
-			servo_offset = TFC_ReadPot(0);
+							
 			TFC_SetServo(0, command);
-		}
+		}		
 		
-		//Led state
-		Capture(&chr_led);
-		if(GetLastDelay_ms(&chr_led) > 500)
-		{
-			Restart(&chr_led);
-			led_state ^= 0x01; 			
-		}
-		
-		//Calibrate
-		if(TFC_PUSH_BUTTON_0_PRESSED)
-		{
-			calibrate_data(&data);
-			led_state = 3;
-		}
-		
+		/* -------------------------- */
+		/* ---   UPDATE ENGINES   --- */
+		/* -------------------------- */
 		if(TFC_GetDIP_Switch() == 0)
 		{
 			TFC_HBRIDGE_DISABLE;
@@ -252,12 +252,38 @@ void cam_program()
 			TFC_HBRIDGE_ENABLE;
 			TFC_SetMotorPWM(command_engines , command_engines);
 		}
-	
-		TFC_SetBatteryLED_Level(led_state);
 		
+		/* -------------------------- */
+		/* --- UPDATE PERIPHERALS --- */
+		/* -------------------------- */				
+		//Calibration and engine update the rest of the time 
+		if(TFC_PUSH_BUTTON_0_PRESSED)
+		{
+			calibrate_data(&data);
+			led_state = 3;
+			TFC_SetBatteryLED_Level(led_state);
+		}
+		
+		
+		
+		/* -------------------------- */
+		/* ---  UPDATE ALIVE LED  --- */
+		/* -------------------------- */
+		Capture(&chr_led);
+		if(GetLastDelay_ms(&chr_led) > 500)
+		{
+			Restart(&chr_led);
+			led_state ^= 0x01; 	
+			TFC_SetBatteryLED_Level(led_state);
+		}
+		
+		
+		
+		
+		/**TIME MONITORING**/				Restart(&chr_rest);
 		/**TIME MONITORING**/				Capture(&chr_loop_m);
 		/**TIME MONITORING**/				Capture(&chr_rest);
-		t_loop = max(t_loop,GetLastDelay_ms(&chr_loop_m));
+		/**TIME MONITORING**/				t_loop = max(t_loop,GetLastDelay_ms(&chr_loop_m));
 		/**TIME MONITORING**/				t_rest = max(t_rest,GetLastDelay_ms(&chr_rest));
 	}
 }

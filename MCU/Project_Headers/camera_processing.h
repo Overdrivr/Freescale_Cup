@@ -19,6 +19,7 @@ struct cameraData
 	int8_t threshold_image[128];
 	uint16_t min, max;
 	uint32_t image_integral;
+	uint32_t reference_integral;
 	
 	int falling_edges_position[128];
 	int rising_edges_position[128];
@@ -26,11 +27,13 @@ struct cameraData
 	float line_position;
 	float previous_line_position;
 	float valid_line_position;
+	float distance;
 	
 	//Calibration data
 	int32_t threshold;
 	float offset;
 	float linewidth;
+	float halftrack_width;
 	
 	//Parameters
 	int16_t edgeleft;
@@ -41,7 +44,8 @@ struct cameraData
 enum
 {
 	LINE_OK = 0,
-	LINE_LOST = -1
+	LINE_LOST = -1,
+	LINE_UNSURE = -2
 };
 
 
@@ -68,6 +72,8 @@ void calibrate_data(cameraData* data);
  * Camera will read 10 frames and compute a correct threshold value
  * 
  */
+
+void compute_valid_line_position(cameraData* data, int linestate);
 
 
 #endif /* CAMERA_PROCESSING_H_ */
