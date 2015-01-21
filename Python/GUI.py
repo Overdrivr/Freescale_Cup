@@ -23,6 +23,8 @@ class Application(ttk.Frame):
         ttk.Style().configure("BW.TLabel")
         ttk.Style().configure("BW.TButton")
         
+        self.grid(row=0,column=0,sticky="WENS")
+
         # Create Model
         self.model = Model()
 
@@ -39,21 +41,34 @@ class Application(ttk.Frame):
         self.frame_ctrl.grid(column=0,row=2,sticky='NSEW',pady=2,padx=5)
 
         # Graph 1 frame
-        self.frame_graph1 = Plot2D_Frame(self,self.model,self.parent,bd=2,relief=Tk.GROOVE)
-        self.frame_graph1.grid(column=1,row=0,sticky='EW',pady=2,padx=0,rowspan=2)
+        #self.frame_graph1 = Plot2D_Frame(self,self.model,self.parent,bd=2,relief=Tk.GROOVE)
+        #self.frame_graph1.grid(column=1,row=0,sticky='EW',pady=2,padx=0,rowspan=2)
 
         # Graph 2 frame
-        self.frame_graph2 = Plot2D_Frame(self,self.model,self.parent,bd=2,relief=Tk.GROOVE)
-        self.frame_graph2.grid(column=2,row=0,sticky='EW',pady=2,padx=0,rowspan=2)
+        #self.frame_graph2 = Plot2D_Frame(self,self.model,self.parent,bd=2,relief=Tk.GROOVE)
+        #self.frame_graph2.grid(column=2,row=0,sticky='EW',pady=2,padx=0,rowspan=2)
 
         # Quit button
         self.bouton_quitter = Tk.Button(self, text="QUITTER",command = self.stop)
         self.bouton_quitter.grid(column=0,row=3,sticky='EW',pady=2,padx=5)
+       
+        #redimensionnement
+        self.parent.grid_columnconfigure(0,weight=1)
+        self.parent.grid_rowconfigure(0,weight=1)
+        #self.grid_columnconfigure(0,weight=1)
+        self.grid_rowconfigure(1,weight=2)
+        self.parent.minsize(width=350, height=500)
 
         self.logger = DataLogger()
         
         self.model.start()
 
+        # Subsciptions
+        pub.subscribe(self.listener_valPlot,"plot_var")
+        
+        #binds: 
+        self.parent.bind('<Return>', self.frame_ctrl.stop_car)
+        
     def stop(self):
         self.model.stop()
         self.logger.record_all()
@@ -69,6 +84,18 @@ class Application(ttk.Frame):
             
         self.parent.destroy()
 
+    def listener_valPlot(self):
+        self.plot = Tk.Toplevel() 
+        self.Plot_frm = Plot2D_Frame(self.plot,self.model, self.plot)
+        self.plot.minsize(width=300, height=200)
+        try: 
+            self.frame_logger.variable_selected(None)
+            self.Plot_frm.add_var_to_plot()
+        except:
+            print("err1")
+
+        
+            
 """
 Test functions
 """
@@ -94,7 +121,7 @@ if __name__ == '__main__':
     root.geometry('+0+0')
     
     app = Application(root,width=640, height=480)
-    app.pack()
+    app.grid()
     
     root.protocol('WM_DELETE_WINDOW', app.stop)
     app.mainloop()
