@@ -162,10 +162,15 @@ class Plot2D_Frame(Tk.Frame):
     def add_var_to_plot(self):
         if self.selected_varid == None:
             return
+
+        # Tell Variable manager we are stopped with former var
+        # and we need the new one
+        pub.sendMessage('stop_using_var',varid=self.plotted_varid)
+        pub.sendMessage('using_var',varid=self.selected_varid)
         
         self.plotted_varid = self.selected_varid
+        
         self.selected_var_name.set(self.selected_varname)
-        self.model.read_var(self.plotted_varid)
         self.first = True
 
     def remove_var_from_plot(self):

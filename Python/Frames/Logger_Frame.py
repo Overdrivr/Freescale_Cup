@@ -134,8 +134,7 @@ class Logger_Frame(Tk.Frame):
         # Tell API to write value
         self.model.write_var(var_id,value)
 
-    def variable_selected(self,event):
-        
+    def variable_selected(self,event):        
         # Find selected variable
         it = self.var_list.selection()
         
@@ -146,19 +145,16 @@ class Logger_Frame(Tk.Frame):
             print("Logger_Frame error : ID not found :",self.var_list.set(it,column='ID'))
             return
 
+        # Tell Variable manager we are stopped with former var
+        # and we need the new one
+        pub.sendMessage('stop_using_var',varid=self.displayed_var_id)
+        pub.sendMessage('using_var',varid=var_id)
+
         self.displayed_var_id = var_id
 
         # If selected variable is writeable
         if self.variables[var_id]['writeable']:
-            self.variable.set(self.variables[var_id]['name'])
-            
-            # First, tell MCU to stop logging former variable ?
-            # !!! Warning, if variable was requested by a plot, this is going to shut it down for the plot as well
-            
-            # Tell MCU to start logging new variable
-
-            # Or other approach is to request the value a single time
-                      
+            self.variable.set(self.variables[var_id]['name'])                      
         else:
             self.variable.set("** Variable not writeable **")
                       

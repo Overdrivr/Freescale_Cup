@@ -6,9 +6,9 @@ from SerialPort import SerialPort
 from DistantIO import DistantIO
 from Protocol import Protocol
 from threading import Thread
+from VariableManager import VariableManager
 
 # Top-level API
-#TODO : Log var API
 
 class Model(Thread):
     def __init__(self, **kwargs):
@@ -19,7 +19,9 @@ class Model(Thread):
         self.controller = DistantIO()
         # Serial protocol
         self.protocol = Protocol()
-        
+        # Variable manager
+        self.variable_manager = VariableManager(self)
+        self.variable_manager.start()
         self.running = True;
         
     def get_ports(self):
@@ -53,6 +55,7 @@ class Model(Thread):
     def stop(self):
         self.running = False
         self.serialthread.stop()
+        self.variable_manager.stop()
 
         if self.serialthread.isAlive():
             self.serialthread.join(0.1)
@@ -62,6 +65,12 @@ class Model(Thread):
 
         if self.serialthread.isAlive():
             print("--- Serial thread not properly joined.")
+
+        if self.variable_manager.isAlive():
+            self.variable_manager.join(0.1)
+            
+        if self.variable_manager.isAlive():
+            self.variable_manager.join(1)
             
         self.stop_controller()
         
@@ -76,7 +85,7 @@ class Model(Thread):
     def stop_controller(self):
         #TODO : Tell MCU to stop sending all data
         pass
-    
+
     def read_var(self, varid):        
         # Get command
         cmd = self.controller.encode(cmd='read',var_id=varid)
@@ -84,20 +93,37 @@ class Model(Thread):
         frame = self.protocol.process_tx(cmd)
         # Send command
         self.serialthread.write(frame)
-        print("RX Frame :",frame)
 
     def write_var(self,varid,value):
         # Get command
         cmd = self.controller.encode(cmd='write',var_id=varid,value=value)
-        
         if cmd == None:
             return
         # Feed command to serial protocol payload processor
         frame = self.protocol.process_tx(cmd)
-        
         # Send command
         self.serialthread.write(frame)
-
+        
+    def stop_read_var(self,varid):
+        # Get command
+        cmd = self.controller.encode(cmd='stop',var_id=varid)
+        if cmd == None:
+            return
+        # Feed command to serial protocol payload processor
+        frame = self.protocol.process_tx(cmd)
+        # Send command
+        self.serialthread.write(frame)
+        
+    def stop_read_all_vars():
+        # Get command
+        cmd = self.controller.encode(cmd='stopall')
+        if cmd == None:
+            return
+        # Feed command to serial protocol payload processor
+        frame = self.protocol.process_tx(cmd)
+        # Send command
+        self.serialthread.write(frame)
+        
     def get_var_info(self,varid):
         return self.controller.get_var_info(varid)
         
@@ -114,7 +140,15 @@ class Model(Thread):
 
 --- DistanIO (DistantIO.py)
     * When variable table has been received : 'logtable_update',varlist
-    * When variable value has been received : 'var_value_update',varid,value_list
+    * When variable value has been received : 'var_value_update',varid,data
+    data is a dict
+    data['time'] : time value in us where variable was read
+    data['values'] : list of values (of size 1 if variable is a scalar)
+
+--- Plot2D_Frame (Plot2D_Frame.py)]
+--- Logger_Frame (Plot2D_Frame.py)
+    * When a graph or the logger frame has started using a variable : 'using_var',varid
+    * When a graph or the logger frame has stopped using a variable : 'stop_using_var',varid
 
 --- GUI
     * When the selection of a variable to do something with (read, write) changes:
