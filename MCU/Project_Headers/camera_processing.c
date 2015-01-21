@@ -70,17 +70,18 @@ int read_process_data(cameraData* data)
 	data->edges_count = 0;
 	edge_signal = 0;
 	data->derivative_image[data->edgeleft] = data->raw_image[data->edgeleft];
-	data->threshold_image[data->edgeleft-1] = -1;
-	data->threshold_image[loopright] = -1;
+	data->threshold_image[data->edgeleft-1] = 0;
+	data->threshold_image[loopright] = 0;
 	
 	for(i = data->edgeleft ; i < loopright ; i++)
 	{
 		if(i < 127)
-			data->derivative_image[i] =  data->raw_image[i+1] -  data->raw_image[i];
+			data->derivative_image[i] =  int32_t(data->raw_image[i+1]) - int32_t(data->raw_image[i]);
 		
 		//Apply threshold
 		if(data->derivative_image[i] >  data->threshold)
 			data->threshold_image[i] = 2;
+		//White to black
 		else if(data->derivative_image[i] < -data->threshold)
 			data->threshold_image[i] = 1;
 		else
@@ -120,26 +121,37 @@ int read_process_data(cameraData* data)
 		position = (float)(data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f - 64.f;
 		
 		//Zone d'incertitude droite
-		// Impossible de dire si on a affaire au bord de piste ou a la moitie de la ligne
 		if(position > 60 - data->linewidth)
 		{
+			if(data->linestate > 0)
+				data->linestate = LINE_HALF_RIGHT_TRACK;
+			else
+				data->linestate = LINE_LEFT_RIGHT;
+				
 			return LINE_LOST;
 		}
 		//Zone d'incertitude gauche
 		// Impossible de dire si on a affaire au bord de piste ou a la moitie de la ligne
 		else if(position < - 60 + data->linewidth) 
 		{
+			if(data->linestate > 0)
+				data->linestate = LINE_HALF_RIGHT;
+			else
+				data->linestate = LINE_LEFT_RIGHT_TRACK;
+				
 			return LINE_LOST;
 		}
 		//Identifie le bord de piste droit
 		else if(data->threshold_image[data->falling_edges_position[0]] == 2)
 		{
-			data->line_position = -position + data->halftrack_width + data->offset;
+			data->linestate = LINE_TRACK_RIGHT;
+			data->line_position = position - data->halftrack_width + data->offset;
 			return LINE_OK;
 		}
 		else if(data->threshold_image[data->falling_edges_position[0]] == 1)
 		{
-			data->line_position = -position - data->halftrack_width + data->offset;
+			data->linestate = LINE_TRACK_LEFT;
+			data->line_position = position + data->halftrack_width + data->offset;
 			return LINE_OK;
 		}
 		else
@@ -147,29 +159,18 @@ int read_process_data(cameraData* data)
 	}
 	else if(data->edges_count == 2)
 	{
-		//If calibrated
-		/*
-		if(data->linewidth > 0.f)
-		{
-			
-			float linewidth = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f -
-							  (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2.f;
-			
-			float error = (linewidth - data->linewidth) / data->linewidth;
-			data->error = linewidth;
-								
-			if(error < 0.f)
-				error *= -1;
-			
-			if(error > 3)
-				return LINE_LOST;
-			
-		}*/
+		//Check derivative order 
 			
 		//1 edge - compute center & record
 		position = (data->rising_edges_position[0] + data->falling_edges_position[0] + data->rising_edges_position[1] + data->falling_edges_position[1]) / 4.f;
 		position -= 64;
 		data->line_position = position + data->offset;
+		if(data->line_position > 0.f)
+			data->linestate = LINE_LEFT;
+		else if(data->line_position < 0.f)
+			data->linestate = LINE_RIGHT;
+		else
+			data->linestate = LINE_CENTER;
 		return LINE_OK;
 	}
 	else if(data->edges_count == 6)

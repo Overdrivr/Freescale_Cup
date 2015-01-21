@@ -29,6 +29,7 @@ struct cameraData
 	float valid_line_position;
 	float distance;
 	float error;
+	int8_t linestate;
 	
 	//Calibration data
 	int32_t threshold;
@@ -47,6 +48,21 @@ enum
 	LINE_OK = 0,
 	LINE_LOST = -1,
 	LINE_UNSURE = -2
+};
+
+enum
+{
+	LINE_TRACK_LEFT = -5,//Only left track border is visible
+	LINE_HALF_TRACK_LEFT = -4,//Half of left track border is visible
+	LINE_NOTHING_LEFT = -3,//Neither line nor track border is visible
+	LINE_HALF_LEFT = -2,//left side of the line is visible
+	LINE_LEFT = -1,
+	LINE_CENTER = 0,
+	LINE_RIGHT = 1,
+	LINE_HALF_RIGHT = 2,
+	LINE_NOTHING_RIGHT = 3,
+	LINE_HALF_RIGHT_TRACK = 4,
+	LINE_TRACK_RIGHT = 5
 };
 
 
