@@ -32,7 +32,7 @@ class Logger_Frame(Tk.Frame):
         self.scrollbar_log = ttk.Scrollbar(self)
         self.scrollbar_log.grid(sticky = 'WNS', row=2, column = 2)
         
-        self.var_list = ttk.Treeview(self, show="headings",columns=("name","type","size","Value","ID"),selectmode="browse")
+        self.var_list = ttk.Treeview(self, show="headings",columns=("name","type","size","Value","ID"),selectmode="browse", yscrollcommand=self.scrollbar_log.set)
         self.var_list.grid(column=0,row=2,sticky='EWNS',columnspan=2,pady=3,padx=(3,0))
         self.var_list.column('name',anchor='center',minwidth=0,width=100)
         self.var_list.heading('name', text='name')
@@ -136,7 +136,11 @@ class Logger_Frame(Tk.Frame):
         if not self.displayed_var_id == varid:
             return
 
-        self.read_val.set(round(data['values'][0],6))        
+        self.read_val.set(round(data['values'][0],6))  
+        
+        if len(data['values']) == 1:
+            item = self.var_list.selection()
+            self.var_list.set(item,column='Value', value=  data['values'][0])      
             
     def change_state(self,state):
         if state == "inprocess":
@@ -189,6 +193,8 @@ class Logger_Frame(Tk.Frame):
             self.variable.set("** Variable not writeable **")
                       
         pub.sendMessage("new_var_selected",varid=var_id,varname=self.variables[var_id]['name'])
+        
+        
 
     def plot_var(self):
         # Find selected variable
@@ -200,7 +206,8 @@ if __name__=="__main__":
     root = Tk.Tk() 
     Log_frm = Logger_Frame(root,None)
     root.minsize(width=350, height=400)
-
+    for val in range(0,20):
+        Log_frm.var_list.insert('','end', text="allo", values=val)
     root.mainloop()
     root.destroy()  
         
