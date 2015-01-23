@@ -17,7 +17,7 @@ from collections import deque
 2D Plot GUI Frame
 """
 class Plot2D_Frame(Tk.Frame):
-    def __init__(self,parent,model,tkmaster,**kwargs):
+    def __init__(self,parent,model,tkmaster,logger_frame,**kwargs):
         Tk.Frame.__init__(self,parent,**kwargs)
         self.parent = parent
         self.model = model
@@ -29,9 +29,10 @@ class Plot2D_Frame(Tk.Frame):
         self.selected_varid = None
         self.selected_varname = ""
         self.s_value = 0.0
+        self.logger_frame = logger_frame
 
         pub.subscribe(self.listener_new_value_received,'var_value_update')
-        pub.subscribe(self.listener_var_selected,'new_var_selected')
+        #pub.subscribe(self.listener_var_selected,'new_var_selected')
 
         # Widgets
         self.grid(row=0,column=0,sticky="WENS")
@@ -97,12 +98,12 @@ class Plot2D_Frame(Tk.Frame):
         #self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         
-        
+    """    
     def listener_var_selected(self,varid,varname):
         self.selected_varid = varid
         self.selected_varname = varname
         
-
+    """
     def listener_new_value_received(self,varid,data):
         if not varid == self.plotted_varid:
             return
@@ -180,15 +181,16 @@ class Plot2D_Frame(Tk.Frame):
             self.selected_value.set(data['values'][0])
     
     def add_var_to_plot(self):
-        if self.selected_varid == None:
+        variable_id = self.logger_frame.selected_var_id
+        
+        if not variable_id:
             return
-
         # Tell Variable manager we are stopped with former var
         # and we need the new one
-        pub.sendMessage('stop_using_var',varid=self.plotted_varid)
-        pub.sendMessage('using_var',varid=self.selected_varid)
+        pub.sendMessage('stop_using_var',varid=self.plotted_varid)        
+        pub.sendMessage('using_var',varid=variable_id)
         
-        self.plotted_varid = self.selected_varid
+        self.plotted_varid = variable_id
         
         self.selected_var_name.set(self.selected_varname)
         self.first = True
@@ -202,10 +204,13 @@ class Plot2D_Frame(Tk.Frame):
     def clear_plot(self):
         print("hello")#Clearplot
         pass
+
+    def stop(self):
+        pub.sendMessage('stop_using_var',varid=self.plotted_varid)
+        self.parent.destroy()
         
 if __name__=="__main__":
     root = Tk.Tk() 
     Plot_frm = Plot2D_Frame(root,None, root)
     root.minsize(width=300, height=200)
     root.mainloop()
-    root.destroy()
