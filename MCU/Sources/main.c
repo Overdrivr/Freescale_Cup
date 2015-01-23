@@ -260,7 +260,7 @@ void cam_program()
 		//Calibration and engine update the rest of the time 
 		if(TFC_PUSH_BUTTON_0_PRESSED)
 		{
-			calibrate_data(&data);
+			calibrate_data(&data,exposure_time_us);
 			led_state = 3;
 			TFC_SetBatteryLED_Level(led_state);
 		}

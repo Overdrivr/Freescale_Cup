@@ -89,7 +89,7 @@ int read_process_data(cameraData* data);
  */
 
 //////////////////////////////////////////////
-void calibrate_data(cameraData* data);
+void calibrate_data(cameraData* data, uint32_t exposure_time_us);
 /*
  * Camera will read 10 frames and compute a correct threshold value
  * 
