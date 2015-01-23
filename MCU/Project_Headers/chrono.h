@@ -14,13 +14,10 @@ struct chrono
 {
 	uint32_t start;
 	uint32_t stop;
-	uint32_t duration;
 };
 typedef struct chrono chrono;
 
 void reset(chrono* chr);
-
-void update(chrono* chr);
 
 float us(chrono* chr);
 

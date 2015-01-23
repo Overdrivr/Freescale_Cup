@@ -304,28 +304,24 @@ void calibrate_data(cameraData* data)
 	float div = 1.f;
 	float center = 0.f;
 	int32_t min = 0,max = 0;
-	uint32_t delay = 0;
 	chrono chr;
-	serial_printf("WTF");
-	Restart(&chr);
-	while(delay < 5000)
+	uint16_t i; 
+	
+	
+	reset(&chr);
+	while(ms(&chr) < 1000)
 	{
-		serial_printf("%d",delay);
-		Capture(&chr);
-		delay = GetLastDelay_ms(&chr);
 		//Wait 1 second
 	}
-	Restart(&chr);
+	
 	
 	data->offset = 0.f;
 	data->linewidth = 0.f;
-	
-	TFC_SetBatteryLED_Level(0);
+	reset(&chr);
 	
 	//Record raw camera image 100 times or stop at 5 seconds
-	while(counter < 100 && GetLastDelay_ms(&chr) < 5000)
+	while(counter < 100 && ms(&chr) < 5000)
 	{
-		Capture(&chr);
 		if(read_process_data(data) == LINE_OK)
 		{
 			//Sum for average
@@ -369,15 +365,6 @@ void calibrate_data(cameraData* data)
 		}	
 	}
 	
-	TFC_SetBatteryLED_Level(1);
-	Restart(&chr);
-	while(GetLastDelay_ms(&chr) < 1000)
-	{
-		Capture(&chr);
-		//Wait 1 second
-	}
-	Restart(&chr);
-	
 	if(counter == 0)
 	{
 		serial_printf("CALIBRATION_ISSUE NULL COUNT");
@@ -385,65 +372,39 @@ void calibrate_data(cameraData* data)
 	}
 		
 	div = (float)(counter);
-		
+	
 	//Compute average	
 	data->offset = - center / div;
 	
 	//Compute linewidth
 	data->linewidth /= div; 
-		
 	
-	uint8_t led_state = 4;
 	
-	//Wait pushbutton for white calibration
-	Restart(&chr);
-	while(GetLastDelay_ms(&chr) < 1000)
+	reset(&chr);
+	while(ms(&chr) < 1000)
 	{
-		Capture(&chr);
 		//Wait 1 second
 	}
-	Restart(&chr);
-	TFC_SetBatteryLED_Level(2);
 	
-	
+	//Wait pushbutton for white calibration
 	uint8_t go = 0;
 	while(go < 2)
 	{
 		if(TFC_PUSH_BUTTON_0_PRESSED)
 			go++;
-		
-		if(GetLastDelay_ms(&chr) < 100)
-		{
-			Restart(&chr);
-			led_state ^= 8;
-			TFC_SetBatteryLED_Level(led_state);
-		}
-		Capture(&chr);
 	}
-	
-	Restart(&chr);
-	while(GetLastDelay_ms(&chr) < 1000)
-	{
-		Capture(&chr);
-		//Wait 1 second
-	}
-	Restart(&chr);
-	TFC_SetBatteryLED_Level(3);
-	
-	counter = 0;
-	Restart(&chr);
-	
-	uint16_t i; 
 	
 	for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
 	{
 		data->derivative_zero[i] = 0;
 	}
 	
+	counter = 0;
+	reset(&chr);
+	
 	//Record raw camera image 100 times or stop at 5 seconds
-	while(counter < 200 && GetLastDelay_ms(&chr) < 5000)
+	while(counter < 200 && ms(&chr) < 5000)
 	{
-		Capture(&chr);
 		if(read_process_data(data) == LINE_LOST)
 		{			
 			// Sum derivative
@@ -476,14 +437,5 @@ void calibrate_data(cameraData* data)
 	{
 		data->derivative_zero[i] /= counter;
 	}
-	
-	TFC_SetBatteryLED_Level(4);
-	Restart(&chr);
-	while(GetLastDelay_ms(&chr) < 1000)
-	{
-		Capture(&chr);
-		//Wait 1 second
-	}
-	Restart(&chr);
 }
 
