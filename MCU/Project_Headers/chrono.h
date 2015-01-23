@@ -18,12 +18,12 @@ struct chrono
 };
 typedef struct chrono chrono;
 
-void Restart(chrono* chr);
+void reset(chrono* chr);
 
-void Capture(chrono* chr);
+void update(chrono* chr);
 
-float GetLastDelay_us(chrono* chr);
+float us(chrono* chr);
 
-float GetLastDelay_ms(chrono* chr);
+float ms(chrono* chr);
 
 #endif /* CHRONO_H_ */

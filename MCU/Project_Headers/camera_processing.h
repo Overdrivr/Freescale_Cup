@@ -15,6 +15,7 @@ typedef struct cameraData cameraData;
 struct cameraData
 {
 	uint16_t raw_image[128];
+	int32_t derivative_zero[128];
 	int32_t derivative_image[128];
 	int8_t threshold_image[128];
 	uint16_t min, max;
@@ -28,12 +29,18 @@ struct cameraData
 	float previous_line_position;
 	float valid_line_position;
 	float distance;
+	float error;
+	int32_t linestate;
+	float current_linewidth;
+	float current_linewidth_diff;
 	
 	//Calibration data
 	int32_t threshold;
 	float offset;
 	float linewidth;
 	float halftrack_width;
+	uint16_t deglitch_counter;
+	uint16_t deglitch_limit;
 	
 	//Parameters
 	int16_t edgeleft;
@@ -46,6 +53,21 @@ enum
 	LINE_OK = 0,
 	LINE_LOST = -1,
 	LINE_UNSURE = -2
+};
+
+enum
+{
+	LINE_TRACK_LEFT = -5,//Only left track border is visible
+	LINE_HALF_TRACK_LEFT = -4,//Half of left track border is visible
+	LINE_NOTHING_LEFT = -3,//Neither line nor track border is visible
+	LINE_HALF_LEFT = -2,//left side of the line is visible
+	LINE_LEFT = -1,
+	LINE_CENTER = 0,
+	LINE_RIGHT = 1,
+	LINE_HALF_RIGHT = 2,
+	LINE_NOTHING_RIGHT = 3,
+	LINE_HALF_TRACK_RIGHT = 4,
+	LINE_TRACK_RIGHT = 5
 };
 
 

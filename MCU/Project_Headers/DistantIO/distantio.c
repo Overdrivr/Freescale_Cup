@@ -6,7 +6,7 @@
  */
 
 #include "distantio.h"
-#include "../Serial/serial.h"
+#include "./serial.h"
 #include "chrono.h"
 
 uint8_t register_(uint8_t* adress, uint16_t octets, datatype type, uint8_t writeable, char* name);

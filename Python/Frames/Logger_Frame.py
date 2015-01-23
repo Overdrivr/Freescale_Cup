@@ -4,6 +4,7 @@
 import tkinter as Tk
 import tkinter.ttk as ttk
 from pubsub import pub
+from Frames.Plot2D_Frame import *
 
 """
 Logger GUI Frame
@@ -11,30 +12,38 @@ Logger GUI Frame
 
 #TODO : Graph should ask logger for selected var
 
-class Logger_Frame(Tk.Frame):
+class Logger_Frame(ttk.LabelFrame):
     def __init__(self,parent,model,**kwargs):
-        Tk.Frame.__init__(self,parent,**kwargs)
+        ttk.LabelFrame.__init__(self,parent,text="DistantIO",**kwargs)
         self.parent = parent
         self.model = model
-        self.displayed_var_id = None
+        self.selected_var_id = None
+        self.define_first = False
+        self.variables = dict()
 
         self.grid(row=0,column=0,sticky="WENS")
         
-        self.txt_log = Tk.Label(self,text="LOGGER")
+        self.txt_log = Tk.Label(self,text="STATUS :")
         self.txt_log.grid(column=0,row=0,sticky='ENW',pady=3,padx=3)
 
         self.txt_active = Tk.Label(self,text="INACTIVE",fg='blue',borderwidth=2)
         self.txt_active.grid(column=1,row=0,sticky='ENW',pady=3,padx=3)
 
-        self.bouton_activate = Tk.Button(self, text="RETRIEVE TABLE", command = self.activate_log)
+        self.bouton_activate = ttk.Button(self, text="RETRIEVE TABLE", command = self.activate_log)
         self.bouton_activate.grid(column=0,row=1,sticky='ENW',pady=3,padx=3)
 
+        # Table + scrollbar group
+        #self.table_frame = ttk.Frame(self)
+        #self.table_frame.grid(column=0,row=2,columnspan=3)
+
         self.scrollbar_log = ttk.Scrollbar(self)
-        self.scrollbar_log.grid(sticky = 'WNS', row=2, column = 2)
+        self.scrollbar_log.grid(sticky ='WNS',row=2,column=2)
         
+
         self.var_list = ttk.Treeview(self, show="headings",columns=("name","type","size","Value","ID"),selectmode="browse", yscrollcommand=self.scrollbar_log.set)
         self.var_list.grid(column=0,row=2,sticky='EWNS',columnspan=2,pady=3,padx=(3,0))
         self.var_list.column('name',anchor='center',minwidth=0,width=100)
+
         self.var_list.heading('name', text='name')
         self.var_list.column('type',anchor='center',minwidth=0,width=50, stretch=Tk.NO)
         self.var_list.heading('type', text='type')
@@ -45,42 +54,34 @@ class Logger_Frame(Tk.Frame):
         self.var_list.column('ID',anchor='center',minwidth=0,width=3, stretch=Tk.NO)
         self.var_list.heading('ID', text='ID')
         self.var_list.bind("<<TreeviewSelect>>", self.variable_selected)
-
-        self.variables = dict()
-
         self.scrollbar_log.config( command=self.var_list.yview)
+
+        # Variable name
+        self.variable = Tk.StringVar()
+        self.variable.set("No var")
+        
+        self.selected_var = ttk.Label(self,textvariable=self.variable)
+        self.selected_var.grid(column=0,row=3,columnspan=2,sticky="NSEW",pady=3,padx=3)
         
         # bouton plot:
-        self.bouton_plot = Tk.Button(self, text="Plot", command = self.plot_var)
-        self.bouton_plot.grid(column=1, row=3, sticky='WENS', pady=3, padx=3)
-        
-        #variable write frame
-        self.writevarFrame = Tk.Frame(self)
-        self.writevarFrame.grid(in_=self,row=4,column=0,sticky="WENS")
-        
-        #Variable name
-        self.variable = Tk.StringVar()
-        self.variable.set("Variable : ")
-        
-        self.selected_var = ttk.Label(self.writevarFrame,textvariable=self.variable)
-        self.selected_var.grid(in_=self.writevarFrame,column=0,row=0)
+        self.bouton_plot = ttk.Button(self, text="Plot", command = self.plot_var)
+        self.bouton_plot.grid(column=2, row=3, sticky='WENS', pady=3, padx=3)
 
-        #Variable read value
-        self.read_val = Tk.DoubleVar()
-        
-        #self.selected_value = ttk.Label(self,textvariable=self.read_val)
-        #self.grid(column=1,row=4, sticky="NS")
+        # fixed label
+        self.label_var2 = ttk.Label(self,text="Value :")
+        self.label_var2.grid(column=0,row=4, sticky="NSEW",pady=3,padx=3)
 
-        #Variable write value
+        #Variable read/write value
         self.value = Tk.DoubleVar()
         self.value.set(0.0)
 
-        self.entry = Tk.Entry(self.writevarFrame,width=6,textvariable=self.value)
-        self.entry.grid(in_=self.writevarFrame, column=1, row=0, sticky="WSN",padx=3,pady=3)
+        self.label_var2 = ttk.Entry(self,textvariable=self.value)
+        self.label_var2.grid(column=1,row=4, sticky="NSEW",pady=3,padx=3)
+
+        # Write button
+        self.bouton_write = ttk.Button(self, text="WRITE", command = self.write_value)
+        self.bouton_write.grid(column=2,row=4,sticky='WENS',pady=3,padx=3)
         
-        self.bouton_write = Tk.Button(self, text="WRITE", command = self.write_value)
-        self.bouton_write.grid(column=1,row=4,sticky='WENS',pady=3,padx=3)
-                
         # redimensionnement fenetres
         self.parent.grid_columnconfigure(0,weight=1)
         self.parent.grid_rowconfigure(0,weight=1)
@@ -90,8 +91,6 @@ class Logger_Frame(Tk.Frame):
         self.grid_rowconfigure(2, weight=1)
         
         self.var_list.grid_columnconfigure(3, weight=1)
-        self.writevarFrame.grid_columnconfigure((0,1),weight=1)
-        
         
         # Subscriptions
         pub.subscribe(self.listener_COM_connected,'com_port_connected')
@@ -130,17 +129,23 @@ class Logger_Frame(Tk.Frame):
             self.var_list.set(i,'ID',key)
 
     def listener_value_received(self,varid,data):
-        if self.displayed_var_id is None:
+        if self.selected_var_id is None:
             return
 
-        if not self.displayed_var_id == varid:
+        if not self.selected_var_id == varid:
             return
 
-        self.read_val.set(round(data['values'][0],6))  
+        #self.read_val.set(round(data['values'][0],6))  
         
         if len(data['values']) == 1:
             item = self.var_list.selection()
             self.var_list.set(item,column='Value', value=  data['values'][0])      
+            
+        # TODO : A faire seulemtn pour variable en ecriture
+        if not self.defined_first:
+            self.value.set(round(data['values'][0],4))        
+            self.defined_first = True
+
             
     def change_state(self,state):
         if state == "inprocess":
@@ -181,26 +186,36 @@ class Logger_Frame(Tk.Frame):
 
         # Tell Variable manager we are stopped with former var
         # and we need the new one
-        pub.sendMessage('stop_using_var',varid=self.displayed_var_id)
+        pub.sendMessage('stop_using_var',varid=self.selected_var_id)
         pub.sendMessage('using_var',varid=var_id)
 
-        self.displayed_var_id = var_id
+        self.selected_var_id = var_id
 
         # If selected variable is writeable
         if self.variables[var_id]['writeable']:
             self.variable.set(self.variables[var_id]['name'])                      
         else:
             self.variable.set("** Variable not writeable **")
+
                       
-        pub.sendMessage("new_var_selected",varid=var_id,varname=self.variables[var_id]['name'])
+        #pub.sendMessage("new_var_selected",varid=var_id,varname=self.variables[var_id]['name'])
         
-        
+        self.defined_first = False
+
 
     def plot_var(self):
-        # Find selected variable
-        #item = self.var_list.selection()
-        #var_id = self.var_dict[item[0]][0]
-        pub.sendMessage("plot_var")#, varid=var_id, varname=self.var_dict[item[0]][1])
+        # TODO :Faire une liste des fenetres et les fermer a la fin
+        self.plot = Tk.Toplevel()
+        if self.selected_var_id in self.variables:
+            self.plot.title("Ploting : " + self.variables[self.selected_var_id]['name'])
+        else:
+            self.plot.title("Plotting : none")
+        self.plot_frame = Plot2D_Frame(self.plot,self.model,self.plot,self)
+        self.plot.protocol('WM_DELETE_WINDOW', self.plot_frame.stop)
+        self.plot.minsize(width=300, height=200)
+        self.plot_frame.add_var_to_plot()
+
+            
         
 if __name__=="__main__":
     root = Tk.Tk() 
@@ -210,4 +225,5 @@ if __name__=="__main__":
         Log_frm.var_list.insert('','end', text="allo", values=val)
     root.mainloop()
     root.destroy()  
+
         

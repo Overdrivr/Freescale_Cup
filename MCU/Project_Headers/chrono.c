@@ -8,23 +8,24 @@
 #include "chrono.h"
 #include "TFC/TFC_ARM_SysTick.h"
 
-void Restart(chrono* chr)
+void reset(chrono* chr)
 {
 	chr->start = TFC_Ticker[0];
+	chr->duration = 0;
 }
 
-void Capture(chrono* chr)
+void update(chrono* chr)
 {
 	chr->stop = TFC_Ticker[0];
 	chr->duration = chr->stop - chr->start;
 }
 
-float GetLastDelay_us(chrono* chr)
+float us(chrono* chr)
 {
-	return chr->duration * 1000000.f / (float)(SYSTICK_FREQUENCY);
+	return chr->duration * 1000.f * 1000.f / (float)(SYSTICK_FREQUENCY);
 }
 
-float GetLastDelay_ms(chrono* chr)
+float ms(chrono* chr)
 {
-	return chr->duration * 1000.f / (float)(SYSTICK_FREQUENCY);
+	return chr->duration * 1.f * 1000.f / (float)(SYSTICK_FREQUENCY);
 }

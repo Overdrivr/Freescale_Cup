@@ -7,6 +7,7 @@ from DistantIO import DistantIO
 from Protocol import Protocol
 from threading import Thread
 from VariableManager import VariableManager
+from DataLogger import DataLogger
 
 # Top-level API
 
@@ -23,6 +24,8 @@ class Model(Thread):
         self.variable_manager = VariableManager(self)
         self.variable_manager.start()
         self.running = True;
+        # Data logger
+        self.logger = DataLogger()
         
     def get_ports(self):
         return self.serialthread.get_ports()
@@ -45,7 +48,7 @@ class Model(Thread):
             if self.protocol.available():
                 p =  self.protocol.get()
                 # Dump payload if controller is in heavy load ?
-                pub.sendMessage('new_rx_payload',rxpayload=p)
+                pub.sendMessage('new_rx_payload',rxpayload=p)#USED ?
                 if not p is None:
                     self.controller.decode(p)
 
@@ -85,6 +88,12 @@ class Model(Thread):
     def stop_controller(self):
         #TODO : Tell MCU to stop sending all data
         pass
+
+    def start_log(self):
+        self.logger.start()
+        
+    def stop_log(self):
+        self.logger.record_all()
 
     def read_var(self, varid):        
         # Get command
@@ -151,6 +160,6 @@ class Model(Thread):
     * When a graph or the logger frame has stopped using a variable : 'stop_using_var',varid
 
 --- GUI
-    * When the selection of a variable to do something with (read, write) changes:
+    *DEPRECATED When the selection of a variable to do something with (read, write) changes:
     'new_var_selected',varid,varname
 """

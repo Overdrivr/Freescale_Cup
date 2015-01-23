@@ -11,9 +11,9 @@ from collections import deque
 COM GUI Frame
 """
 
-class COM_Frame(ttk.Frame):
+class COM_Frame(ttk.LabelFrame):
     def __init__(self,parent,model,**kwargs):
-        ttk.Frame.__init__(self,parent,**kwargs)
+        ttk.LabelFrame.__init__(self,parent,text="COM Ports",**kwargs)
         self.parent = parent
         self.model = model
         self.connected = False
@@ -21,7 +21,7 @@ class COM_Frame(ttk.Frame):
         self.grid(row=0,column=0,sticky="WENS")
          
         #Widgets
-        self.txt_ports = ttk.Label(self,text="COM PORT :",style="BW.TLabel")
+        self.txt_ports = ttk.Label(self,text="STATUS :",style="BW.TLabel")
         self.txt_ports.grid(column=0,row=0,sticky='EW',pady=3,padx=3)
 
         #
@@ -119,5 +119,4 @@ if __name__=="__main__":
     root = Tk.Tk() 
     COM_frm = COM_Frame(root,None)
     root.minsize(width=300, height=100)
-    root.mainloop()
-    root.destroy()        
+    root.mainloop()       

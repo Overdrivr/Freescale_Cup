@@ -20,18 +20,22 @@ void init_data(cameraData* data)
 		data->threshold_image[i] = 0;
 		data->falling_edges_position[i] = 0;
 		data->rising_edges_position[i] = 0;
+		data->derivative_zero[i] = 0;
 	}
 	data->edges_count = 0;
 	data->line_position = 0;
 	data->valid_line_position = 0;
 	data->previous_line_position = 0;
 	data->image_integral = 0;
+	data->error = 0;
 	data->reference_integral = 0;//Compute reference integral at calibration
 	
 	data->threshold = 200;
 	data->halftrack_width = 150;
 	data->offset = 0.f;
-	data->linewidth = 0.f;
+	data->linewidth = 14.f;
+	data->deglitch_counter = 0;
+	data->deglitch_limit = 50;
 	
 	data->edgeleft = 1;//MIN VALUE : 1
 	data->edgeright = 1;//MIN VALUE : 1
@@ -69,17 +73,18 @@ int read_process_data(cameraData* data)
 	data->edges_count = 0;
 	edge_signal = 0;
 	data->derivative_image[data->edgeleft] = data->raw_image[data->edgeleft];
-	data->threshold_image[data->edgeleft-1] = -1;
-	data->threshold_image[loopright] = -1;
+	data->threshold_image[data->edgeleft-1] = 0;
+	data->threshold_image[loopright] = 0;
 	
 	for(i = data->edgeleft ; i < loopright ; i++)
 	{
 		if(i < 127)
-			data->derivative_image[i] =  data->raw_image[i+1] -  data->raw_image[i];
+			data->derivative_image[i] =  (int32_t)(data->raw_image[i+1]) - (int32_t)(data->raw_image[i]) - data->derivative_zero[i];
 		
 		//Apply threshold
 		if(data->derivative_image[i] >  data->threshold)
 			data->threshold_image[i] = 2;
+		//White to black
 		else if(data->derivative_image[i] < -data->threshold)
 			data->threshold_image[i] = 1;
 		else
@@ -119,43 +124,95 @@ int read_process_data(cameraData* data)
 		position = (float)(data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f - 64.f;
 		
 		//Zone d'incertitude droite
-		// Impossible de dire si on a affaire au bord de piste ou a la moitie de la ligne
-		if(position > 64 - linewidth)
+		/*if(position > 0 && position + data->linewidth > 40)
 		{
+			if(data->linestate > 0)
+				data->linestate = LINE_HALF_TRACK_RIGHT;
+			else
+				data->linestate = LINE_HALF_LEFT;
+				
 			return LINE_LOST;
-			//position = position + data->linewidth / 2.f + data->offset;
-		}
+		}*/
 		//Zone d'incertitude gauche
 		// Impossible de dire si on a affaire au bord de piste ou a la moitie de la ligne
-		else if(position < - 64 + linewidth) 
+		/*else if(position < 0 && position - data->linewidth < -40) 
+		{
+			if(data->linestate > 0)
+				data->linestate = LINE_HALF_RIGHT;
+			else
+				data->linestate = LINE_HALF_TRACK_LEFT;
+				
+			return LINE_LOST;
+		}*/
+		
+		if(position > data->hysteresis_threshold || position < -data->hysteresis_threshold)
 		{
 			return LINE_LOST;
-			//position = position - data->linewidth / 2.f + data->offset;
 		}
 		//Identifie le bord de piste droit
 		else if(data->threshold_image[data->falling_edges_position[0]] == 1)
 		{
-			position = position - data->halftrack_width + data->offset;
-			return LINE_OK;
+			if(data->deglitch_counter >= data->deglitch_limit)
+			{
+				data->linestate = LINE_TRACK_RIGHT;
+				data->line_position = position - data->halftrack_width + data->offset;
+				return LINE_OK;
+			}
+			else
+			{
+				data->deglitch_counter++;
+				return LINE_LOST;
+			}
+			
 		}
 		else if(data->threshold_image[data->falling_edges_position[0]] == 2)
 		{
-			position = position + data->halftrack_width + data_offset;
-			return LINE_OK;
+			if(data->deglitch_counter >= data->deglitch_limit)
+			{
+				data->linestate = LINE_TRACK_LEFT;
+				data->line_position = position + data->halftrack_width + data->offset;
+				return LINE_OK;
+			}
+			else
+			{
+				data->deglitch_counter++;
+				return LINE_LOST;
+			}
 		}
 		else
 			return LINE_LOST;
 	}
 	else if(data->edges_count == 2)
 	{
+		data->deglitch_counter = 0;
+		//Check derivative order 
+			
 		//1 edge - compute center & record
 		position = (data->rising_edges_position[0] + data->falling_edges_position[0] + data->rising_edges_position[1] + data->falling_edges_position[1]) / 4.f;
 		position -= 64;
 		data->line_position = position + data->offset;
+		data->current_linewidth = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f -
+						  	  	  (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2.f;
+		
+		if(data->current_linewidth < 0.f)
+			data->current_linewidth *= -1;
+		
+		data->current_linewidth_diff = (data->current_linewidth - data->linewidth) / data->current_linewidth;
+		
+		if(data->current_linewidth_diff > 0.4 || data->current_linewidth_diff < -0.4)
+			return LINE_LOST;
+		
+		if(data->line_position > 0.f)
+			data->linestate = LINE_LEFT;
+		else if(data->line_position < 0.f)
+			data->linestate = LINE_RIGHT;
+		else
+			data->linestate = LINE_CENTER;
 		return LINE_OK;
-	}
+	}/*
 	else if(data->edges_count == 6)
 	{
+		return LINE_LOST;
 		//TODO : CHECK INTERVALS ARE CORRECT 
 		position = (data->rising_edges_position[2] + data->falling_edges_position[2] + data->rising_edges_position[3] + data->falling_edges_position[3]) / 4.f;
 		position -= 64;
@@ -165,6 +222,7 @@ int read_process_data(cameraData* data)
 	}
 	else
 	{
+		return LINE_LOST;
 		float linewidth = 0.f;
 		float error = 0.f, lowest_error = 1000.f;
 		uint16_t valid_index = 0;
@@ -200,7 +258,8 @@ int read_process_data(cameraData* data)
 		{
 			return LINE_LOST;
 		}
-	}
+	}*/
+	return LINE_LOST;
 }
 
 
@@ -245,23 +304,23 @@ void calibrate_data(cameraData* data)
 	float div = 1.f;
 	float center = 0.f;
 	int32_t min = 0,max = 0;
-	
+	uint32_t delay = 0;
 	chrono chr;
-	
+	serial_printf("WTF");
 	Restart(&chr);
-	
-	
-	while(GetLastDelay_ms(&chr) < 1000)
+	while(delay < 5000)
 	{
+		serial_printf("%d",delay);
 		Capture(&chr);
+		delay = GetLastDelay_ms(&chr);
 		//Wait 1 second
 	}
-	
-	
 	Restart(&chr);
 	
 	data->offset = 0.f;
 	data->linewidth = 0.f;
+	
+	TFC_SetBatteryLED_Level(0);
 	
 	//Record raw camera image 100 times or stop at 5 seconds
 	while(counter < 100 && GetLastDelay_ms(&chr) < 5000)
@@ -308,17 +367,123 @@ void calibrate_data(cameraData* data)
 		{
 			serial_printf("CALIBRATION_ISSUE 2");
 		}	
-	}	
+	}
+	
+	TFC_SetBatteryLED_Level(1);
+	Restart(&chr);
+	while(GetLastDelay_ms(&chr) < 1000)
+	{
+		Capture(&chr);
+		//Wait 1 second
+	}
+	Restart(&chr);
 	
 	if(counter == 0)
-		return;
-	
+	{
+		serial_printf("CALIBRATION_ISSUE NULL COUNT");
+		counter=1;
+	}
+		
 	div = (float)(counter);
-	
+		
 	//Compute average	
 	data->offset = - center / div;
 	
 	//Compute linewidth
 	data->linewidth /= div; 
+		
+	
+	uint8_t led_state = 4;
+	
+	//Wait pushbutton for white calibration
+	Restart(&chr);
+	while(GetLastDelay_ms(&chr) < 1000)
+	{
+		Capture(&chr);
+		//Wait 1 second
+	}
+	Restart(&chr);
+	TFC_SetBatteryLED_Level(2);
+	
+	
+	uint8_t go = 0;
+	while(go < 2)
+	{
+		if(TFC_PUSH_BUTTON_0_PRESSED)
+			go++;
+		
+		if(GetLastDelay_ms(&chr) < 100)
+		{
+			Restart(&chr);
+			led_state ^= 8;
+			TFC_SetBatteryLED_Level(led_state);
+		}
+		Capture(&chr);
+	}
+	
+	Restart(&chr);
+	while(GetLastDelay_ms(&chr) < 1000)
+	{
+		Capture(&chr);
+		//Wait 1 second
+	}
+	Restart(&chr);
+	TFC_SetBatteryLED_Level(3);
+	
+	counter = 0;
+	Restart(&chr);
+	
+	uint16_t i; 
+	
+	for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
+	{
+		data->derivative_zero[i] = 0;
+	}
+	
+	//Record raw camera image 100 times or stop at 5 seconds
+	while(counter < 200 && GetLastDelay_ms(&chr) < 5000)
+	{
+		Capture(&chr);
+		if(read_process_data(data) == LINE_LOST)
+		{			
+			// Sum derivative
+			if(data->edges_count == 0)
+			{
+				for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
+				{
+					data->derivative_zero[i] += data->derivative_image[i];
+					counter++;
+				}
+			}
+			else
+			{
+				serial_printf("CALIBRATION_ISSUE");
+			}
+		}
+		else
+		{
+			serial_printf("CALIBRATION_ISSUE 2");
+		}	
+	}
+	
+	if(counter == 0)
+	{
+		serial_printf("CALIBRATION_ISSUE NULL COUNT");
+		return;
+	}
+	
+	for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
+	{
+		data->derivative_zero[i] /= counter;
+	}
+	
+	TFC_SetBatteryLED_Level(4);
+	Restart(&chr);
+	while(GetLastDelay_ms(&chr) < 1000)
+	{
+		Capture(&chr);
+		//Wait 1 second
+	}
+	Restart(&chr);
 }
 

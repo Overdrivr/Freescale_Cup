@@ -216,8 +216,9 @@ class DistantIO():
                 packed = bytes(struct.pack('=f',val))
             elif fmt == 6:
                 val = int(value)
-                packed = bytes(struct.pack('=i',val))
+                packed = bytes(struct.pack('=i',val))              
             else:
+                print(fmt)
                 print("Write format not supported.")
                 return None
             

@@ -2,7 +2,7 @@
 # For conditions of distribution and use, see copyright notice in the LICENSE file
 
 import tkinter as Tk
-import ttk as ttk
+import tkinter.ttk as ttk
 from pubsub import pub
 from threading import Thread, Lock, Event, Timer
 
