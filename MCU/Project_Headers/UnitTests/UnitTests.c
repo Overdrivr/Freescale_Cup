@@ -25,17 +25,16 @@ void test_serial1()
 	testESC[8] = 0x08;
 	testESC[9] = 0x09;
 		
-	Restart(&chr);
+	reset(&chr);
 	
 	for(;;)
 	{
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
 		TFC_Task();
 		
-		Capture(&chr);
-		if(GetLastDelay_us(&chr) > 1500)
+		if(us(&chr) > 1500)
 		{
-			Restart(&chr);
+			reset(&chr);
 			serial_write(testESC,10);
 		}			
 		
@@ -81,17 +80,16 @@ void test_protocol1()
 	testESC[9] = 0x7f;
 	*/
 		
-	Restart(&chr);
+	reset(&chr);
 	
 	for(;;)
 	{
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
 		TFC_Task();
 		
-		Capture(&chr);
-		if(GetLastDelay_us(&chr) > 1500)
+		if(us(&chr) > 1500)
 		{
-			Restart(&chr);
+			reset(&chr);
 			serial_write(testESC,13);
 		}			
 		
@@ -114,7 +112,7 @@ void test_distantio_minimal()
 	register_scalar(&testESC,UINT32,0,"TestESC");
 	
 	chrono chr_distantio;
-	Restart(&chr_distantio);
+	reset(&chr_distantio);
 	
 	for(;;)
 	{
@@ -122,10 +120,9 @@ void test_distantio_minimal()
 		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
 		TFC_Task();
 		
-		Capture(&chr_distantio);
-		if(GetLastDelay_us(&chr_distantio) > 500)
+		if(us(&chr_distantio) > 500)
 		{
-			Restart(&chr_distantio);
+			reset(&chr_distantio);
 				
 			update_distantio();
 		}			

@@ -36,7 +36,7 @@ void init_distantio()
 		Log.variables[i].send = 0;
 	}
 	tmp=0;
-	Restart(&chr);
+	reset(&chr);
 }
 
 //TODO : Replace octets by array_size ?
@@ -380,8 +380,7 @@ uint32_t distantio_send_variable(uint16_t i)
 	buffer[j] = *(temp_ptr+1);	j++;
 	
 	//Write time
-	Capture(&chr);
-	tmp = GetLastDelay_us(&chr);
+	tmp = us(&chr);
 	temp_ptr = (uint8_t*)(&tmp);
 		
 	buffer[j] = *temp_ptr;		j++;
