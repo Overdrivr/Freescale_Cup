@@ -21,10 +21,10 @@ void Capture(chrono* chr)
 
 float GetLastDelay_us(chrono* chr)
 {
-	return chr->duration * 1000000.f / (float)(SYSTICK_FREQUENCY);
+	return chr->duration * 1000.f * 1000.f / (float)(SYSTICK_FREQUENCY);
 }
 
 float GetLastDelay_ms(chrono* chr)
 {
-	return chr->duration * 1000.f / (float)(SYSTICK_FREQUENCY);
+	return chr->duration * 1.f * 1000.f / (float)(SYSTICK_FREQUENCY);
 }
