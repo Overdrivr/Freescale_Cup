@@ -214,11 +214,34 @@ class DistantIO():
             if fmt == 0:
                 val = float(value)
                 packed = bytes(struct.pack('=f',val))
+            elif fmt == 1:
+                val = chr(value & 0x000000FF)
+                packed = bytes(struct.pack('=B',val))
+            elif fmt == 2:
+                val = int(value)&0xFFFF
+                packed = bytes(struct.pack('=H', val))
+            elif fmt == 3:
+                val = int(value)&0xFFFFFFFF
+                packed = bytes(struct.pack('=I',val))
+            elif fmt == 4:
+                val = int(value)
+                try:
+                    packed = bytes(struct.pack('=b',val))
+                except:
+                    print("byte out of range")
+                    return None
+            elif fmt == 5:
+                val = int(value)
+                try:
+                    packed = bytes(struct.pack('=h',val))
+                except:
+                    print("int16 out of range")
+                    return None
             elif fmt == 6:
                 val = int(value)
                 packed = bytes(struct.pack('=i',val))              
             else:
-                print(fmt)
+                #print(fmt)
                 print("Write format not supported.")
                 return None
             

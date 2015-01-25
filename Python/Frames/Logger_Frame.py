@@ -4,7 +4,10 @@
 import tkinter as Tk
 import tkinter.ttk as ttk
 from pubsub import pub
-from Frames.Plot2D_Frame import *
+try:
+    from Frames.Plot2D_Frame import *
+except:
+     from Plot2D_Frame import *
 
 """
 Logger GUI Frame
@@ -33,15 +36,15 @@ class Logger_Frame(ttk.LabelFrame):
         self.bouton_activate.grid(column=0,row=1,sticky='ENW',pady=3,padx=3)
 
         # Table + scrollbar group
-        #self.table_frame = ttk.Frame(self)
-        #self.table_frame.grid(column=0,row=2,columnspan=3)
+        self.table_frame = ttk.Frame(self)
+        self.table_frame.grid(column=0,row=2,columnspan=3, sticky="WENS")
 
-        self.scrollbar_log = ttk.Scrollbar(self)
-        self.scrollbar_log.grid(sticky ='WNS',row=2,column=2)
+        self.scrollbar_log = ttk.Scrollbar(self.table_frame)
+        self.scrollbar_log.grid(sticky ='WNS',row=0,column=2)
         
 
-        self.var_list = ttk.Treeview(self, show="headings",columns=("name","type","size","Value","ID"),selectmode="browse", yscrollcommand=self.scrollbar_log.set)
-        self.var_list.grid(column=0,row=2,sticky='EWNS',columnspan=2,pady=3,padx=(3,0))
+        self.var_list = ttk.Treeview(self.table_frame, show="headings",columns=("name","type","size","Value","ID"),selectmode="browse", yscrollcommand=self.scrollbar_log.set)
+        self.var_list.grid(column=0,row=0,sticky='EWNS',pady=3,padx=(3,0))#columnspan=2
         self.var_list.column('name',anchor='center',minwidth=0,width=100)
 
         self.var_list.heading('name', text='name')
@@ -90,6 +93,8 @@ class Logger_Frame(ttk.LabelFrame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
         
+        self.table_frame.grid_columnconfigure(0,weight=1)
+        self.table_frame.grid_rowconfigure(0,weight=1)
         self.var_list.grid_columnconfigure(3, weight=1)
         
         # Subscriptions
