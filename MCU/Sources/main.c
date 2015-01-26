@@ -51,11 +51,9 @@ void cam_program()
 	init_data(&data);
 	
 	//Computation variables
-	float position_error = 0.f;
 	float previous_error = 0.f;
+	float error_proportionnal = 0.f;
 	float error_derivative = 0.f;
-	float alpha_error = 0.85;
-	float filtered_error = 0.f;
 	
 	float command = 0.f;
 	float servo_offset = 0.2;
@@ -71,20 +69,10 @@ void cam_program()
 	float D = 0.008f;
 	float command_engines = 0.4f;
 	
-	//Stable
-	P = 0.0011;
-	D = 0.0001f;
-	command_engines = 0.53f;
-	
-	//Stable, mais erreur atteint saturation a vitesse 0.55
-	P = 0.011;
-	D = 0.0007f;
-	command_engines = 0.54f;
-	
 	//Le plus performant pour l'instant
 	P = 0.013;
 	D = 0.0007f;
-	command_engines = 0.54f;
+	command_engines = 0.f;
 	
 	//To check loop times
 	chrono chr_cam_m, chr_loop_m,chr_io,chr_rest, chr_Task;
@@ -95,7 +83,11 @@ void cam_program()
 	float period_cam;
 	float queue_size = 0;
 	
-	chrono PID_chrono;
+	uint32_t counter_fps = 0,fps = 0;
+	chrono chrono_fps;
+	
+	uint32_t counter_process_fps = 0, process_fps = 0;
+	chrono chrono_process_fps;
 	
 	//TFC_HBRIDGE_ENABLE;
 	
@@ -103,16 +95,22 @@ void cam_program()
 	
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
-	float exposure_time_us = 8000;
-	uint32_t servo_update_ms = 20;
+	
+	float exposure_time_us = 4000;
+	float servo_update_us = 5000;
 	
 	//Readonly variables
 	register_scalar(&command_engines,FLOAT,1,"command engines");
-	register_scalar(&data.position_left,FLOAT,0,"position left");
-	register_scalar(&data.position_right,FLOAT,0,"position right");
-	register_scalar(&data.error_left,FLOAT,0,"error left");
-	register_scalar(&data.error_right,FLOAT,0,"error right");
-	register_scalar(&data.one_edge_choice,INT32,0,"decision (1 right, -1 left)");
+	register_scalar(&error_proportionnal, FLOAT,0,"Proportionnel");
+	register_scalar(&error_derivative, FLOAT,0,"Derivative");
+	register_scalar(&command,FLOAT,0,"command");
+	register_scalar(&commandP,FLOAT,0,"cmd P");
+	register_scalar(&commandD,FLOAT,0,"cmd D");
+	//register_scalar(&data.position_left,FLOAT,0,"position left");
+	//register_scalar(&data.position_right,FLOAT,0,"position right");
+	//register_scalar(&data.error_left,FLOAT,0,"error left");
+	//register_scalar(&data.error_right,FLOAT,0,"error right");
+	//register_scalar(&data.one_edge_choice,INT32,0,"decision (1 right, -1 left)");
 	
 	//register_scalar(&data.linestate, INT32,0,"LineState");
 	//register_scalar(&data.previous_line_position,FLOAT,0,"Variations position");
@@ -122,40 +120,37 @@ void cam_program()
 	//register_scalar(&data.deglitch_limit, INT16,1,"deglicth limit");
 	//register_scalar(&data.error, FLOAT,0,"Linewidth error");
 	//register_scalar(&data.linewidth, FLOAT,0,"Linewidth");
-	//register_scalar(&position_error, FLOAT,0,"Error");
+	
 	//register_scalar(&data.valid_line_position,FLOAT,0,"Shielded Error");
 	
-	register_scalar(&data.hysteresis_threshold,FLOAT,1,"Protection distance");
+	//register_scalar(&data.hysteresis_threshold,FLOAT,1,"Protection distance");
 	//register_scalar(&data.distance,FLOAT,1,"distance variation");
-	register_scalar(&error_derivative, FLOAT,0,"Derivative");
-	register_scalar(&command,FLOAT,0,"command");
-	register_scalar(&commandP,FLOAT,0,"cmdP");
-	register_scalar(&commandD,FLOAT,0,"cmdD");
 	
-	register_scalar(&exposure_time_us,FLOAT,1,"Exposure time");
 	
 	//Read/write variables
 	register_scalar(&P,FLOAT,1,"P");
-	register_scalar(&D,FLOAT,1,"D");	
+	register_scalar(&D,FLOAT,1,"D");
+	register_scalar(&exposure_time_us,FLOAT,1,"Exposure time (us)");
+	register_scalar(&servo_update_us,FLOAT,1,"Servo update period (us)");
+	register_scalar(&fps,UINT32,0,"FPS");
+	register_scalar(&process_fps,UINT32,0,"FPS camera");
 	
 	//Calibration data
 	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
 	register_scalar(&data.linewidth,FLOAT,1,"linewidth");
-	register_scalar(&data.offset,FLOAT,1,"offset");
-	register_scalar(&data.threshold,INT32,1,"threshold");
+	register_scalar(&data.offset,FLOAT,1,"line offset");
+	register_scalar(&data.threshold,INT32,1,"line threshold");
 	
-	register_scalar(&filtered_error,FLOAT,1,"Filtered error");
-	register_scalar(&alpha_error,FLOAT,1,"Filtered error Alpha");
-	
-	//Secondary values
-	register_scalar(&pload,UINT16,0,"Serial load");
-	
-	register_scalar(&t_cam,FLOAT,0,"max cam time(ms)");
+	//Loop times
+	register_scalar(&t_cam,FLOAT,0,"max camera processing time(ms)");
 	register_scalar(&t_loop,FLOAT,0,"max main time(ms)");
 	register_scalar(&period_cam,FLOAT,0,"camera period (ms)");
 	register_scalar(&t_io,FLOAT,0,"distant io time(ms)");
 	register_scalar(&t_Task,FLOAT,0,"max TFC task time(ms)");
 	register_scalar(&looptime_cam,FLOAT,0,"cam exe period(us)");
+	
+	//Secondary values
+	register_scalar(&pload,UINT16,0,"Serial load");
 	register_scalar(&queue_size, FLOAT,0,"queue size");
 	
 	register_scalar(&data.edges_count,UINT16,0,"edge count");
@@ -174,7 +169,8 @@ void cam_program()
 	reset(&chr_io);
 	reset(&chr_rest);
 	reset(&chr_Task);
-	reset(&PID_chrono);
+	reset(&chrono_fps);
+	reset(&chrono_process_fps);
 	
 	for(;;)
 	{
@@ -192,12 +188,24 @@ void cam_program()
 		if(us(&chr_distantio) > 3000)
 		{
 			reset(&chr_distantio);
-			/**TIME MONITORING**/			reset(&chr_io);
+			
+			reset(&chr_io);
 			update_distantio();
-			/**TIME MONITORING**/			t_io = ms(&chr_io);
+			t_io = ms(&chr_io);
 			pload = getPeakLoad();
-			/**TIME MONITORING**/			t_rest = 0;
+			t_rest = 0;
 			t_loop = 0;
+			t_cam = 0;
+		}
+		
+		//Compute fps
+		if(ms(&chrono_fps) < 1000)
+			counter_fps++;
+		else
+		{
+			fps = counter_fps;
+			counter_fps = 0;
+			remove_ms(&chrono_fps,1000);
 		}
 				
 		/* -------------------------- */
@@ -206,27 +214,39 @@ void cam_program()
 		looptime_cam = us(&chr_cam);
 		if(looptime_cam > exposure_time_us)
 		{
-			reset(&chr_cam);//PAS BON CA
+			reset(&chr_cam);
 			period_cam = looptime_cam;
+			
+			//Compute fps
+			if(ms(&chrono_process_fps) < 1000)
+				counter_process_fps++;
+			else
+			{
+				process_fps = counter_process_fps;
+				counter_process_fps = 0;
+				remove_ms(&chrono_process_fps,1000);
+			}
 			
 			/**TIME MONITORING**/			reset(&chr_cam_m);
 			
 			r = read_process_data(&data);
 			if(r == LINE_OK)
-			{
-				//compute_valid_line_position(&data,r);
-				
+			{				
 				//Compute errors for PD
-				previous_error = position_error;
-				position_error = data.line_position;
+				previous_error = error_proportionnal;
+				error_proportionnal = data.line_position;
+				error_derivative = (error_proportionnal - previous_error) * 1000000.f / looptime_cam;
 				
-				filtered_error = filtered_error * alpha_error +  position_error * (1 - alpha_error);
-				
-				error_derivative = (position_error - previous_error) * 1000000.f / looptime_cam;
-				
-				commandP = P * filtered_error;
-				commandD = D * error_derivative;							
-			}			
+				//Adjust gear depending on error
+			}
+			else
+			{
+				error_derivative = 0;
+				//Reduce speed with delay on restart
+			}
+			
+			
+			
 			TFC_SetLineScanExposureTime(exposure_time_us);
 							
 			/**TIME MONITORING**/			t_cam = max(t_cam,ms(&chr_cam_m));
@@ -235,9 +255,12 @@ void cam_program()
 		/* -------------------------- */
 		/* ---- UPDATE DIRECTION ---- */
 		/* -------------------------- */
-		if(ms(&chr_servo) > servo_update_ms)
+		if(us(&chr_servo) > servo_update_us)
 		{
-			reset(&chr_servo);
+			remove_us(&chr_servo,servo_update_us);
+			
+			commandP = P * error_proportionnal;
+			commandD = D * error_derivative;
 			
 			//Get offset
 			servo_offset = TFC_ReadPot(0);
@@ -263,8 +286,17 @@ void cam_program()
 		}
 		else
 		{
-			TFC_HBRIDGE_ENABLE;
-			TFC_SetMotorPWM(command_engines , command_engines);
+			//Disable engines on low value
+			if(command_engines > -0.1f && command_engines < 0.1f)
+			{
+				TFC_HBRIDGE_DISABLE;
+				TFC_SetMotorPWM(0 , 0);
+			}
+			else
+			{
+				TFC_HBRIDGE_ENABLE;
+				TFC_SetMotorPWM(command_engines , command_engines);
+			}
 		}
 		
 		/* -------------------------- */
