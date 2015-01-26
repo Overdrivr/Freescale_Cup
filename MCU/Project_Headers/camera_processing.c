@@ -31,11 +31,11 @@ void init_data(cameraData* data)
 	data->reference_integral = 0;//Compute reference integral at calibration
 	
 	data->threshold = 200;
-	data->halftrack_width = 150;
+	data->halftrack_width = 110;
 	data->offset = 0.f;
 	data->linewidth = 14.f;
 	data->deglitch_counter = 0;
-	data->deglitch_limit = 50;
+	data->deglitch_limit = 35;
 	
 	data->edgeleft = 1;//MIN VALUE : 1
 	data->edgeright = 1;//MIN VALUE : 1
@@ -121,76 +121,69 @@ int read_process_data(cameraData* data)
 	else if(data->edges_count == 1)
 	{
 		//Line is in very border of camera, or car is going outside the road
-		position = (float)(data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f - 64.f;
+		position = (float)(data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f - 64.f; 
 		
-		//Zone d'incertitude droite
-		/*if(position > 0 && position + data->linewidth > 40)
+		//Estimate new position for both cases (Car on the left or car on the right)
+		//White to black
+		if(data->threshold_image[data->falling_edges_position[0]] == 1)
 		{
-			if(data->linestate > 0)
-				data->linestate = LINE_HALF_TRACK_RIGHT;
-			else
-				data->linestate = LINE_HALF_LEFT;
-				
-			return LINE_LOST;
-		}*/
-		//Zone d'incertitude gauche
-		// Impossible de dire si on a affaire au bord de piste ou a la moitie de la ligne
-		/*else if(position < 0 && position - data->linewidth < -40) 
-		{
-			if(data->linestate > 0)
-				data->linestate = LINE_HALF_RIGHT;
-			else
-				data->linestate = LINE_HALF_TRACK_LEFT;
-				
-			return LINE_LOST;
-		}*/
-		
-		if(position > data->hysteresis_threshold || position < -data->hysteresis_threshold)
-		{
-			return LINE_LOST;
-		}
-		//Identifie le bord de piste droit
-		else if(data->threshold_image[data->falling_edges_position[0]] == 1)
-		{
-			if(data->deglitch_counter >= data->deglitch_limit)
+			//Si la position est > -64+linewidth  on a forcement le bord droit
+			if(position > -64 + data->linewidth * 1.2f)
 			{
-				data->linestate = LINE_TRACK_RIGHT;
-				data->line_position = position - data->halftrack_width + data->offset;
+				data->one_edge_choice = 2;
+				data->line_position = position + data->offset - data->halftrack_width;
 				return LINE_OK;
 			}
 			else
-			{
-				data->deglitch_counter++;
 				return LINE_LOST;
-			}
 			
+			//data->position_left = position;
+			//data->position_right = position + data->offset - data->halftrack_width;//OK, sur la droite la valeur part bien en negatif
 		}
+		//Black to white
 		else if(data->threshold_image[data->falling_edges_position[0]] == 2)
 		{
-			if(data->deglitch_counter >= data->deglitch_limit)
+			if(position < 64 - data->linewidth * 1.2f)
 			{
-				data->linestate = LINE_TRACK_LEFT;
-				data->line_position = position + data->halftrack_width + data->offset;
+				data->one_edge_choice = -2;
+				data->line_position = position + data->offset + data->halftrack_width;
 				return LINE_OK;
 			}
 			else
-			{
-				data->deglitch_counter++;
 				return LINE_LOST;
-			}
+			
+			//data->position_left = position + data->offset + data->halftrack_width;
+			//data->position_right = position;
+		}
+		
+		//Compute line variations
+		/*data->error_left = data->position_left - data->line_position;
+		if(data->error_left < 0.f)
+			data->error_left *= -1;
+		
+		data->error_right = data->position_right - data->line_position;
+		if(data->error_right < 0.f)
+			data->error_right *= -1;
+		
+		//Choose smaller one
+		if(data->error_left > data->error_right)
+		{
+			data->one_edge_choice = 1;
+			data->line_position = data->position_right;
 		}
 		else
-			return LINE_LOST;
+		{
+			data->one_edge_choice = -1;
+			data->line_position = data->position_left;
+		}
+		return LINE_OK;*/
+		
 	}
 	else if(data->edges_count == 2)
 	{
 		data->deglitch_counter = 0;
 		//Check derivative order 
 			
-		//1 edge - compute center & record
-		position = (data->rising_edges_position[0] + data->falling_edges_position[0] + data->rising_edges_position[1] + data->falling_edges_position[1]) / 4.f;
-		position -= 64;
-		data->line_position = position + data->offset;
 		data->current_linewidth = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f -
 						  	  	  (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2.f;
 		
@@ -202,6 +195,11 @@ int read_process_data(cameraData* data)
 		if(data->current_linewidth_diff > 0.4 || data->current_linewidth_diff < -0.4)
 			return LINE_LOST;
 		
+		//1 edge - compute center & record
+		position = (data->rising_edges_position[0] + data->falling_edges_position[0] + data->rising_edges_position[1] + data->falling_edges_position[1]) / 4.f;
+		position -= 64;
+		data->line_position = position + data->offset;
+		
 		if(data->line_position > 0.f)
 			data->linestate = LINE_LEFT;
 		else if(data->line_position < 0.f)
@@ -209,7 +207,8 @@ int read_process_data(cameraData* data)
 		else
 			data->linestate = LINE_CENTER;
 		return LINE_OK;
-	}/*
+	}
+	/*
 	else if(data->edges_count == 6)
 	{
 		return LINE_LOST;
@@ -219,83 +218,8 @@ int read_process_data(cameraData* data)
 		data->line_position = position + data->offset;
 		//TODO : CALL FUNCTION TO SIGNAL START LINE
 		return LINE_OK;
-	}
-	else
-	{
-		return LINE_LOST;
-		float linewidth = 0.f;
-		float error = 0.f, lowest_error = 1000.f;
-		uint16_t valid_index = 0;
-		
-		//Select most probable line
-		for(i = 0 ; i < data->edges_count - 1 ; i++)
-		{
-			linewidth = (data->rising_edges_position[i] + data->falling_edges_position[i]) / 2.f -
-						(data->rising_edges_position[i + 1] + data->falling_edges_position[i + 1]) / 2.f;
-			
-			error = (linewidth - data->linewidth) / data->linewidth;
-			
-			if(error < 0.f)
-				error *= -1;
-			
-			if(error < lowest_error)
-			{
-				lowest_error = error;
-				valid_index = i;
-			}
-		}
-		
-		if(lowest_error < 0.10)
-		{
-			//Valid line found, compute position
-			position = (data->rising_edges_position[valid_index] + data->falling_edges_position[valid_index] + 
-					    data->rising_edges_position[valid_index + 1] + data->falling_edges_position[valid_index + 1]) / 4.f;
-			position -= 64;
-			data->line_position = position + data->offset;
-			return LINE_OK;
-		}
-		else
-		{
-			return LINE_LOST;
-		}
 	}*/
 	return LINE_LOST;
-}
-
-
-//Detects erratic behavior of line position, and puts a corrected value in valid_line_position
-//Locks line value if changes from left to right are too big
-void compute_valid_line_position(cameraData* data, int linestate)
-{
-	//If the distance between previous and new valid line is > threshold
-	data->distance = data->line_position - data->valid_line_position;
-	
-	if(linestate == LINE_UNSURE)
-	{
-		if(data->valid_line_position > -20 && data->line_position < 40)
-		{
-			//Wrong line detected...Max out the error
-			data->valid_line_position = 64;
-			data->previous_line_position = 1;
-		}
-		else if(data->valid_line_position < 20 && data->line_position > -40)
-		{
-			data->valid_line_position = -64;
-			data->previous_line_position = -1;
-		}
-		else
-		{
-			data->valid_line_position = data->line_position;
-			data->previous_line_position = 0;
-		}
-	}
-	else
-	{
-		data->valid_line_position = data->line_position;
-		
-	}
-	
-	
 }
 
 void calibrate_data(cameraData* data, uint32_t exposure_time_us)

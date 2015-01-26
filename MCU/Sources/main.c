@@ -92,7 +92,10 @@ void cam_program()
 	chrono chr_distantio,chr_cam,chr_led,chr_servo;
 	float t_cam = 0, t_loop = 0, t_io = 0, t_rest = 0, t_Task = 0;
 	float looptime_cam;
+	float period_cam;
 	float queue_size = 0;
+	
+	chrono PID_chrono;
 	
 	//TFC_HBRIDGE_ENABLE;
 	
@@ -105,16 +108,23 @@ void cam_program()
 	
 	//Readonly variables
 	register_scalar(&command_engines,FLOAT,1,"command engines");
-	register_scalar(&data.linestate, INT32,0,"LineState");
-	register_scalar(&data.current_linewidth, FLOAT,0,"Linewidth current");
-	register_scalar(&data.current_linewidth_diff, FLOAT,0,"Linewidth error");
-	register_scalar(&data.deglitch_counter, INT16,0,"deglitch");
-	register_scalar(&data.deglitch_limit, INT16,1,"deglicth limit");
-	register_scalar(&data.error, FLOAT,0,"Linewidth error");
-	register_scalar(&data.linewidth, FLOAT,0,"Linewidth");
-	register_scalar(&position_error, FLOAT,0,"Error");
+	register_scalar(&data.position_left,FLOAT,0,"position left");
+	register_scalar(&data.position_right,FLOAT,0,"position right");
+	register_scalar(&data.error_left,FLOAT,0,"error left");
+	register_scalar(&data.error_right,FLOAT,0,"error right");
+	register_scalar(&data.one_edge_choice,INT32,0,"decision (1 right, -1 left)");
+	
+	//register_scalar(&data.linestate, INT32,0,"LineState");
+	//register_scalar(&data.previous_line_position,FLOAT,0,"Variations position");
+	//register_scalar(&data.current_linewidth, FLOAT,0,"Linewidth current");
+	//register_scalar(&data.current_linewidth_diff, FLOAT,0,"Linewidth error");
+	//register_scalar(&data.deglitch_counter, INT16,0,"deglitch");
+	//register_scalar(&data.deglitch_limit, INT16,1,"deglicth limit");
+	//register_scalar(&data.error, FLOAT,0,"Linewidth error");
+	//register_scalar(&data.linewidth, FLOAT,0,"Linewidth");
+	//register_scalar(&position_error, FLOAT,0,"Error");
 	//register_scalar(&data.valid_line_position,FLOAT,0,"Shielded Error");
-	//register_scalar(&data.previous_line_position,FLOAT,0,"Correction on/off");
+	
 	register_scalar(&data.hysteresis_threshold,FLOAT,1,"Protection distance");
 	//register_scalar(&data.distance,FLOAT,1,"distance variation");
 	register_scalar(&error_derivative, FLOAT,0,"Derivative");
@@ -142,7 +152,7 @@ void cam_program()
 	
 	register_scalar(&t_cam,FLOAT,0,"max cam time(ms)");
 	register_scalar(&t_loop,FLOAT,0,"max main time(ms)");
-	register_scalar(&t_rest,FLOAT,0,"max rest time(ms)");
+	register_scalar(&period_cam,FLOAT,0,"camera period (ms)");
 	register_scalar(&t_io,FLOAT,0,"distant io time(ms)");
 	register_scalar(&t_Task,FLOAT,0,"max TFC task time(ms)");
 	register_scalar(&looptime_cam,FLOAT,0,"cam exe period(us)");
@@ -164,6 +174,7 @@ void cam_program()
 	reset(&chr_io);
 	reset(&chr_rest);
 	reset(&chr_Task);
+	reset(&PID_chrono);
 	
 	for(;;)
 	{
@@ -186,6 +197,7 @@ void cam_program()
 			/**TIME MONITORING**/			t_io = ms(&chr_io);
 			pload = getPeakLoad();
 			/**TIME MONITORING**/			t_rest = 0;
+			t_loop = 0;
 		}
 				
 		/* -------------------------- */
@@ -194,7 +206,8 @@ void cam_program()
 		looptime_cam = us(&chr_cam);
 		if(looptime_cam > exposure_time_us)
 		{
-			reset(&chr_cam);
+			reset(&chr_cam);//PAS BON CA
+			period_cam = looptime_cam;
 			
 			/**TIME MONITORING**/			reset(&chr_cam_m);
 			

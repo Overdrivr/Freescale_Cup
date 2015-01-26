@@ -22,6 +22,13 @@ struct cameraData
 	uint32_t image_integral;
 	uint32_t reference_integral;
 	
+	//1-edge situation
+	int32_t one_edge_choice;
+	float position_left;
+	float position_right;
+	float error_left;
+	float error_right;
+	
 	int falling_edges_position[128];
 	int rising_edges_position[128];
 	uint16_t edges_count;
