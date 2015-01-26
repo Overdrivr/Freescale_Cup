@@ -91,10 +91,12 @@ class Model(Thread):
 
     def start_log(self):
         self.logger.start()
+        #subscribe
         
     def stop_log(self):
         self.logger.record_all()
-
+        #unsubscribe
+        
     def read_var(self, varid):        
         # Get command
         cmd = self.controller.encode(cmd='read',var_id=varid)
