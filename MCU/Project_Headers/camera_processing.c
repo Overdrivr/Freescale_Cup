@@ -120,6 +120,8 @@ int read_process_data(cameraData* data)
 	}
 	else if(data->edges_count == 1)
 	{
+		return LINE_LOST;
+		/*
 		//Line is in very border of camera, or car is going outside the road
 		position = (float)(data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f - 64.f; 
 		
@@ -135,7 +137,11 @@ int read_process_data(cameraData* data)
 				return LINE_OK;
 			}
 			else
+			{
+				data->one_edge_choice = 0;
 				return LINE_LOST;
+			}
+				
 			
 			//data->position_left = position;
 			//data->position_right = position + data->offset - data->halftrack_width;//OK, sur la droite la valeur part bien en negatif
@@ -150,34 +156,15 @@ int read_process_data(cameraData* data)
 				return LINE_OK;
 			}
 			else
+			{
+				data->one_edge_choice = 0;
 				return LINE_LOST;
+			}
+				
 			
 			//data->position_left = position + data->offset + data->halftrack_width;
 			//data->position_right = position;
-		}
-		
-		//Compute line variations
-		/*data->error_left = data->position_left - data->line_position;
-		if(data->error_left < 0.f)
-			data->error_left *= -1;
-		
-		data->error_right = data->position_right - data->line_position;
-		if(data->error_right < 0.f)
-			data->error_right *= -1;
-		
-		//Choose smaller one
-		if(data->error_left > data->error_right)
-		{
-			data->one_edge_choice = 1;
-			data->line_position = data->position_right;
-		}
-		else
-		{
-			data->one_edge_choice = -1;
-			data->line_position = data->position_left;
-		}
-		return LINE_OK;*/
-		
+		}*/
 	}
 	else if(data->edges_count == 2)
 	{
