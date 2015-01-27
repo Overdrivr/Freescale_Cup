@@ -69,6 +69,15 @@ void cam_program()
 	float D = 0.008f;
 	float command_engines = 0.4f;
 	
+	// Speed control
+	
+	float gear_1_threshold = 30;
+	float gears[3];
+	uint16_t current_gear = 0;
+	gears[0] = 0.4f; // Line lost speed
+	gears[1] = 0.5f; // Error > gear_1_threshold
+	gears[2] = command_engines; //Full speed
+	
 	//Le plus performant pour l'instant
 	P = 0.013;
 	D = 0.0007f;
@@ -134,6 +143,9 @@ void cam_program()
 	register_scalar(&servo_update_us,FLOAT,1,"Servo update period (us)");
 	register_scalar(&fps,UINT32,0,"FPS");
 	register_scalar(&process_fps,UINT32,0,"FPS camera");
+	
+	register_scalar(&current_gear,UINT16,0,"gear");
+	register_scalar(&gear_1_threshold,FLOAT,1,"full speed threshold");
 	
 	//Calibration data
 	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
@@ -238,11 +250,18 @@ void cam_program()
 				error_derivative = (error_proportionnal - previous_error) * 1000000.f / looptime_cam;
 				
 				//Adjust gear depending on error
+				if(error_proportionnal > gear_1_threshold || error_proportionnal < -gear_1_threshold)
+				{
+					current_gear = 1;
+				}
+				else
+					current_gear = 2;
 			}
 			else
 			{
 				error_derivative = 0;
 				//Reduce speed with delay on restart
+				current_gear = 0;
 			}
 			
 			
@@ -295,7 +314,10 @@ void cam_program()
 			else
 			{
 				TFC_HBRIDGE_ENABLE;
-				TFC_SetMotorPWM(command_engines , command_engines);
+				gears[2] = command_engines;
+				if(current_gear > 2)
+					current_gear = 0;
+				TFC_SetMotorPWM(gears[current_gear] , gears[current_gear]);
 			}
 		}
 		
