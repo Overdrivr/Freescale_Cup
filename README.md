@@ -1,10 +1,12 @@
 #Freescale Cup
 
-The Freescale Cup is an autonomous vehicle competition using Freescale hardware
-Note : This code does not complies with the new rules of the competition and thus cannot be used
+The Freescale Cup is an autonomous vehicle competition using Freescale hardware.
+
+*_Note_* : This code does not complies with the new rules of the competition and thus cannot be used
 
 ## Authors
-Rémi Bèges
+Rémi Bèges (Base code + GUI)
+
 Jerôme Mallet (GUI Improvements)
 
 ## Contents of this repository
@@ -23,9 +25,7 @@ Both protocols are implemented in MCU/DistantIO/
 #### Computer side
 A python program implementing both protocols to communicate with the MCU is provided. 
 A GUI build with Tkinter is also supplied for communicating and debugging the MCU in a more friendly manner.
-Main control panel :
 ![gui main control screenshot](https://raw.githubusercontent.com/Overdrivr/Freescale_Cup/master/gui_main_control.png)
-An empty plot :
 ![gui plot screenshot](https://raw.githubusercontent.com/Overdrivr/Freescale_Cup/master/gui_plot.png)
 
 ### Car program
