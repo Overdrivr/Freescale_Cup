@@ -14,6 +14,7 @@ Jerôme Mallet (GUI Improvements)
 DistantIO is a complete framework for reading and writing variables on an MCU from a computer in real time.
 
 It uses two software protocols on top of the serial port to construct data frames and exchange data with the MCU :
+
 1. serial protocol (on top of serial port) : A simple frame delimiter protocol with byte stuffing
 2. distantio protocol (on top of serial protocol) : A set of commands and defined frames for reading/writing variables 
 
