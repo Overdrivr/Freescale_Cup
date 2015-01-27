@@ -17,7 +17,7 @@ class Control_Frame(ttk.LabelFrame):
         self.parent = parent
         self.model = model
         self.connected = False
-        
+        self.Run_F=True
         self.grid(row=0,column=0,sticky="WENS")
         
         #Widgets
@@ -42,11 +42,20 @@ class Control_Frame(ttk.LabelFrame):
         
         
     def stop_car(self,*args):
-        try:
-            self.model.write_var(0,0)
-        except: 
-            pass
-
+        if(self.Run_F==True):
+            try:
+                self.model.write_var(0,0)
+            except: 
+                return
+            self.Run_F=False
+        else:
+            try:
+                self.model.write_var(0,1)
+            except: 
+                return
+            self.Run_F=True
+            
+            
     def stop_record(self):
         pass
 

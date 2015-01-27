@@ -7,7 +7,8 @@ from pubsub import pub
 try:
     from Frames.Plot2D_Frame import *
 except:
-    from Plot2D_Frame import *
+     from Plot2D_Frame import *
+
 """
 Logger GUI Frame
 """
@@ -29,21 +30,23 @@ class Logger_Frame(ttk.LabelFrame):
         self.txt_log.grid(column=0,row=0,sticky='ENW',pady=3,padx=3)
 
         self.txt_active = Tk.Label(self,text="INACTIVE",fg='blue',borderwidth=2)
-        self.txt_active.grid(column=2,row=0,sticky='ENW',pady=3,padx=3)
+        self.txt_active.grid(column=1,row=0,sticky='ENW',pady=3,padx=3)
 
         self.bouton_activate = ttk.Button(self, text="RETRIEVE TABLE", command = self.activate_log)
         self.bouton_activate.grid(column=0,row=1,sticky='ENW',pady=3,padx=3)
 
         # Table + scrollbar group
         self.table_frame = ttk.Frame(self)
-        self.table_frame.grid(column=0,row=2,columnspan=3)
+        self.table_frame.grid(column=0,row=2,columnspan=3, sticky="WENS")
 
         self.scrollbar_log = ttk.Scrollbar(self.table_frame)
-        self.scrollbar_log.grid(sticky ='WNS',row=0,column=1)
+        self.scrollbar_log.grid(sticky ='WNS',row=0,column=2)
         
-        self.var_list = ttk.Treeview(self.table_frame, show="headings",columns=("name","type","size","Value","ID"),selectmode="browse")
-        self.var_list.grid(column=0,row=0,sticky='EWNS',pady=3,padx=(3,0))
-        self.var_list.column('name',anchor='center',minwidth=0,width=150)
+
+        self.var_list = ttk.Treeview(self.table_frame, show="headings",columns=("name","type","size","Value","ID"),selectmode="browse", yscrollcommand=self.scrollbar_log.set)
+        self.var_list.grid(column=0,row=0,sticky='EWNS',pady=3,padx=(3,0))#columnspan=2
+        self.var_list.column('name',anchor='center',minwidth=0,width=100)
+
         self.var_list.heading('name', text='name')
         self.var_list.column('type',anchor='center',minwidth=0,width=50, stretch=Tk.NO)
         self.var_list.heading('type', text='type')
@@ -90,6 +93,8 @@ class Logger_Frame(ttk.LabelFrame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
         
+        self.table_frame.grid_columnconfigure(0,weight=1)
+        self.table_frame.grid_rowconfigure(0,weight=1)
         self.var_list.grid_columnconfigure(3, weight=1)
         
         # Subscriptions
@@ -135,10 +140,18 @@ class Logger_Frame(ttk.LabelFrame):
         if not self.selected_var_id == varid:
             return
 
+        #self.read_val.set(round(data['values'][0],6))  
+        
+        if len(data['values']) == 1:
+            item = self.var_list.selection()
+            self.var_list.set(item,column='Value', value=  data['values'][0])      
+            
         # TODO : A faire seulemtn pour variable en ecriture
         if not self.defined_first:
             self.value.set(round(data['values'][0],4))        
             self.defined_first = True
+
+            
     def change_state(self,state):
         if state == "inprocess":
             self.txt_active.config(text="WAITING TABLE",fg="orange")
@@ -189,7 +202,11 @@ class Logger_Frame(ttk.LabelFrame):
         else:
             self.variable.set("** Variable not writeable **")
 
+                      
+        #pub.sendMessage("new_var_selected",varid=var_id,varname=self.variables[var_id]['name'])
+        
         self.defined_first = False
+
 
     def plot_var(self):
         # TODO :Faire une liste des fenetres et les fermer a la fin
@@ -208,5 +225,10 @@ class Logger_Frame(ttk.LabelFrame):
 if __name__=="__main__":
     root = Tk.Tk() 
     Log_frm = Logger_Frame(root,None)
-    root.mainloop() 
+    root.minsize(width=350, height=400)
+    for val in range(0,20):
+        Log_frm.var_list.insert('','end', text="allo", values=val)
+    root.mainloop()
+    root.destroy()  
+
         

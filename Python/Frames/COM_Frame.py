@@ -56,7 +56,7 @@ class COM_Frame(ttk.LabelFrame):
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(2, weight=1)
-        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(1, weight=1, minsize=40)
         
         self.listbox_frame.grid_columnconfigure(0,weight=1)
         self.listbox_frame.grid_rowconfigure(0,weight=1)
@@ -118,5 +118,5 @@ class COM_Frame(ttk.LabelFrame):
 if __name__=="__main__":
     root = Tk.Tk() 
     COM_frm = COM_Frame(root,None)
-    root.minsize(width=300, height=100)
+    root.minsize(width=300, height=120)
     root.mainloop()       

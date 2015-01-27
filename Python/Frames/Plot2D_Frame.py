@@ -117,7 +117,7 @@ class Plot2D_Frame(Tk.Frame):
                 self.first = False
             else:
                 self.ymin = np.minimum(self.ymin,data['values'][0])
-                self.ymax = np.maximum(self.ymax,data['values'][0])
+         #      self.ymax = np.maximum(self.ymax,data['values'][0])
 
             # Check min != max 
             if self.ymin == self.ymax :
@@ -129,23 +129,23 @@ class Plot2D_Frame(Tk.Frame):
                     
             self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
             
-            self.x.appendleft(data['time'])
+         #   self.x.appendleft(data['time'])
             self.y.appendleft(data['values'][0])
             
-            xmin = np.amin(self.x)
-            xmax = np.amax(self.x)
+          #  xmin = np.amin(self.x)
+         #   xmax = np.amax(self.x)
 
              # Check min != max 
-            if xmin == xmax :
-                if xmin == 0:
-                    xmin -= 0.0001
-                    xmax += 0.0001
-                else:
-                    xmax *= 1.0001
+         #   if xmin == xmax :
+         #       if xmin == 0:
+         #           xmin -= 0.0001
+        #            xmax += 0.0001
+        #        else:
+        #            xmax *= 1.0001
                     
-            self.a.set_xlim(xmin,xmax)
+         #   self.a.set_xlim(xmin,xmax)
             
-            self.line1.set_data(self.x,self.y)
+            self.line1.set_data(np.arange(len(self.y))[::-1],self.y)
             self.dataPlot.draw()
 
             self.selected_value.set(data['values'][0])

@@ -9,7 +9,7 @@
 #define DISTANTIO_H_
 
 //1 log can retain 128 different variables (=ptr adress) (A table only counts 1)
-#include "..\TFC\TFC.h"
+#include ".\TFC\TFC.h"
 #include "protocol.h"
 
 typedef enum datatype datatype;

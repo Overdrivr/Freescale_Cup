@@ -50,19 +50,31 @@ class Application(ttk.Frame):
 
     
         ## FILE EXPLORER TAB ITEM
-        
-        # Disabling resizing
-        self.parent.resizable(0,0)
 
         # Add frames to notebook
         self.tabs.add(self.measurement_tab,text='LiveFeed')
         self.tabs.add(self.file_explorer_tab,text='Measurements')
-        self.tabs.grid(column=0,row=0)
+        self.tabs.grid(column=0,row=0,sticky='WENS')
 
         # Quit button
         self.bouton_quitter = ttk.Button(self, text="QUITTER",command = self.stop)
         self.bouton_quitter.grid(column=0,row=1,sticky='EW',pady=10,padx=3)
-
+        
+        
+        # Disabling resizing
+        #self.parent.resizable(0,0)
+        
+        # resizing: 
+        self.parent.grid_columnconfigure(0,weight=1)
+        self.parent.grid_rowconfigure(0,weight=1)
+        self.grid_rowconfigure(0,weight=1)
+        self.tabs.grid_rowconfigure(0,weight=1)
+        self.tabs.grid_columnconfigure(0,weight=1)
+        self.measurement_tab.grid_rowconfigure(0,weight=1, minsize=120)
+        self.measurement_tab.grid_rowconfigure(1,weight=2)
+        
+        self.parent.minsize(width=350, height=500)
+        
         # Start model
         self.model.start()
         
