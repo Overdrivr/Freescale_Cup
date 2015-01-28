@@ -32,7 +32,6 @@ class Plot2D_Frame(Tk.Frame):
         self.logger_frame = logger_frame
 
         pub.subscribe(self.listener_new_value_received,'var_value_update')
-        #pub.subscribe(self.listener_var_selected,'new_var_selected')
 
         # Widgets
         self.grid(row=0,column=0,sticky="WENS")
@@ -65,8 +64,6 @@ class Plot2D_Frame(Tk.Frame):
         self.line1, = self.a.plot([],[])
         self.x = deque(maxlen=128)
         self.y = deque(maxlen=128)
-        self.ymin = 0
-        self.ymax = 1
         self.first = False
 
         #
@@ -112,68 +109,55 @@ class Plot2D_Frame(Tk.Frame):
         if len(data['values']) == 1:
 
             if self.first:
-                self.ymin = data['values'][0]
-                self.ymax = data['values'][0]
+                self.x = deque(maxlen=128)
+                self.y = deque(maxlen=128)
                 self.first = False
-            else:
-                self.ymin = np.minimum(self.ymin,data['values'][0])
-         #      self.ymax = np.maximum(self.ymax,data['values'][0])
+            
+            self.x.appendleft(data['time'])
+            self.y.appendleft(data['values'][0])
+
+            xmin = np.amin(self.x)
+            xmax = np.amax(self.x)
+            
+            ymin = np.amin(self.y)
+            ymax = np.amax(self.y)
 
             # Check min != max 
-            if self.ymin == self.ymax :
-                if self.ymin == 0:
-                    self.ymin -= 0.0001
-                    self.ymax += 0.0001
+            if ymin == ymax :
+                if ymin == 0:
+                    ymin -= 0.0001
+                    ymax += 0.0001
                 else:
-                    self.ymax *= 1.0001
-                    
-            self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
-            
-         #   self.x.appendleft(data['time'])
-            self.y.appendleft(data['values'][0])
-            
-          #  xmin = np.amin(self.x)
-         #   xmax = np.amax(self.x)
+                    ymax *= 1.0001
 
-             # Check min != max 
-         #   if xmin == xmax :
-         #       if xmin == 0:
-         #           xmin -= 0.0001
-        #            xmax += 0.0001
-        #        else:
-        #            xmax *= 1.0001
+            if xmin == xmax :
+                if xmin == 0:
+                    xmax = 0.0001
+                else:
+                    xmax *= 1.0001
                     
-         #   self.a.set_xlim(xmin,xmax)
+            self.a.set_ylim([ymin - 0.1 * np.abs(ymin), ymax + 0.1 * np.abs(ymax)])
+            self.a.set_xlim([xmin, xmax])
             
-            self.line1.set_data(np.arange(len(self.y))[::-1],self.y)
+            self.line1.set_data(self.x,self.y)
             self.dataPlot.draw()
 
             self.selected_value.set(data['values'][0])
         else:
             # TODO : Bound max refresh rate
-            if self.first:
-                self.ymin = data['values'][0]
-                self.ymax = data['values'][0]
-                self.first = False
-
-            data['values'].append(self.ymin)
-            data['values'].append(self.ymax)
             
-            self.ymin = np.amin(data['values'])
-            self.ymax = np.amax(data['values'])
+            ymin = np.amin(data['values'])
+            ymax = np.amax(data['values'])
 
             # Check min != max 
-            if self.ymin == self.ymax :
-                if self.ymin == 0:
-                    self.ymin -= 0.0001
-                    self.ymax += 0.0001
+            if ymin == ymax :
+                if ymin == 0:
+                    ymin -= 0.0001
+                    ymax += 0.0001
                 else:
-                    self.ymax *= 1.0001
+                    ymax *= 1.0001
                     
-            data['values'].pop()
-            data['values'].pop()
-            
-            self.a.set_ylim([self.ymin - 0.1 * np.abs(self.ymin), self.ymax + 0.1 * np.abs(self.ymax)])
+            self.a.set_ylim([ymin - 0.1 * np.abs(ymin), ymax + 0.1 * np.abs(ymax)])
             self.a.set_xlim(0,len(data['values']))
             self.line1.set_data(np.arange(len(data['values']))[::-1],data['values'])
             self.dataPlot.draw()
