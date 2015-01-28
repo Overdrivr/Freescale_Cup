@@ -71,6 +71,10 @@ class VariableManager(Thread):
         
 
     def stop(self):
+        pub.unsubscribe(self.add_follower,'using_var')
+        pub.unsubscribe(self.remove_follower,'stop_using_var')
+        pub.unsubscribe(self.variable_state_check,'var_value_update')
+        pub.unsubscribe(self.table_received_listener,'logtable_update')
         self.l.acquire()
         self.running = False
         self.variables = dict()
