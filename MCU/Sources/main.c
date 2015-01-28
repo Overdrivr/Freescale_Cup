@@ -63,15 +63,13 @@ void cam_program()
 	int r = 0;
 	
 	//      PID        
-	
-	//STABLE
-	float P = 0.011;
-	float D = 0.008f;
-	float command_engines = 0.4f;
+	float P;
+	float D;
+	float command_engines;
 	
 	// Speed control
 	
-	float gear_1_threshold = 30;
+	float gear_1_threshold = 5;
 	float gears[3];
 	uint16_t current_gear = 0;
 	gears[0] = 0.4f; // Line lost speed
@@ -80,7 +78,7 @@ void cam_program()
 	
 	//Le plus performant pour l'instant
 	P = 0.013;
-	D = 0.0007f;
+	D = 0.00095f;
 	command_engines = 0.f;
 	
 	//To check loop times
@@ -105,7 +103,7 @@ void cam_program()
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
 	
-	float exposure_time_us = 4000;
+	float exposure_time_us = 8000;
 	float servo_update_us = 5000;
 	
 	//Readonly variables
