@@ -75,10 +75,15 @@ class Control_Frame(ttk.LabelFrame):
     
         
 if __name__=="__main__":
-    root = Tk.Tk() 
-    Log_frm = Control_Frame(root,None)
-    #root.minsize(width=350, height=400)
-
+    class dummyModel():
+        def __init__(self):
+            pass
+        def start_log():
+            pass
+        def stop_log():
+            pass
+    root = Tk.Tk()
+    model = dummyModel()
+    Log_frm = Control_Frame(root,model)
     root.mainloop()
-    root.destroy()
     
