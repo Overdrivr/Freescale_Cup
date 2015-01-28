@@ -17,44 +17,51 @@ class Control_Frame(ttk.LabelFrame):
         self.parent = parent
         self.model = model
         self.connected = False
-        self.Run_F=True
         self.grid(row=0,column=0,sticky="WENS")
         
         #Widgets
+        # Row 0
         self.bouton_emergency_shutdown = ttk.Button(self, text="STOP CAR", command = self.stop_all)
         self.bouton_emergency_shutdown.grid(column=0,row=0,sticky='NSEW',pady=3,padx=3)
 
         self.bouton_restart = ttk.Button(self, text="RESTART CAR", command = self.restart)
         self.bouton_restart.grid(column=1,row=0,sticky='NSEW',pady=3,padx=3)
 
+        self.speed_label = ttk.Label(self,text="Speed:")
+        self.speed_label.grid(column=2,row=0,sticky="NSEW",padx=3,pady=3)
+
+        self.speed = Tk.DoubleVar()
+        self.speed.set(1.0)
+
+        self.speed_entry = ttk.Entry(self,textvariable=self.speed,width=4)
+        self.speed_entry.grid(column=3,row=0,sticky="NSEW",padx=3,pady=3)
+        # Row 1
+        
         self.bouton_start_log = ttk.Button(self, text="START LOGGING", command = self.model.start_log)
         self.bouton_start_log.grid(column=0,row=1,sticky='NSEW',pady=3,padx=3)
 
         self.bouton_stop_log = ttk.Button(self, text="STOP LOGGING", command = self.model.stop_log)
         self.bouton_stop_log.grid(column=1,row=1,sticky='NSEW',pady=3,padx=3)
 
+        self.queuesize_label = ttk.Label(self,text="Queue Size:")
+        self.queuesize_label.grid(column=2,row=1,sticky="NSEW",padx=3,pady=3)
+
+        self.queuesize = Tk.DoubleVar()
+        self.queuesize.set(3000.0)
+
+        self.queuesize_entry = ttk.Entry(self,textvariable=self.queuesize,width=6)
+        self.queuesize_entry.grid(column=3,row=1,sticky="NSEW",padx=3,pady=3)
+
         # redimensionnement fenetres
         self.parent.grid_columnconfigure(0,weight=1)
         self.parent.grid_rowconfigure(0,weight=1)
 
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=0)
+        #self.grid_columnconfigure(0, weight=1)
+        #self.grid_rowconfigure(0, weight=0)
         
         
     def stop_car(self,*args):
-        if(self.Run_F==True):
-            try:
-                self.model.write_var(0,0)
-            except: 
-                return
-            self.Run_F=False
-        else:
-            try:
-                self.model.write_var(0,1)
-            except: 
-                return
-            self.Run_F=True
-            
+        self.model.write_var(0,0)
             
     def stop_record(self):
         pass
@@ -64,7 +71,7 @@ class Control_Frame(ttk.LabelFrame):
         self.stop_record()
 
     def restart(self):
-        pass
+        self.model.write_var(0,self.speed.get())
     
         
 if __name__=="__main__":
