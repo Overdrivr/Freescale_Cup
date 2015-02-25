@@ -107,8 +107,10 @@ class DistantIO():
                 data_dict['values'] = new_values
                 
             #Publish the value update
-            pub.sendMessage('var_value_update',varid=dataid,data=data_dict)
-             
+            try :
+                pub.sendMessage('var_value_update',varid=dataid,data=data_dict)
+            except:
+                print("DistantIO Error : Dead listener :")
         # Parse 'received_table' payload
         elif command == 2:            
             #Empty list
@@ -215,13 +217,13 @@ class DistantIO():
                 val = float(value)
                 packed = bytes(struct.pack('=f',val))
             elif fmt == 1:
-                val = chr(value & 0x000000FF)
+                val = int(value)
                 packed = bytes(struct.pack('=B',val))
             elif fmt == 2:
-                val = int(value)&0xFFFF
+                val = int(value)
                 packed = bytes(struct.pack('=H', val))
             elif fmt == 3:
-                val = int(value)&0xFFFFFFFF
+                val = int(value)
                 packed = bytes(struct.pack('=I',val))
             elif fmt == 4:
                 val = int(value)
@@ -241,8 +243,7 @@ class DistantIO():
                 val = int(value)
                 packed = bytes(struct.pack('=i',val))              
             else:
-                #print(fmt)
-                print("Write format not supported.")
+                print("Write format ",fmt," not supported.")
                 return None
             
             frame.extend(packed)
