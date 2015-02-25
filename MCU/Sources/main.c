@@ -8,8 +8,6 @@
 
 //TODO : Investiger erreurs avec virage+discontinuites
 
-// WARNING : SysTick frequency is 50kHz. Will overflow after roughly 2.5 hours
-// Derivative not clean
 
 void cam_program();
 void configure_bluetooth();
@@ -63,23 +61,24 @@ void cam_program()
 	int r = 0;
 	
 	//      PID        
-	float P;
-	float D;
-	float command_engines;
-	
+	float P[3];
+	float D[3];
 	// Speed control
 	
 	float gear_1_threshold = 5;
 	float gears[3];
-	uint16_t current_gear = 0;
-	gears[0] = 0.4f; // Line lost speed
-	gears[1] = 0.5f; // Error > gear_1_threshold
-	gears[2] = command_engines; //Full speed
+	int32_t current_gear = 0;
+	gears[0] = 0.51f; // Line lost speed
+	gears[1] = 0.62f; // Error > gear_1_threshold
+	gears[2] = 0.74f; //Full speed
 	
 	//Le plus performant pour l'instant
-	P = 0.013;
-	D = 0.00095f;
-	command_engines = 0.f;
+	P[0] = 0.013f;//0.015f
+	D[0] = 0.00095f;//0.0012f
+	P[1] = 0.013f;//0.015f
+	D[1] = 0.0008f;//0.0009
+	P[2] = 0.007;
+	D[2] = 0.f;
 	
 	//To check loop times
 	chrono chr_cam_m, chr_loop_m,chr_io,chr_rest, chr_Task;
@@ -106,16 +105,35 @@ void cam_program()
 	float exposure_time_us = 8000;
 	float servo_update_us = 5000;
 	
+	int32_t gears_bypass = 0;
+	int32_t killswitch = 0;
+	
+	float commandleft = 0.f;
+	float commandright = 0.f;
+	float coeff_pos = 0.f;
+	float coeff_neg = 1.f;
+	float ecart = 0.f;
+	
 	//Readonly variables
-	register_scalar(&command_engines,FLOAT,1,"command engines");
+	register_scalar(&killswitch,INT32,1,"Killswitch. 0 = car stop");
+	register_scalar(&gears[0],FLOAT,1,"gears[0]");
+	register_scalar(&gears[1],FLOAT,1,"gears[1]");
+	register_scalar(&gears[2],FLOAT,1,"gears[2]");
+	register_scalar(&gears_bypass,INT32,1,"automatic gear bypass (if != 0)");
+	register_scalar(&current_gear,INT32,1,"current gear");
+	register_scalar(&gear_1_threshold,FLOAT,1,"gear 1<->2 threshold");
+	
+	register_scalar(&commandleft,FLOAT,0,"engine left");
+	register_scalar(&commandright,FLOAT,0,"engine right");
+	register_scalar(&ecart,FLOAT,0,"ecart");
+	register_scalar(&coeff_pos,FLOAT,1,"diff coeff pos");
+	register_scalar(&coeff_neg,FLOAT,1,"diff coeff min");
+	
 	register_scalar(&error_proportionnal, FLOAT,0,"Proportionnel");
 	register_scalar(&error_derivative, FLOAT,0,"Derivative");
 	register_scalar(&command,FLOAT,0,"command");
 	register_scalar(&commandP,FLOAT,0,"cmd P");
 	register_scalar(&commandD,FLOAT,0,"cmd D");
-	//register_scalar(&data.position_left,FLOAT,0,"position left");
-	//register_scalar(&data.position_right,FLOAT,0,"position right");
-	//register_scalar(&data.error_left,FLOAT,0,"error left");
 	//register_scalar(&data.error_right,FLOAT,0,"error right");
 	//register_scalar(&data.one_edge_choice,INT32,0,"decision (1 right, -1 left)");
 	
@@ -135,15 +153,16 @@ void cam_program()
 	
 	
 	//Read/write variables
-	register_scalar(&P,FLOAT,1,"P");
-	register_scalar(&D,FLOAT,1,"D");
+	register_scalar(&P[0],FLOAT,1,"P0");
+	register_scalar(&D[0],FLOAT,1,"D0");
+	register_scalar(&P[1],FLOAT,1,"P1");
+	register_scalar(&D[1],FLOAT,1,"D1");
+	register_scalar(&P[2],FLOAT,1,"P2");
+	register_scalar(&D[2],FLOAT,1,"D2");
 	register_scalar(&exposure_time_us,FLOAT,1,"Exposure time (us)");
 	register_scalar(&servo_update_us,FLOAT,1,"Servo update period (us)");
 	register_scalar(&fps,UINT32,0,"FPS");
 	register_scalar(&process_fps,UINT32,0,"FPS camera");
-	
-	register_scalar(&current_gear,UINT16,0,"gear");
-	register_scalar(&gear_1_threshold,FLOAT,1,"full speed threshold");
 	
 	//Calibration data
 	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
@@ -247,19 +266,26 @@ void cam_program()
 				error_proportionnal = data.line_position;
 				error_derivative = (error_proportionnal - previous_error) * 1000000.f / looptime_cam;
 				
-				//Adjust gear depending on error
-				if(error_proportionnal > gear_1_threshold || error_proportionnal < -gear_1_threshold)
+				//Gear bypass disconnect autmatic gear switching
+				if(gears_bypass == 0)
 				{
-					current_gear = 1;
+					//Adjust gear depending on error
+					if(error_proportionnal > gear_1_threshold || error_proportionnal < -gear_1_threshold)
+					{
+						current_gear = 1;
+					}
+					else
+						current_gear = 2;
 				}
-				else
-					current_gear = 2;
+					
+				
 			}
 			else
 			{
 				error_derivative = 0;
 				//Reduce speed with delay on restart
-				current_gear = 0;
+				if(gears_bypass == 0)
+					current_gear = 0;
 			}
 			
 			
@@ -276,8 +302,8 @@ void cam_program()
 		{
 			remove_us(&chr_servo,servo_update_us);
 			
-			commandP = P * error_proportionnal;
-			commandD = D * error_derivative;
+			commandP = P[current_gear] * error_proportionnal;
+			commandD = D[current_gear] * error_derivative;
 			
 			//Get offset
 			servo_offset = TFC_ReadPot(0);
@@ -304,7 +330,7 @@ void cam_program()
 		else
 		{
 			//Disable engines on low value
-			if(command_engines > -0.1f && command_engines < 0.1f)
+			if(killswitch == 0)
 			{
 				TFC_HBRIDGE_DISABLE;
 				TFC_SetMotorPWM(0 , 0);
@@ -312,10 +338,27 @@ void cam_program()
 			else
 			{
 				TFC_HBRIDGE_ENABLE;
-				gears[2] = command_engines;
 				if(current_gear > 2)
 					current_gear = 0;
-				TFC_SetMotorPWM(gears[current_gear] , gears[current_gear]);
+				
+				if(command < 0)
+				{
+					ecart = -command/2.f;
+					commandleft = gears[current_gear] * (1 - ecart*coeff_neg);//OK
+					commandright = gears[current_gear]* (1 + ecart*coeff_pos);
+				}
+				else if(command > 0)
+				{
+					ecart = command/2.f;
+					commandleft = gears[current_gear] * (1 + ecart*coeff_pos);
+					commandright = gears[current_gear]* (1 - ecart*coeff_neg);//OK
+				}
+				else
+				{
+					commandleft = gears[current_gear];
+					commandright = gears[current_gear];
+				}
+				TFC_SetMotorPWM(commandleft, commandright);
 			}
 		}
 		
