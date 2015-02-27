@@ -26,8 +26,9 @@ int main(void)
 	//test_serial1();
 	//test_protocol1();
 	//test_distantio_minimal();
+	test_alive_signal();
 	
-	cam_program();
+	//cam_program();
 	
 	//configure_bluetooth();
 	
@@ -42,7 +43,7 @@ void cam_program()
 	//Init all 3 communication layers
 	init_serial();
 	init_protocol();
-	init_distantio();
+	init_distantio(3);
 	
 	cameraData data;
 	
@@ -102,7 +103,7 @@ void cam_program()
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
 	
-	float exposure_time_us = 8000;
+	float exposure_time_us = 4000;
 	float servo_update_us = 5000;
 	
 	int32_t gears_bypass = 0;
