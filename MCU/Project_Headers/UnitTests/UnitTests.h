@@ -37,4 +37,9 @@ void test_protocol1();
  */
 void test_distantio_minimal();
 
+/*
+ * test_alive_signal : To test reliability of alive signal sent every 100 ms by distantio to the computer
+ */
+void test_alive_signal();
+
 #endif /* UNITTESTS_H_ */

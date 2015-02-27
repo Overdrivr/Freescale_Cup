@@ -102,7 +102,7 @@ void test_distantio_minimal()
 	
 	init_serial();
 	init_protocol();
-	init_distantio();
+	init_distantio(3);
 	
 	//TFC_HBRIDGE_ENABLE;
 	
@@ -128,3 +128,30 @@ void test_distantio_minimal()
 		}			
 	}
 }
+
+void test_alive_signal()
+{
+	TFC_Init();	
+	
+	init_serial();
+	init_protocol();
+	init_distantio(3);
+	
+	chrono chr_distantio;
+	reset(&chr_distantio);
+	
+	for(;;)
+	{
+			
+		//TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
+		TFC_Task();
+		
+		if(us(&chr_distantio) > 500)
+		{
+			reset(&chr_distantio);
+				
+			update_distantio();
+		}			
+	}
+}
+
