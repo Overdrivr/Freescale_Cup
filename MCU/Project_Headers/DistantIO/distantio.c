@@ -20,6 +20,7 @@ uint32_t distantio_send_variable(uint16_t variable_id);
 log Log;
 uint32_t tmp;
 chrono chr;
+chrono chr_alive;
 float update_interval_ms;
 
 void init_distantio(float update_ms)
@@ -152,10 +153,10 @@ void update_distantio()
 	uint16_t interval = 1;
 	
 	//If last alive signal was send more than 100 ms ago, resend it
-	if(ms(&chr) > 100)
+	if(ms(&chr_alive) > 100)
 	{
 		distantio_send_alive();
-		reset(&chr);
+		reset(&chr_alive);
 	}				
 		
 	//Transmit data to serial - Only one variable per mainloop
@@ -420,6 +421,4 @@ void distantio_send_alive()
 	
 	uint8_t cmd = 0x55;
 	protocol_frame(&cmd,1);
-	
-	return 0;
 }
