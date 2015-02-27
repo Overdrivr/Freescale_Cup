@@ -26,9 +26,9 @@ int main(void)
 	//test_serial1();
 	//test_protocol1();
 	//test_distantio_minimal();
-	test_alive_signal();
+//	test_alive_signal();
 	
-	//cam_program();
+	cam_program();
 	
 	//configure_bluetooth();
 	
@@ -103,7 +103,7 @@ void cam_program()
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
 	
-	float exposure_time_us = 4000;
+	float exposure_time_us = 6000;
 	float servo_update_us = 5000;
 	
 	int32_t gears_bypass = 0;
@@ -135,7 +135,7 @@ void cam_program()
 	register_scalar(&command,FLOAT,0,"command");
 	register_scalar(&commandP,FLOAT,0,"cmd P");
 	register_scalar(&commandD,FLOAT,0,"cmd D");
-	//register_scalar(&data.error_right,FLOAT,0,"error right");
+	register_scalar(&data.filter_coeff,FLOAT,1,"filter_coeff");
 	//register_scalar(&data.one_edge_choice,INT32,0,"decision (1 right, -1 left)");
 	
 	//register_scalar(&data.linestate, INT32,0,"LineState");
@@ -184,9 +184,11 @@ void cam_program()
 	register_scalar(&queue_size, FLOAT,0,"queue size");
 	
 	register_scalar(&data.edges_count,UINT16,0,"edge count");
+	
+	register_array(data.filtered_raw,128,FLOAT,0,"filtered line");
 	register_array(data.threshold_image,128,INT8,0,"threshold_line");
 	register_array(data.derivative_image,128,INT32,0,"line derivative");
-	register_array(data.derivative_zero,128,INT32,0,"line derivative zero");
+	//register_array(data.derivative_zero,128,INT32,0,"line derivative zero");
 	register_array(data.raw_image,128,UINT16,0,"raw_line");
 	
 	TFC_SetLineScanExposureTime(exposure_time_us);
