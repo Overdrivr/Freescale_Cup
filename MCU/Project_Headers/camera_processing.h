@@ -14,13 +14,15 @@
 typedef struct cameraData cameraData;
 struct cameraData
 {
-	uint16_t raw_image[128];
-	int32_t derivative_zero[128];
+	
+	//int32_t derivative_zero[128];
 	int32_t derivative_image[128];
-	int8_t threshold_image[128];
+	float filtered_raw[128];
 	uint16_t min, max;
+	uint16_t raw_image[128];
 	uint32_t image_integral;
 	uint32_t reference_integral;
+	int8_t threshold_image[128];
 	
 	//1-edge situation
 	int32_t one_edge_choice;
@@ -36,6 +38,7 @@ struct cameraData
 	float previous_line_position;
 	float valid_line_position;
 	float distance;
+	float filter_coeff;
 	float error;
 	int32_t linestate;
 	float current_linewidth;

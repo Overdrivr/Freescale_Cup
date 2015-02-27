@@ -20,7 +20,8 @@ void init_data(cameraData* data)
 		data->threshold_image[i] = 0;
 		data->falling_edges_position[i] = 0;
 		data->rising_edges_position[i] = 0;
-		data->derivative_zero[i] = 0;
+		//data->derivative_zero[i] = 0;
+		data->filtered_raw[i] = 0;
 	}
 	data->edges_count = 0;
 	data->line_position = 0;
@@ -30,12 +31,13 @@ void init_data(cameraData* data)
 	data->error = 0;
 	data->reference_integral = 0;//Compute reference integral at calibration
 	
-	data->threshold = 200;
+	data->threshold = 100;
 	data->halftrack_width = 110;
 	data->offset = 0.f;
 	data->linewidth = 14.f;
 	data->deglitch_counter = 0;
 	data->deglitch_limit = 35;
+	data->filter_coeff = 0.7;
 	
 	data->edgeleft = 1;//MIN VALUE : 1
 	data->edgeright = 1;//MIN VALUE : 1
@@ -54,10 +56,9 @@ int read_process_data(cameraData* data)
 	data->image_integral = 0;
 	
 	// Copy image, compute integral & min/max
-	for(i=0;i<128;i++)
+	for(i=1;i<127;i++)
 	{
 		data->raw_image[i] = LineScanImage0[i];
-		
 		data->image_integral += data->raw_image[i];
 		
 		if(data->raw_image[i] > data->max)
@@ -73,13 +74,17 @@ int read_process_data(cameraData* data)
 	data->edges_count = 0;
 	edge_signal = 0;
 	data->derivative_image[data->edgeleft] = data->raw_image[data->edgeleft];
-	data->threshold_image[data->edgeleft-1] = 0;
+	data->threshold_image[data->edgeleft-1] = data->raw_image[data->edgeleft-1];
+	data->filtered_raw[data->edgeleft-1] = 
 	data->threshold_image[loopright] = 0;
 	
 	for(i = data->edgeleft ; i < loopright ; i++)
 	{
 		if(i < 127)
-			data->derivative_image[i] =  (int32_t)(data->raw_image[i+1]) - (int32_t)(data->raw_image[i]) - data->derivative_zero[i];
+			data->derivative_image[i] =  (int32_t)(data->raw_image[i+1]) - (int32_t)(data->raw_image[i]);// - data->derivative_zero[i]);
+		
+		//TODO : Use this filtered value instead
+		data->filtered_raw[i] = data->filtered_raw[i-1] * data->filter_coeff + (float)(data->derivative_image[i]) * (1.f - data->filter_coeff);
 		
 		//Apply threshold
 		if(data->derivative_image[i] >  data->threshold)
@@ -312,7 +317,7 @@ void calibrate_data(cameraData* data, uint32_t exposure_time_us)
 	
 	for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
 	{
-		data->derivative_zero[i] = 0;
+		//data->derivative_zero[i] = 0;
 	}
 	
 	counter = 0;
@@ -337,7 +342,7 @@ void calibrate_data(cameraData* data, uint32_t exposure_time_us)
 				{
 					for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
 					{
-						data->derivative_zero[i] += data->derivative_image[i];
+						//data->derivative_zero[i] += data->derivative_image[i];
 					}
 					counter++;
 				}
