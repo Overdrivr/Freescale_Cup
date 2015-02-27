@@ -12,6 +12,7 @@
 uint8_t register_(uint8_t* adress, uint16_t octets, datatype type, uint8_t writeable, char* name);
 void distantio_decode_rx_frame(ByteQueue* rx_queue);
 void distantio_send_table();
+void distantio_send_alive();
 //Returns 0xFF00 if done, or 0x00XX if transmitted only up to index XX
 //TODO : IMPLEMENT DISTRIBUTED TRANSMIT
 uint32_t distantio_send_variable(uint16_t variable_id);
@@ -19,8 +20,9 @@ uint32_t distantio_send_variable(uint16_t variable_id);
 log Log;
 uint32_t tmp;
 chrono chr;
+float update_interval_ms;
 
-void init_distantio()
+void init_distantio(float update_ms)
 {
 	uint16_t i;
 	char default_name[] = {"undefined"};
@@ -37,6 +39,7 @@ void init_distantio()
 	}
 	tmp=0;
 	reset(&chr);
+	update_interval_ms = update_ms;
 }
 
 //TODO : Replace octets by array_size ?
@@ -148,6 +151,13 @@ void update_distantio()
 	uint16_t i;	
 	uint16_t interval = 1;
 	
+	//If last alive signal was send more than 100 ms ago, resend it
+	if(ms(&chr) > 100)
+	{
+		distantio_send_alive();
+		reset(&chr);
+	}				
+		
 	//Transmit data to serial - Only one variable per mainloop
 	for(i = Log.previous_index ; i < Log.previous_index + interval ; i++)
 	{		
@@ -401,6 +411,15 @@ uint32_t distantio_send_variable(uint16_t i)
 		protocol_frame_append(temp_ptr,1);
 	}
 	protocol_frame_end();
+	
+	return 0;
+}
+
+void distantio_send_alive()
+{
+	
+	uint8_t cmd = 0x55;
+	protocol_frame(&cmd,1);
 	
 	return 0;
 }

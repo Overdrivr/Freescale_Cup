@@ -44,7 +44,7 @@ struct log
 	uint16_t previous_index;
 };
 
-void init_distantio();
+void init_distantio(float update_ms);
 
 uint8_t register_scalar(void* adress, 
 					    datatype type, 
