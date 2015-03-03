@@ -467,8 +467,8 @@ void TFC_InitADCs()
 	//Enable the PIT module
 	PIT_MCR &= ~PIT_MCR_MDIS_MASK;
 	
-	enable_irq(INT_PIT-16);
-	enable_irq(INT_ADC0-16);
+	//enable_irq(INT_PIT-16);
+	//enable_irq(INT_ADC0-16);
 	
 
 	

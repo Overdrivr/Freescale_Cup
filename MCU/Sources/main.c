@@ -136,7 +136,7 @@ void cam_program()
 	register_scalar(&commandP,FLOAT,0,"cmd P");
 	register_scalar(&commandD,FLOAT,0,"cmd D");
 	register_scalar(&data.filter_coeff,FLOAT,1,"filter_coeff");
-	//register_scalar(&data.one_edge_choice,INT32,0,"decision (1 right, -1 left)");
+	register_scalar(&fps,UINT32,0,"FPS)");
 	
 	//register_scalar(&data.linestate, INT32,0,"LineState");
 	//register_scalar(&data.previous_line_position,FLOAT,0,"Variations position");
@@ -246,8 +246,10 @@ void cam_program()
 		looptime_cam = us(&chr_cam);
 		if(looptime_cam > exposure_time_us)
 		{
-			reset(&chr_cam);
+			remove_us(&chr_cam,exposure_time_us);
 			period_cam = looptime_cam;
+			
+			read_data(&data);
 			
 			//Compute fps
 			if(ms(&chrono_process_fps) < 1000)
@@ -261,7 +263,7 @@ void cam_program()
 			
 			/**TIME MONITORING**/			reset(&chr_cam_m);
 			
-			r = read_process_data(&data);
+			r = process_data(&data);
 			if(r == LINE_OK)
 			{				
 				//Compute errors for PD

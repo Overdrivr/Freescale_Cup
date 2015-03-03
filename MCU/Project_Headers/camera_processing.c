@@ -8,6 +8,9 @@
 #include "camera_processing.h"
 #include "chrono.h"
 #include "Serial/serial.h"
+#include "TFC/TFC_ADC.h"
+
+#define TFC_LINESCAN0_ADC_CHANNEL	6
 
 void init_data(cameraData* data)
 {
@@ -45,8 +48,57 @@ void init_data(cameraData* data)
 	
 }
 
+void read_data(cameraData* data)
+{
+	uint8_t clock_cycles = 5;
+	uint32_t i,j;
+	
+	
+	//Configure the camera
+	ADC0_CFG2  |= ADC_CFG2_MUXSEL_MASK; //Select the B side of the mux
+	ADC0_SC1A  =  TFC_LINESCAN0_ADC_CHANNEL | ADC_SC1_AIEN_MASK;
+		
+	
+	//Start new measurement for next conversion
+	//Signal sequence in the camera datasheet
+		
+	TAOS_SI_HIGH;
+	TAOS_CLK_HIGH;
+	TAOS_SI_LOW;
+	
+	//Start reading pixel one by one with the ADC
+	for(i = 0 ; i < 128 ; i++)
+	{
+		
+		//Wait for camera settling time 
+		for(j = 0; j < clock_cycles ; j++)
+		{
+			
+		}
+		
+		TAOS_CLK_LOW;
+		
+		//Wait for camera settling time 
+		for(j = 0; j < clock_cycles ; j++)
+		{
+			
+		}
+		
+		//Wait for end of ADC conversion... A TESTER
+		while ((ADC_SC1_REG(ADC0_BASE_PTR,0) & ADC_SC1_COCO_MASK ) == COCO_NOT );
+		
+		//Lecture du registre de conversion
+		data->raw_image[i] = ADC0_RA;
+		
+		//New pixel
+		TAOS_CLK_HIGH;
+		
+	}
+	TAOS_CLK_LOW;
+}
 
-int read_process_data(cameraData* data)
+
+int process_data(cameraData* data)
 {	
 	float position;
 	uint8_t edge_signal;
@@ -75,7 +127,7 @@ int read_process_data(cameraData* data)
 	edge_signal = 0;
 	data->derivative_image[data->edgeleft] = data->raw_image[data->edgeleft];
 	data->threshold_image[data->edgeleft-1] = data->raw_image[data->edgeleft-1];
-	data->filtered_raw[data->edgeleft-1] = 
+	data->filtered_raw[data->edgeleft-1] = data->raw_image[data->edgeleft-1];
 	data->threshold_image[loopright] = 0;
 	
 	for(i = data->edgeleft ; i < loopright ; i++)
@@ -244,7 +296,8 @@ void calibrate_data(cameraData* data, uint32_t exposure_time_us)
 		if(us(&chr_exposure) > exposure_time_us)
 		{
 			reset(&chr_exposure);
-			if(read_process_data(data) == LINE_OK)
+			read_data(data);
+			if(process_data(data) == LINE_OK)
 			{
 				//Sum for average
 				center += data->line_position;
@@ -324,7 +377,7 @@ void calibrate_data(cameraData* data, uint32_t exposure_time_us)
 	reset(&chr);
 	
 	//Empty camera sensor
-	read_process_data(data);
+	process_data(data);
 	reset(&chr_exposure);
 	
 	//Record raw camera image 100 times or stop at 5 seconds
@@ -333,8 +386,8 @@ void calibrate_data(cameraData* data, uint32_t exposure_time_us)
 		if(us(&chr_exposure) > exposure_time_us)
 		{
 			reset(&chr_exposure);
-			
-			if(read_process_data(data) == LINE_LOST)
+			read_data(data);
+			if(process_data(data) == LINE_LOST)
 			{
 				
 				// Sum derivative

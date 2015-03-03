@@ -88,10 +88,15 @@ void init_data(cameraData* data);
  * data : data structure for holding all informations (for filtering & computing)
  */
 
-
+//////////////////////////////////////////////
+void read_data(cameraData* data);
+/*
+ * Function to read the camera with the ADC
+ * data : data structure for holding all informations (for filtering & computing)
+ */
 
 //////////////////////////////////////////////
-int read_process_data(cameraData* data);
+int process_data(cameraData* data);
 /*
  * Reads camera image through serial port, process image and computes line position 
  * data : data structure for holding all informations (for filtering, optimizations, etc.)
