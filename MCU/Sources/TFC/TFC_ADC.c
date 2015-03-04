@@ -373,14 +373,14 @@ void ADC_Read_Cal(ADC_MemMapPtr adcmap, tADC_Cal_Blk *blk)
 
 void InitADC0()
 {
-	//tADC_Config Master_Adc0_Config;
+	tADC_Config Master_Adc0_Config;
 	
 	
     SIM_SCGC6 |= (SIM_SCGC6_ADC0_MASK);
     
     //Lets calibrate the ADC. 1st setup how the channel will be used.
 
-    /*disable_irq(INT_ADC0-16);   
+    disable_irq(INT_ADC0-16);   
      
     Master_Adc0_Config.CONFIG1 = ADLPC_NORMAL 			//No low power mode
 								| ADC_CFG1_ADIV(ADIV_4) //divide input by 4
@@ -436,7 +436,7 @@ void InitADC0()
      	 	 	 	 	 	 	
      	 	 	 	 	 	 	
      			
-     ADC_Config_Alt(ADC0_BASE_PTR, &Master_Adc0_Config);*/
+     ADC_Config_Alt(ADC0_BASE_PTR, &Master_Adc0_Config);
 }
 
 
@@ -456,14 +456,14 @@ void TFC_InitADCs()
 	//for the camera and then start the conversions for the pots.
 	
 	//Enable clock to the PIT
-	//SIM_SCGC6 |= SIM_SCGC6_PIT_MASK;
+	SIM_SCGC6 |= SIM_SCGC6_PIT_MASK;
 	
 	//We will use PIT0
 	//TFC_SetLineScanExposureTime(TFC_DEFAULT_LINESCAN_EXPOSURE_TIME_uS);
 	//enable PIT0 and its interrupt
 	//PIT_TCTRL0 = PIT_TCTRL_TEN_MASK | PIT_TCTRL_TIE_MASK;
 
-	//PIT_MCR |= PIT_MCR_FRZ_MASK; // stop the pit when in debug mode
+	PIT_MCR |= PIT_MCR_FRZ_MASK; // stop the pit when in debug mode
 	//Enable the PIT module
 	//PIT_MCR &= ~PIT_MCR_MDIS_MASK;
 	
@@ -472,8 +472,8 @@ void TFC_InitADCs()
 	//CUSTOM
 	//Configure the camera
 	//ADC0_CFG2  &= ~ADC_CFG2_MUXSEL_MASK; //Select the B side of the mux
-	//ADC_SC1_REG(ADC0_BASE_PTR,1) &= ~AIEN_ON;
-	//ADC_SC1_REG(ADC0_BASE_PTR,0) &= ~AIEN_ON;
+	ADC_SC1_REG(ADC0_BASE_PTR,1) &= ~AIEN_ON;
+	ADC_SC1_REG(ADC0_BASE_PTR,0) &= ~AIEN_ON;
 }
 
 void PIT_IRQHandler()

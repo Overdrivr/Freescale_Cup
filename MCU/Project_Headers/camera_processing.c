@@ -73,25 +73,11 @@ void read_data(cameraData* data)
 	TAOS_SI_LOW;
 	ADC0_CFG2  |= ADC_CFG2_MUXSEL_MASK; //Select the B side of the mux
 	ADC0_SC1A  =  TFC_LINESCAN0_ADC_CHANNEL;
+	TAOS_CLK_LOW;
 	
 	//Start reading pixel one by one with the ADC
 	for(i = 0 ; i < 128 ; i++)
-	{
-		
-		//Wait for camera settling time 
-		for(j = 0; j < clock_cycles ; j++)
-		{
-			
-		}
-		
-		TAOS_CLK_LOW;
-		
-		//Wait for camera settling time 
-		for(j = 0; j < clock_cycles ; j++)
-		{
-			
-		}
-		
+	{		
 		//Wait for end of ADC conversion... A TESTER
 		while ((ADC_SC1_REG(ADC0_BASE_PTR,0) & ADC_SC1_COCO_MASK ) == 0x00)
 		{
@@ -99,16 +85,22 @@ void read_data(cameraData* data)
 		
 		//Lecture du registre de conversion
 		data->raw_image[i] = ADC0_RA;
-		
-		//Start new conversion
-		ADC0_SC1A  =  TFC_LINESCAN0_ADC_CHANNEL;
-		
 		//New pixel
 		TAOS_CLK_HIGH;
+		
+		//Wait for camera settling time 
+		for(j = 0; j < clock_cycles ; j++)
+		{
+			
+		}
+				
+		//Start new conversion
+		ADC0_CFG2  |= ADC_CFG2_MUXSEL_MASK;
+		ADC0_SC1A  =  TFC_LINESCAN0_ADC_CHANNEL;
+		
+		TAOS_CLK_LOW;
 	}
-	TAOS_CLK_LOW;
 }
-
 
 int process_data(cameraData* data)
 {	
@@ -122,7 +114,7 @@ int process_data(cameraData* data)
 	// Copy image, compute integral & min/max
 	for(i=1;i<127;i++)
 	{
-		data->raw_image[i] = LineScanImage0[i];
+		//data->raw_image[i] = LineScanImage0[i];
 		data->image_integral += data->raw_image[i];
 		
 		if(data->raw_image[i] > data->max)
