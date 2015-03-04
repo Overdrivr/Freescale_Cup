@@ -136,12 +136,11 @@ void cam_program()
 	register_scalar(&commandP,FLOAT,0,"cmd P");
 	register_scalar(&commandD,FLOAT,0,"cmd D");
 	register_scalar(&data.filter_coeff,FLOAT,1,"filter_coeff");
-	register_scalar(&fps,UINT32,0,"FPS)");
 	
 	//register_scalar(&data.linestate, INT32,0,"LineState");
 	//register_scalar(&data.previous_line_position,FLOAT,0,"Variations position");
-	//register_scalar(&data.current_linewidth, FLOAT,0,"Linewidth current");
-	//register_scalar(&data.current_linewidth_diff, FLOAT,0,"Linewidth error");
+	register_scalar(&data.current_linewidth, INT32,0,"Linewidth current");
+	register_scalar(&data.current_linewidth_diff, INT32,0,"Linewidth error");
 	//register_scalar(&data.deglitch_counter, INT16,0,"deglitch");
 	//register_scalar(&data.deglitch_limit, INT16,1,"deglicth limit");
 	//register_scalar(&data.error, FLOAT,0,"Linewidth error");
@@ -167,7 +166,7 @@ void cam_program()
 	
 	//Calibration data
 	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
-	register_scalar(&data.linewidth,FLOAT,1,"linewidth");
+	//register_scalar(&data.linewidth,FLOAT,1,"linewidth");
 	register_scalar(&data.offset,FLOAT,1,"line offset");
 	register_scalar(&data.threshold,INT32,1,"line threshold");
 	
@@ -246,7 +245,7 @@ void cam_program()
 		looptime_cam = us(&chr_cam);
 		if(looptime_cam > exposure_time_us)
 		{
-			remove_us(&chr_cam,exposure_time_us);
+			reset(&chr_cam);
 			period_cam = looptime_cam;
 			
 			read_data(&data);
@@ -295,7 +294,7 @@ void cam_program()
 			
 			
 			
-			TFC_SetLineScanExposureTime(exposure_time_us);
+			//TFC_SetLineScanExposureTime(exposure_time_us);
 							
 			/**TIME MONITORING**/			t_cam = max(t_cam,ms(&chr_cam_m));
 		}	
@@ -305,6 +304,7 @@ void cam_program()
 		/* -------------------------- */
 		if(us(&chr_servo) > servo_update_us)
 		{
+			//PB !!!!
 			remove_us(&chr_servo,servo_update_us);
 			
 			commandP = P[current_gear] * error_proportionnal;

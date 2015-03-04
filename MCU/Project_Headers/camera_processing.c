@@ -84,7 +84,8 @@ void read_data(cameraData* data)
 		}
 		
 		//Lecture du registre de conversion
-		data->raw_image[i] = ADC0_RA;
+		data->raw_image[i] = ADC0_RA;		
+				
 		//New pixel
 		TAOS_CLK_HIGH;
 		
@@ -108,39 +109,19 @@ int process_data(cameraData* data)
 	uint8_t edge_signal;
 	int16_t i;
 	int16_t loopright = 128 - data->edgeright;
-		
-	data->image_integral = 0;
-	
-	// Copy image, compute integral & min/max
-	for(i=1;i<127;i++)
-	{
-		//data->raw_image[i] = LineScanImage0[i];
-		data->image_integral += data->raw_image[i];
-		
-		if(data->raw_image[i] > data->max)
-			data->max = data->raw_image[i];
-		if(data->raw_image[i] < data->min)
-			data->min =data->raw_image[i];
-	}
-	
-	//If signal integral is too small, the line is very likely lost
-	//if(data->image_integral < data->linewidth * data->threshold * 0.5)
-	//	return LINE_LOST;
 	
 	data->edges_count = 0;
 	edge_signal = 0;
 	data->derivative_image[data->edgeleft] = data->raw_image[data->edgeleft];
-	data->threshold_image[data->edgeleft-1] = data->raw_image[data->edgeleft-1];
+	data->threshold_image[data->edgeleft-1] = 0;
 	data->filtered_raw[data->edgeleft-1] = data->raw_image[data->edgeleft-1];
-	data->threshold_image[loopright] = 0;
 	
 	for(i = data->edgeleft ; i < loopright ; i++)
 	{
-		if(i < 127)
-			data->derivative_image[i] =  (int32_t)(data->raw_image[i+1]) - (int32_t)(data->raw_image[i]);// - data->derivative_zero[i]);
+		data->derivative_image[i] =  (int32_t)(data->raw_image[i+1]) - (int32_t)(data->raw_image[i]);// - data->derivative_zero[i]);
 		
 		//TODO : Use this filtered value instead
-		data->filtered_raw[i] = data->filtered_raw[i-1] * data->filter_coeff + (float)(data->derivative_image[i]) * (1.f - data->filter_coeff);
+		//data->filtered_raw[i] = data->filtered_raw[i-1] * data->filter_coeff + (float)(data->derivative_image[i]) * (1.f - data->filter_coeff);
 		
 		//Apply threshold
 		if(data->derivative_image[i] >  data->threshold)
@@ -231,16 +212,17 @@ int process_data(cameraData* data)
 	{
 		data->deglitch_counter = 0;
 		//Check derivative order 
-			
-		data->current_linewidth = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f -
-						  	  	  (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2.f;
 		
-		if(data->current_linewidth < 0.f)
+		//Work with twice the linewidth and int32
+		data->current_linewidth = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2  -
+						  	  	  (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2;
+		
+		if(data->current_linewidth < 0)
 			data->current_linewidth *= -1;
 		
-		data->current_linewidth_diff = (data->current_linewidth - data->linewidth) / data->current_linewidth;
+		data->current_linewidth_diff = data->current_linewidth - data->linewidth;
 		
-		if(data->current_linewidth_diff > 0.4 || data->current_linewidth_diff < -0.4)
+		if(data->current_linewidth_diff > 2 || data->current_linewidth_diff < -2)
 			return LINE_LOST;
 		
 		//1 edge - compute center & record
