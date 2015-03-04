@@ -9,6 +9,7 @@
 #include "chrono.h"
 #include "Serial/serial.h"
 #include "TFC/TFC_ADC.h"
+#include "TFC/TFC_ADC.h"
 
 #define TFC_LINESCAN0_ADC_CHANNEL	6
 
@@ -50,21 +51,28 @@ void init_data(cameraData* data)
 
 void read_data(cameraData* data)
 {
-	uint8_t clock_cycles = 5;
+	uint8_t clock_cycles = 50;
 	uint32_t i,j;
-	
-	
-	//Configure the camera
-	ADC0_CFG2  |= ADC_CFG2_MUXSEL_MASK; //Select the B side of the mux
-	ADC0_SC1A  =  TFC_LINESCAN0_ADC_CHANNEL | ADC_SC1_AIEN_MASK;
 		
 	
 	//Start new measurement for next conversion
 	//Signal sequence in the camera datasheet
 		
 	TAOS_SI_HIGH;
+	//Wait for camera settling time 
+	for(j = 0; j < clock_cycles ; j++)
+	{
+		
+	}
 	TAOS_CLK_HIGH;
+	//Wait for camera settling time 
+	for(j = 0; j < clock_cycles ; j++)
+	{
+		
+	}
 	TAOS_SI_LOW;
+	ADC0_CFG2  |= ADC_CFG2_MUXSEL_MASK; //Select the B side of the mux
+	ADC0_SC1A  =  TFC_LINESCAN0_ADC_CHANNEL;
 	
 	//Start reading pixel one by one with the ADC
 	for(i = 0 ; i < 128 ; i++)
@@ -85,14 +93,18 @@ void read_data(cameraData* data)
 		}
 		
 		//Wait for end of ADC conversion... A TESTER
-		while ((ADC_SC1_REG(ADC0_BASE_PTR,0) & ADC_SC1_COCO_MASK ) == COCO_NOT );
+		while ((ADC_SC1_REG(ADC0_BASE_PTR,0) & ADC_SC1_COCO_MASK ) == 0x00)
+		{
+		}
 		
 		//Lecture du registre de conversion
 		data->raw_image[i] = ADC0_RA;
 		
+		//Start new conversion
+		ADC0_SC1A  =  TFC_LINESCAN0_ADC_CHANNEL;
+		
 		//New pixel
 		TAOS_CLK_HIGH;
-		
 	}
 	TAOS_CLK_LOW;
 }

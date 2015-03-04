@@ -191,7 +191,7 @@ void cam_program()
 	//register_array(data.derivative_zero,128,INT32,0,"line derivative zero");
 	register_array(data.raw_image,128,UINT16,0,"raw_line");
 	
-	TFC_SetLineScanExposureTime(exposure_time_us);
+	//TFC_SetLineScanExposureTime(exposure_time_us);
 	TFC_SetServo(0, servo_offset);
 	
 	reset(&chr_distantio);
