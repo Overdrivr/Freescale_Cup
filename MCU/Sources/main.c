@@ -6,9 +6,6 @@
 #include "UnitTests/UnitTests.h"
 #include "TFC/TFC_UART.h"
 
-//TODO : Investiger erreurs avec virage+discontinuites
-
-
 void cam_program();
 void configure_bluetooth();
 
@@ -34,8 +31,6 @@ int main(void)
 	
 	return 0;
 }
-
-//TODO : Calibrer offset
 
 void cam_program()
 {
@@ -77,7 +72,7 @@ void cam_program()
 	P[0] = 0.013f;//0.015f
 	D[0] = 0.00095f;//0.0012f
 	P[1] = 0.013f;//0.015f
-	D[1] = 0.0008f;//0.0009
+	D[1] = 0.0007f;//0.0009
 	P[2] = 0.007;
 	D[2] = 0.f;
 	
@@ -88,7 +83,7 @@ void cam_program()
 	float t_cam = 0, t_loop = 0, t_io = 0, t_rest = 0, t_Task = 0;
 	float looptime_cam;
 	float period_cam;
-	float queue_size = 0;
+	//float queue_size = 0;
 	
 	uint32_t counter_fps = 0,fps = 0;
 	chrono chrono_fps;
@@ -96,9 +91,10 @@ void cam_program()
 	uint32_t counter_process_fps = 0, process_fps = 0;
 	chrono chrono_process_fps;
 	
-	//TFC_HBRIDGE_ENABLE;
+	uint32_t counter_direction_fps,direction_fps;
+	chrono chrono_direction_fps;
 	
-	uint16_t pload;
+	//uint16_t pload;
 	
 	uint8_t led_state = 0;
 	TFC_SetBatteryLED_Level(led_state);
@@ -115,41 +111,39 @@ void cam_program()
 	float coeff_neg = 1.f;
 	float ecart = 0.f;
 	
-	//Readonly variables
+	/* ------ DISTANTIO VARIABLES -------*/
+	// Start - Stop
 	register_scalar(&killswitch,INT32,1,"Killswitch. 0 = car stop");
+	// Gearbox
 	register_scalar(&gears[0],FLOAT,1,"gears[0]");
 	register_scalar(&gears[1],FLOAT,1,"gears[1]");
 	register_scalar(&gears[2],FLOAT,1,"gears[2]");
 	register_scalar(&gears_bypass,INT32,1,"automatic gear bypass (if != 0)");
 	register_scalar(&current_gear,INT32,1,"current gear");
 	register_scalar(&gear_1_threshold,FLOAT,1,"gear 1<->2 threshold");
-	
-	register_scalar(&commandleft,FLOAT,0,"engine left");
-	register_scalar(&commandright,FLOAT,0,"engine right");
-	register_scalar(&ecart,FLOAT,0,"ecart");
+	// Differential drive & Propulsion
+	register_scalar(&commandleft,FLOAT,0,"Engine left");
+	register_scalar(&commandright,FLOAT,0,"Engine right");
+	register_scalar(&ecart,FLOAT,0,"Engine diff action");
 	register_scalar(&coeff_pos,FLOAT,1,"diff coeff pos");
 	register_scalar(&coeff_neg,FLOAT,1,"diff coeff min");
-	
+	// Direction
 	register_scalar(&error_proportionnal, FLOAT,0,"Proportionnel");
 	register_scalar(&error_derivative, FLOAT,0,"Derivative");
-	register_scalar(&command,FLOAT,0,"command");
-	register_scalar(&commandP,FLOAT,0,"cmd P");
-	register_scalar(&commandD,FLOAT,0,"cmd D");
-	register_scalar(&data.filter_coeff,FLOAT,1,"filter_coeff");
+	register_scalar(&command,FLOAT,0,"CMD PD");
+	register_scalar(&commandP,FLOAT,0,"CMD P");
+	register_scalar(&commandD,FLOAT,0,"CMD D");
+	//register_scalar(&data.filter_coeff,FLOAT,1,"filter_coeff");
 	
 	//register_scalar(&data.linestate, INT32,0,"LineState");
 	//register_scalar(&data.previous_line_position,FLOAT,0,"Variations position");
 	register_scalar(&data.current_linewidth, INT32,0,"Linewidth current");
 	register_scalar(&data.current_linewidth_diff, INT32,0,"Linewidth error");
+	register_scalar(&data.linewidth_margin, INT32,1,"Linewidth margin");
 	//register_scalar(&data.deglitch_counter, INT16,0,"deglitch");
 	//register_scalar(&data.deglitch_limit, INT16,1,"deglicth limit");
 	//register_scalar(&data.error, FLOAT,0,"Linewidth error");
 	//register_scalar(&data.linewidth, FLOAT,0,"Linewidth");
-	
-	//register_scalar(&data.valid_line_position,FLOAT,0,"Shielded Error");
-	
-	//register_scalar(&data.hysteresis_threshold,FLOAT,1,"Protection distance");
-	//register_scalar(&data.distance,FLOAT,1,"distance variation");
 	
 	
 	//Read/write variables
@@ -163,10 +157,10 @@ void cam_program()
 	register_scalar(&servo_update_us,FLOAT,1,"Servo update period (us)");
 	register_scalar(&fps,UINT32,0,"FPS");
 	register_scalar(&process_fps,UINT32,0,"FPS camera");
+	register_scalar(&direction_fps,UINT32,0,"FPS direction");
 	
 	//Calibration data
 	register_scalar(&servo_offset,FLOAT,1,"servo_offset");
-	//register_scalar(&data.linewidth,FLOAT,1,"linewidth");
 	register_scalar(&data.offset,FLOAT,1,"line offset");
 	register_scalar(&data.threshold,INT32,1,"line threshold");
 	
@@ -179,18 +173,16 @@ void cam_program()
 	register_scalar(&looptime_cam,FLOAT,0,"cam exe period(us)");
 	
 	//Secondary values
-	register_scalar(&pload,UINT16,0,"Serial load");
-	register_scalar(&queue_size, FLOAT,0,"queue size");
+	//register_scalar(&pload,UINT16,0,"Serial load");
+	//register_scalar(&queue_size, FLOAT,0,"queue size");
 	
 	register_scalar(&data.edges_count,UINT16,0,"edge count");
 	
-	register_array(data.filtered_raw,128,FLOAT,0,"filtered line");
 	register_array(data.threshold_image,128,INT8,0,"threshold_line");
 	register_array(data.derivative_image,128,INT32,0,"line derivative");
-	//register_array(data.derivative_zero,128,INT32,0,"line derivative zero");
+	register_array(data.derivative_zero,128,INT32,0,"line derivative zero");
 	register_array(data.raw_image,128,UINT16,0,"raw_line");
 	
-	//TFC_SetLineScanExposureTime(exposure_time_us);
 	TFC_SetServo(0, servo_offset);
 	
 	reset(&chr_distantio);
@@ -223,7 +215,7 @@ void cam_program()
 			reset(&chr_io);
 			update_distantio();
 			t_io = ms(&chr_io);
-			pload = getPeakLoad();
+			//pload = getPeakLoad();
 			t_rest = 0;
 			t_loop = 0;
 			t_cam = 0;
@@ -236,7 +228,8 @@ void cam_program()
 		{
 			fps = counter_fps;
 			counter_fps = 0;
-			remove_ms(&chrono_fps,1000);
+			//remove_ms(&chrono_fps,1000);
+			reset(&chrono_fps);
 		}
 				
 		/* -------------------------- */
@@ -257,7 +250,8 @@ void cam_program()
 			{
 				process_fps = counter_process_fps;
 				counter_process_fps = 0;
-				remove_ms(&chrono_process_fps,1000);
+				//remove_ms(&chrono_process_fps,1000);
+				reset(&chrono_process_fps);
 			}
 			
 			/**TIME MONITORING**/			reset(&chr_cam_m);
@@ -305,13 +299,29 @@ void cam_program()
 		if(us(&chr_servo) > servo_update_us)
 		{
 			//PB !!!!
-			remove_us(&chr_servo,servo_update_us);
+			//remove_us(&chr_servo,servo_update_us);
+			
+			reset(&chr_servo);
+			
+			
+			//Compute fps
+			//TO TEST
+			if(ms(&chrono_direction_fps) < 1000)
+				counter_direction_fps++;
+			else
+			{
+				direction_fps = counter_direction_fps;
+				counter_direction_fps = 0;
+				//remove_ms(&chrono_direction_fps,1000);
+				reset(&chrono_direction_fps);
+			}
+						
 			
 			commandP = P[current_gear] * error_proportionnal;
 			commandD = D[current_gear] * error_derivative;
 			
 			//Get offset
-			servo_offset = TFC_ReadPot(0);
+			//servo_offset = TFC_ReadPot(0);
 			
 			//Compute servo command between -1.0 & 1.0 
 			command = commandD + commandP + servo_offset;
@@ -327,14 +337,13 @@ void cam_program()
 		/* -------------------------- */
 		/* ---   UPDATE ENGINES   --- */
 		/* -------------------------- */
-		if(TFC_GetDIP_Switch() == 0)
+		/*if(TFC_GetDIP_Switch() == 0)
 		{
 			TFC_HBRIDGE_DISABLE;
 			TFC_SetMotorPWM(0 , 0);
 		}
 		else
-		{
-			//Disable engines on low value
+		{*/
 			if(killswitch == 0)
 			{
 				TFC_HBRIDGE_DISABLE;
@@ -365,7 +374,7 @@ void cam_program()
 				}
 				TFC_SetMotorPWM(commandleft, commandright);
 			}
-		}
+		//}
 		
 		/* -------------------------- */
 		/* --- UPDATE PERIPHERALS --- */
