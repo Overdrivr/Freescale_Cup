@@ -23,8 +23,8 @@ float us(chrono* chr);
 
 float ms(chrono* chr);
 
-void remove_us(chrono* chr, uint32_t delay);
+//void remove_us(chrono* chr, uint32_t delay);
 
-void remove_ms(chrono* chr, uint32_t delay);
+//void remove_ms(chrono* chr, uint32_t delay);
 
 #endif /* CHRONO_H_ */
