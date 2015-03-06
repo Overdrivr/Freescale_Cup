@@ -16,6 +16,19 @@
 void init_data(cameraData* data)
 {
 	int i;
+	
+	int32_t hardcoded_derivative_zero[128] = 
+	{
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	};
+	
 	//Init image buffer
 	for(i=0;i<128;i++)
 	{
@@ -24,29 +37,24 @@ void init_data(cameraData* data)
 		data->threshold_image[i] = 0;
 		data->falling_edges_position[i] = 0;
 		data->rising_edges_position[i] = 0;
-		//data->derivative_zero[i] = 0;
-		data->filtered_raw[i] = 0;
+		data->derivative_zero[i] = hardcoded_derivative_zero[i];
 	}
+	
 	data->edges_count = 0;
 	data->line_position = 0;
-	data->valid_line_position = 0;
 	data->previous_line_position = 0;
-	data->image_integral = 0;
-	data->error = 0;
-	data->reference_integral = 0;//Compute reference integral at calibration
 	
 	data->threshold = 100;
 	data->halftrack_width = 110;
 	data->offset = 0.f;
 	data->linewidth = 14.f;
+	data->linewidth_margin = 2;
 	data->deglitch_counter = 0;
 	data->deglitch_limit = 35;
 	data->filter_coeff = 0.7;
 	
 	data->edgeleft = 1;//MIN VALUE : 1
-	data->edgeright = 1;//MIN VALUE : 1
-	data->hysteresis_threshold = 50;
-	
+	data->edgeright = 1;//MIN VALUE : 1	
 }
 
 void read_data(cameraData* data)
@@ -114,13 +122,12 @@ int process_data(cameraData* data)
 	edge_signal = 0;
 	data->derivative_image[data->edgeleft] = data->raw_image[data->edgeleft];
 	data->threshold_image[data->edgeleft-1] = 0;
-	data->filtered_raw[data->edgeleft-1] = data->raw_image[data->edgeleft-1];
 	
 	for(i = data->edgeleft ; i < loopright ; i++)
 	{
-		data->derivative_image[i] =  (int32_t)(data->raw_image[i+1]) - (int32_t)(data->raw_image[i]);// - data->derivative_zero[i]);
+		data->derivative_image[i] =  (int32_t)(data->raw_image[i+1]) - (int32_t)(data->raw_image[i]) - data->derivative_zero[i];
 		
-		//TODO : Use this filtered value instead
+		//Filtered value formula
 		//data->filtered_raw[i] = data->filtered_raw[i-1] * data->filter_coeff + (float)(data->derivative_image[i]) * (1.f - data->filter_coeff);
 		
 		//Apply threshold
@@ -222,7 +229,7 @@ int process_data(cameraData* data)
 		
 		data->current_linewidth_diff = data->current_linewidth - data->linewidth;
 		
-		if(data->current_linewidth_diff > 2 || data->current_linewidth_diff < -2)
+		if(data->current_linewidth_diff > data->linewidth_margin || data->current_linewidth_diff < -data->linewidth_margin)
 			return LINE_LOST;
 		
 		//1 edge - compute center & record
@@ -230,12 +237,6 @@ int process_data(cameraData* data)
 		position -= 64;
 		data->line_position = position + data->offset;
 		
-		if(data->line_position > 0.f)
-			data->linestate = LINE_LEFT;
-		else if(data->line_position < 0.f)
-			data->linestate = LINE_RIGHT;
-		else
-			data->linestate = LINE_CENTER;
 		return LINE_OK;
 	}
 	/*
@@ -255,118 +256,31 @@ int process_data(cameraData* data)
 void calibrate_data(cameraData* data, uint32_t exposure_time_us)
 {
 	int counter = 0;
-	float div = 1.f;
-	float center = 0.f;
-	int32_t min = 0,max = 0;
 	chrono chr;
-	uint16_t i; 
-	
-	
-	reset(&chr);
-	while(ms(&chr) < 1000)
-	{
-		//Wait 1 second
-	}
-	
-	
-	data->offset = 0.f;
-	reset(&chr);
 	chrono chr_exposure;
-	reset(&chr_exposure);
-	
-	float linewidth = 0;
-	
-	//Record raw camera image 100 times or stop at 5 seconds
-	while(counter < 100 && ms(&chr) < 5000)
-	{
-		if(us(&chr_exposure) > exposure_time_us)
-		{
-			reset(&chr_exposure);
-			read_data(data);
-			if(process_data(data) == LINE_OK)
-			{
-				//Sum for average
-				center += data->line_position;
-				
-				// Sum for line width
-				if(data->edges_count == 2)
-				{
-					//1 edge - compute center & record
-					linewidth += (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2.f -
-								 (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f ;
-				}
-				
-				//Compute thresholds
-				if(counter == 0)
-				{
-					min = data->derivative_image[data->edgeleft];
-					max = data->derivative_image[data->edgeleft];
-				}
-				int16_t i;
-				for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
-				{
-					if(data->derivative_image[i] < min)
-						min = data->derivative_image[i];
-					if(data->derivative_image[i] > max)
-						max = data->derivative_image[i];
-					
-					//Compute threshold
-					data->threshold = (int32_t)(max / 2.f);
-				}
-				counter++;
-			}
-		}
-	}
-	
-	if(counter == 0)
-	{
-		serial_printf("Calibration step 1 : ISSUE : %d \n",counter);
-		TFC_Task();
-		counter=1;
-	}
-	else
-		data->linewidth = linewidth;
-		
-	div = (float)(counter);
-	
-	//Compute average	
-	data->offset = - center / div;
-	
-	//Compute linewidth
-	data->linewidth /= div; 
-	
-	serial_printf("Calibration step 1 done on &d samples.\n",counter);
-	TFC_Task();
-	
+	uint16_t i; 
 	reset(&chr);
+	
+	for(i = 0 ; i < 128 ; i++)
+	{
+		data->derivative_zero[i] = 0;
+	}
+	
+	//Wait 1 second
 	while(ms(&chr) < 1000)
 	{
-		TFC_Task();
-		//Wait 1 second
+		
 	}
 	
-	//Wait pushbutton for white calibration
-	uint8_t go = 0;
-	while(go == 0)
-	{
-		if(TFC_PUSH_BUTTON_0_PRESSED)
-			go++;
-	}
-	
-	
-	for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
-	{
-		//data->derivative_zero[i] = 0;
-	}
-	
-	counter = 0;
 	reset(&chr);
 	
 	//Empty camera sensor
 	process_data(data);
 	reset(&chr_exposure);
 	
-	//Record raw camera image 100 times or stop at 5 seconds
+	/*-------------------------------*/
+	/*       DERIVATIVE ZERO         */
+	/*-------------------------------*/
 	while(counter < 200 && ms(&chr) < 5000)
 	{
 		if(us(&chr_exposure) > exposure_time_us)
@@ -375,13 +289,12 @@ void calibrate_data(cameraData* data, uint32_t exposure_time_us)
 			read_data(data);
 			if(process_data(data) == LINE_LOST)
 			{
-				
 				// Sum derivative
 				if(data->edges_count == 0)
 				{
 					for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
 					{
-						//data->derivative_zero[i] += data->derivative_image[i];
+						data->derivative_zero[i] += data->derivative_image[i];
 					}
 					counter++;
 				}
@@ -396,20 +309,30 @@ void calibrate_data(cameraData* data, uint32_t exposure_time_us)
 		TFC_Task();
 		counter = 1;
 	}
-	//Pourquoi pas besoin de faire ca ??
-	/*
-	for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
+	else
 	{
-		data->derivative_zero[i] /= counter;
-	}*/
-	serial_printf("Calibration step 2 done on %d samples\n",counter);
-	TFC_Task();
-	
-	reset(&chr);
-	while(ms(&chr) < 1000)
-	{
+		serial_printf("Lens compensation done. Averaging %d times\n",counter);
 		TFC_Task();
-		//Wait 1 second
+		
+		for(i = 0 ; i < 128 ; i++)
+		{
+			serial_printf("%d %d\n",i,data->derivative_zero[i]);
+			TFC_Task();
+		}
+		
+		//PROBLEME
+		for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
+		{
+			data->derivative_zero[i] /= counter;
+		}
+		
+		for(i = 0 ; i < 128 ; i++)
+		{
+			serial_printf("---------");
+			serial_printf("%d %d\n",i,data->derivative_zero[i]);
+			TFC_Task();
+		}
+		
 	}
 }
 
