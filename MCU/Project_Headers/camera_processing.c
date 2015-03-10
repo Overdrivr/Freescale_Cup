@@ -19,14 +19,24 @@ void init_data(cameraData* data)
 	
 	int32_t hardcoded_derivative_zero[128] = 
 	{
-		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0, 74, 31, 67, 41, 38, 26, 45,
+		4,  0, 26, 22,-10, 58,-10, 41,
+	  -13, 48,-11, 18, 15, 19,-11, 27,
+	   -7, 41,-23, 38,-13, 47,-32, 28,
+	    4, 26,-22, 29,-30, 38,-12, 12,
+	  -27, 40,-25, 22, -8, 17,-23, 38,
+	  -41, 53,-33, 15, -3, 29,-25,  7,
+	   -1,	9,-10, 10, -4, 16,-16, 16,
+	  -17, 23,-17,  9,-29, 42,-35, 33,
+	  -32, 27,-22, -3,  3, 12,-25, 17,
+	  -13,  3, -8, 23,-28, 14, -5, 10,
+	  -14,	0, -3, -7,-23, 16,-22,-10,
+	   -6,-12,-10,  0,-18,-14,-17, -3,
+	  -20, -4,-23,  3,-32,  0,-27,-15,
+	  -17, -1,-28,-17,-21, -8,-45, 12,
+	  -50,  0,-34,-15,-42,-15,-54,  0
+
+		
 	};
 	
 	//Init image buffer
@@ -143,6 +153,12 @@ int process_data(cameraData* data)
 		//Edge detected
 		if(data->threshold_image[i-1] * data->threshold_image[i] < 0)
 		{
+			//Too many edges detected, error
+			if(data->edges_count > 6)
+			{
+				return LINE_LOST;
+			}
+			
 			//First edge detected (edges go by pair)
 			if(edge_signal == 0)
 			{
@@ -258,12 +274,14 @@ void calibrate_data(cameraData* data, uint32_t exposure_time_us)
 	int counter = 0;
 	chrono chr;
 	chrono chr_exposure;
-	uint16_t i; 
+	int32_t i; 
 	reset(&chr);
+	int32_t dz[128];
 	
 	for(i = 0 ; i < 128 ; i++)
 	{
 		data->derivative_zero[i] = 0;
+		dz[i] = 0;
 	}
 	
 	//Wait 1 second
@@ -294,7 +312,7 @@ void calibrate_data(cameraData* data, uint32_t exposure_time_us)
 				{
 					for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
 					{
-						data->derivative_zero[i] += data->derivative_image[i];
+						dz[i] += data->derivative_image[i];
 					}
 					counter++;
 				}
@@ -306,33 +324,15 @@ void calibrate_data(cameraData* data, uint32_t exposure_time_us)
 	if(counter == 0)
 	{
 		serial_printf("Calibration step 2 : ISSUE : %d \n",counter);
-		TFC_Task();
-		counter = 1;
 	}
 	else
 	{
 		serial_printf("Lens compensation done. Averaging %d times\n",counter);
-		TFC_Task();
-		
+	
 		for(i = 0 ; i < 128 ; i++)
 		{
-			serial_printf("%d %d\n",i,data->derivative_zero[i]);
-			TFC_Task();
+		data->derivative_zero[i] = dz[i] / counter;
 		}
-		
-		//PROBLEME
-		for(i = data->edgeleft ; i < 128 - data->edgeright ; i++)
-		{
-			data->derivative_zero[i] /= counter;
-		}
-		
-		for(i = 0 ; i < 128 ; i++)
-		{
-			serial_printf("---------");
-			serial_printf("%d %d\n",i,data->derivative_zero[i]);
-			TFC_Task();
-		}
-		
 	}
 }
 
