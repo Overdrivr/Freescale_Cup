@@ -64,8 +64,8 @@ void cam_program()
 	float gear_1_threshold = 5;
 	float gears[3];
 	int32_t current_gear = 0;
-	gears[0] = 0.51f; // Line lost speed
-	gears[1] = 0.62f; // Error > gear_1_threshold
+	gears[0] = 0.55f; // Line lost speed
+	gears[1] = 0.64f; // Error > gear_1_threshold
 	gears[2] = 0.74f; //Full speed
 	
 	//Le plus performant pour l'instant
@@ -82,6 +82,7 @@ void cam_program()
 	chrono chr_distantio,chr_cam,chr_led,chr_servo;
 	float t_cam = 0, t_loop = 0, t_io = 0, t_rest = 0, t_Task = 0;
 	float looptime_cam;
+	float looptime_servo;
 	float period_cam;
 	//float queue_size = 0;
 	
@@ -101,14 +102,18 @@ void cam_program()
 	
 	float exposure_time_us = 6000;
 	float servo_update_us = 5000;
+	float servo_speed = 0.f;
+	float previous_cmd = 0.f;
 	
 	int32_t gears_bypass = 0;
 	int32_t killswitch = 0;
 	
 	float commandleft = 0.f;
 	float commandright = 0.f;
-	float coeff_pos = 0.f;
-	float coeff_neg = 1.f;
+	float coeff_pos = 0.8f;
+	float coeff_neg = 0.6f;
+	float offset_in = 0.5;
+	float command_threshold = 0.4;
 	float ecart = 0.f;
 	
 	/* ------ DISTANTIO VARIABLES -------*/
@@ -127,12 +132,15 @@ void cam_program()
 	register_scalar(&ecart,FLOAT,0,"Engine diff action");
 	register_scalar(&coeff_pos,FLOAT,1,"diff coeff pos");
 	register_scalar(&coeff_neg,FLOAT,1,"diff coeff min");
+	register_scalar(&offset_in,FLOAT,1,"offset in");
+	register_scalar(&command_threshold,FLOAT,1,"command threshold");
 	// Direction
 	register_scalar(&error_proportionnal, FLOAT,0,"Proportionnel");
 	register_scalar(&error_derivative, FLOAT,0,"Derivative");
 	register_scalar(&command,FLOAT,0,"CMD PD");
 	register_scalar(&commandP,FLOAT,0,"CMD P");
 	register_scalar(&commandD,FLOAT,0,"CMD D");
+	register_scalar(&servo_speed,FLOAT,0,"servo_speed");
 	//register_scalar(&data.filter_coeff,FLOAT,1,"filter_coeff");
 	
 	//register_scalar(&data.linestate, INT32,0,"LineState");
@@ -208,7 +216,7 @@ void cam_program()
 		/* -------------------------- */
 		/* ---- UPDATE DISTANTIO ---- */
 		/* -------------------------- */
-		if(us(&chr_distantio) > 3000)
+		/*if(us(&chr_distantio) > 3000)
 		{
 			reset(&chr_distantio);
 			
@@ -219,7 +227,7 @@ void cam_program()
 			t_rest = 0;
 			t_loop = 0;
 			t_cam = 0;
-		}
+		}*/
 		
 		//Compute fps
 		if(ms(&chrono_fps) < 1000)
@@ -296,11 +304,9 @@ void cam_program()
 		/* -------------------------- */
 		/* ---- UPDATE DIRECTION ---- */
 		/* -------------------------- */
-		if(us(&chr_servo) > servo_update_us)
-		{
-			//PB !!!!
-			//remove_us(&chr_servo,servo_update_us);
-			
+		looptime_servo = us(&chr_servo);
+		if(looptime_servo > servo_update_us)
+		{			
 			reset(&chr_servo);
 			
 			
@@ -323,6 +329,8 @@ void cam_program()
 			//Get offset
 			//servo_offset = TFC_ReadPot(0);
 			
+			previous_cmd = command;
+			
 			//Compute servo command between -1.0 & 1.0 
 			command = commandD + commandP + servo_offset;
 			
@@ -332,6 +340,12 @@ void cam_program()
 				command = -1.f;
 							
 			TFC_SetServo(0, command);
+			
+			//Compute servo speed
+			servo_speed = (command - previous_cmd) / (looptime_servo * 1000.f);
+			
+			update_distantio();
+			
 		}		
 		
 		/* -------------------------- */
@@ -372,6 +386,13 @@ void cam_program()
 					commandleft = gears[current_gear];
 					commandright = gears[current_gear];
 				}
+				
+				//Brake with inner wheel in case of strong turn
+				if(command < -command_threshold)
+					commandleft -= offset_in;
+				else if(command > command_threshold)
+					commandright -= offset_in;
+				
 				TFC_SetMotorPWM(commandleft, commandright);
 			}
 		//}

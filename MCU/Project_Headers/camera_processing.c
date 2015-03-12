@@ -54,11 +54,11 @@ void init_data(cameraData* data)
 	data->line_position = 0;
 	data->previous_line_position = 0;
 	
-	data->threshold = 100;
+	data->threshold = 65;
 	data->halftrack_width = 110;
 	data->offset = 0.f;
 	data->linewidth = 14.f;
-	data->linewidth_margin = 2;
+	data->linewidth_margin = 6;
 	data->deglitch_counter = 0;
 	data->deglitch_limit = 35;
 	data->filter_coeff = 0.7;
