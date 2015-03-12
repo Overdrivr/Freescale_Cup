@@ -35,8 +35,6 @@ struct cameraData
 	
 	float offset;
 	float halftrack_width;
-	uint16_t deglitch_counter;
-	uint16_t deglitch_limit;
 	uint16_t edges_count;
 	
 	int16_t edgeleft;

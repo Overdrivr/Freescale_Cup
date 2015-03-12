@@ -57,10 +57,8 @@ void init_data(cameraData* data)
 	data->threshold = 65;
 	data->halftrack_width = 110;
 	data->offset = 0.f;
-	data->linewidth = 14.f;
-	data->linewidth_margin = 6;
-	data->deglitch_counter = 0;
-	data->deglitch_limit = 35;
+	data->linewidth = 10.f;
+	data->linewidth_margin = 3;
 	data->filter_coeff = 0.7;
 	
 	data->edgeleft = 1;//MIN VALUE : 1
@@ -186,55 +184,10 @@ int process_data(cameraData* data)
 	else if(data->edges_count == 1)
 	{
 		return LINE_LOST;
-		/*
-		//Line is in very border of camera, or car is going outside the road
-		position = (float)(data->rising_edges_position[0] + data->falling_edges_position[0]) / 2.f - 64.f; 
-		
-		//Estimate new position for both cases (Car on the left or car on the right)
-		//White to black
-		if(data->threshold_image[data->falling_edges_position[0]] == 1)
-		{
-			//Si la position est > -64+linewidth  on a forcement le bord droit
-			if(position > -64 + data->linewidth * 1.2f)
-			{
-				data->one_edge_choice = 2;
-				data->line_position = position + data->offset - data->halftrack_width;
-				return LINE_OK;
-			}
-			else
-			{
-				data->one_edge_choice = 0;
-				return LINE_LOST;
-			}
-				
-			
-			//data->position_left = position;
-			//data->position_right = position + data->offset - data->halftrack_width;//OK, sur la droite la valeur part bien en negatif
-		}
-		//Black to white
-		else if(data->threshold_image[data->falling_edges_position[0]] == 2)
-		{
-			if(position < 64 - data->linewidth * 1.2f)
-			{
-				data->one_edge_choice = -2;
-				data->line_position = position + data->offset + data->halftrack_width;
-				return LINE_OK;
-			}
-			else
-			{
-				data->one_edge_choice = 0;
-				return LINE_LOST;
-			}
-				
-			
-			//data->position_left = position + data->offset + data->halftrack_width;
-			//data->position_right = position;
-		}*/
 	}
 	else if(data->edges_count == 2)
 	{
-		data->deglitch_counter = 0;
-		//Check derivative order 
+		//TODO : Check derivative order ? 
 		
 		//Work with twice the linewidth and int32
 		data->current_linewidth = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2  -
