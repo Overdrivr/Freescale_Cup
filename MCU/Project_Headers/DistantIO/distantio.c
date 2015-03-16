@@ -160,7 +160,7 @@ void update_distantio()
 	}				
 		
 	//Transmit data to serial - Only one variable per mainloop
-	for(i = Log.previous_index ; i < Log.previous_index + interval ; i++)
+	for(i = 0 ; i < Log.current_index ; i++)
 	{		
 		if(Log.variables[i].send == 0)
 			continue;
