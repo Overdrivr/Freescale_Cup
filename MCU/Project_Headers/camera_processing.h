@@ -32,6 +32,7 @@ struct cameraData
 	int32_t threshold;
 	int32_t linewidth;
 	int32_t linewidth_margin;
+	int32_t linewidth1, linewidth2;
 	
 	float offset;
 	float halftrack_width;

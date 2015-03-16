@@ -57,7 +57,7 @@ void init_data(cameraData* data)
 	data->threshold = 65;
 	data->halftrack_width = 110;
 	data->offset = 0.f;
-	data->linewidth = 10.f;
+	data->linewidth = 10;
 	data->linewidth_margin = 3;
 	data->filter_coeff = 0.7;
 	
@@ -207,6 +207,50 @@ int process_data(cameraData* data)
 		data->line_position = position + data->offset;
 		
 		return LINE_OK;
+	}
+	else if(data->edges_count == 3)
+	{
+		
+		data->linewidth1 = (data->rising_edges_position[0] + data->falling_edges_position[0]) / 2  -
+		  	  	  	  	  	 (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2;
+		
+		data->linewidth2 = (data->rising_edges_position[1] + data->falling_edges_position[1]) / 2  -
+				  	  	  	 (data->rising_edges_position[2] + data->falling_edges_position[2]) / 2;
+		
+		if(data->linewidth1 < 0)
+			data->linewidth1 *= -1;
+		
+		if(data->linewidth2 < 0)
+			data->linewidth2 *= -1;
+		
+		//CHECK first linewidth
+		data->current_linewidth_diff = data->linewidth1 - data->linewidth;
+				
+		if(data->current_linewidth_diff < data->linewidth_margin && data->current_linewidth_diff > -data->linewidth_margin)
+		{
+			//1 edge - compute center & record
+			position = (data->rising_edges_position[0] + data->falling_edges_position[0] + data->rising_edges_position[1] + data->falling_edges_position[1]) / 4.f;
+			position -= 64;
+			data->line_position = position + data->offset;
+			
+			return LINE_OK;
+		}
+		
+		//CHECK second linewidth
+		data->current_linewidth_diff = data->linewidth2 - data->linewidth;
+		
+		if(data->current_linewidth_diff < data->linewidth_margin && data->current_linewidth_diff > -data->linewidth_margin)
+		{
+			//1 edge - compute center & record
+			position = (data->rising_edges_position[1] + data->falling_edges_position[1] + data->rising_edges_position[2] + data->falling_edges_position[2]) / 4.f;
+			position -= 64;
+			data->line_position = position + data->offset;
+			
+			return LINE_OK;
+		}
+		
+		return LINE_LOST;
+		
 	}
 	/*
 	else if(data->edges_count == 6)
