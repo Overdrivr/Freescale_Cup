@@ -1,3 +1,5 @@
+*Note : Experimental, deprecated, untested, unmaintained code.*
+
 #Freescale Cup
 
 The Freescale Cup is an autonomous vehicle competition using Freescale hardware.
